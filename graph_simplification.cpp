@@ -1967,7 +1967,7 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
         // modify multiplicity in case of reverse complementary -1990600->-5726575 in 5726575->1990600->741685->-1990600->-5726575->6492462
         std::set<std::pair<std::string, std::string>> p_pairs;
         for (size_t x = 0; x < p1.nodes.size() - 1; ++x) {
-            p_pairs.insert({ reverse_complementary_node(p1.nodes[x + 1]), reverse_complementary_node(p1.nodes[x]) });
+            p_pairs.insert({ p1.nodes[x], p1.nodes[x + 1] });
         }
         for (size_t x = 0; x < p1_reverse.nodes.size() - 1; ++x) {
             if (p_pairs.find({ p1_reverse.nodes[x], p1_reverse.nodes[x + 1] }) != p_pairs.end()) {
@@ -1978,7 +1978,7 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
         assert(std::abs(p1.min_multi - p1_reverse.min_multi) < MIN_MULTI);
         p_pairs.clear();
         for (size_t x = 0; x < p2.nodes.size() - 1; ++x) {
-            p_pairs.insert({ reverse_complementary_node(p2.nodes[x + 1]), reverse_complementary_node(p2.nodes[x]) });
+            p_pairs.insert({ p2.nodes[x], p2.nodes[x + 1] });
         }
         for (size_t x = 0; x < p2_reverse.nodes.size() - 1; ++x) {
             if (p_pairs.find({ p2_reverse.nodes[x], p2_reverse.nodes[x + 1] }) != p_pairs.end()) {
