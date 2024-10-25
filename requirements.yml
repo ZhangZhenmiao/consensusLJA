@@ -1,0 +1,12 @@
+name: clja
+channels:
+  - anaconda
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - minimap2=2.21=h5bf99c6_0
+  - samtools=1.11=h6270b1f_0
+  - pip
+  - pip:
+      - pysam==0.22.1
