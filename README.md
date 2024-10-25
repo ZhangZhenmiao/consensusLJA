@@ -17,7 +17,7 @@ To install **consensusLJA (cLJA)**, follow the steps below to install the requir
 
 1. **Install Dependencies**:  
    Install the required dependencies to ensure proper functionality:
-   
+   - [**gcc**](https://gcc.gnu.org/): tested on v11.4.0
    - [**minimap2**](https://github.com/lh3/minimap2): v2.21 (For creating BAM files)
    - [**samtools**](https://github.com/samtools/samtools): v1.11 (For processing BAM files)
    - [**pysam**](https://pysam.readthedocs.io/en/latest/installation.html): v0.22.1 (For processing BAM files)
@@ -45,7 +45,7 @@ To install **consensusLJA (cLJA)**, follow the steps below to install the requir
    Clone the **consensusLJA** repository:
 
    ```bash
-   git clone https://github.com/yourusername/consensusLJA.git
+   git clone https://github.com/ZhangZhenmiao/consensusLJA.git
    ```
 
 5. **Build the Tool**:  
@@ -133,6 +133,6 @@ In the `example` folder under this [google drive link](https://drive.google.com/
 cLJA -d LJA_output/01_TopologyBasedCorrection/final_dbg.dot -f LJA_output/01_TopologyBasedCorrection/final_dbg.fasta -m LJA_output/02_MDBG/mdbg_edge_seqs.fasta -o cLJA_output
 ```
 
-In this example, **cLJA** will process the `final_dbg.dot`, `final_dbg.fasta`, and `mdbg_edge_seqs.fasta` files, and output the results into the `cLJA_output` directory. It will generate the final consensus assembly in the file `cLJA_output/graph.final.fasta`.
+In this example, **cLJA** will process the `final_dbg.dot`, `final_dbg.fasta`, and `mdbg_edge_seqs.fasta` files, and output the results into the `cLJA_output` directory. It will generate the final consensus assembly in the file `cLJA_output/graph.final.fasta` (currently it's homopolymer collapsed contigs; we will uncompress them in later versions).
 
 If you encounter any issues or errors, please feel free to open an issue on the repository.
