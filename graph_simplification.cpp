@@ -690,7 +690,7 @@ std::string getExecutablePath() {
     return "";
 }
 
-void Graph::resolve_2_in_2_out_mdbg(std::string multidbg, std::string output) {
+void Graph::decoupling(std::string multidbg, std::string output) {
     unsigned removed_bulges = 1;
     while (removed_bulges) {
         this->multi_bulge_removal(removed_bulges);
@@ -2034,7 +2034,7 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
     }
 }
 
-void Graph::decouple_strands(std::string node1, std::string node2, int& decoupled_stands, std::vector<std::string>& nodes_to_remove, bool strict) {
+void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved_edges, std::vector<std::string>& nodes_to_remove, bool strict) {
     std::vector<std::string> incoming_nodes, outgoing_nodes_tmp, outgoing_nodes;
 
     for (auto&& e : this->graph[node1].incoming_edges) {
@@ -2189,11 +2189,11 @@ void Graph::decouple_strands(std::string node1, std::string node2, int& decouple
     unsigned bulges = 1;
     multi_bulge_removal(bulges, false);
 
-    decoupled_stands += 2;
+    resolved_edges += 2;
     // write_graph("debugging_" + path1.nodes.at(0) + "_" + path1.nodes.at(path1.nodes.size() - 1) + "_after");
 }
 
-void Graph::decoupling(int& decoupled_stands, bool strict) {
+void Graph::resolve_edges_in_reverse_complement(int& resolved_edges, bool strict) {
     unsigned removed_paths = 1;
     unsigned bulges = 1;
     if (!strict) {
@@ -2208,7 +2208,7 @@ void Graph::decoupling(int& decoupled_stands, bool strict) {
     while (removed_paths)
         multi_bulge_removal(removed_paths, false);
 
-    decoupled_stands = 0;
+    resolved_edges = 0;
     std::vector<std::string> nodes_to_remove;
     std::vector<std::string> source_nodes, sink_nodes;
     //search for 2-in-2-out edge
@@ -2237,7 +2237,7 @@ void Graph::decoupling(int& decoupled_stands, bool strict) {
     }
 
     for (int i = 0; i < source_nodes.size();++i)
-        this->decouple_strands(source_nodes[i], sink_nodes[i], decoupled_stands, nodes_to_remove, strict);
+        this->resolve_edges_rc(source_nodes[i], sink_nodes[i], resolved_edges, nodes_to_remove, strict);
 
     for (auto&& node : nodes_to_remove) {
         this->graph.erase(node);

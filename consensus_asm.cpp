@@ -83,12 +83,12 @@ int main(int argc, char* argv[]) {
     graph.write_graph(output + "/graph.complex_bulge_stage3.3");
     std::cout << "Removed complex bulges: " << total_removed << std::endl;
 
-    // Step 4 Decouple with reverse complementary in nodes and out nodes
-    decoupled = 1;
-    while (decoupled) {
-        graph.decoupling(decoupled, true);
+    // Step 4 Resolve edges with reverse complementary in nodes and out nodes
+    total_removed = 1;
+    while (total_removed) {
+        graph.resolve_edges_in_reverse_complement(total_removed, true);
     }
-    graph.write_graph(output + "/graph.decoupling_rc");
+    graph.write_graph(output + "/graph.resolve_edges_in_reverse_complement_rc");
 
     // Step 5 Broken bulges and tips
     removed_bulges = 1;
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     // Step 6 Decouple with MultiDBG
     std::cout << "----------Stage 6: MultiDBG----------" << std::endl;
     // TODO: will this module to not depend on minimap2
-    graph.resolve_2_in_2_out_mdbg(multidbg, output + "/graph.multidbg.round1");
+    graph.decoupling(multidbg, output + "/graph.multidbg.round1");
     removed_paths = 1;
     while (removed_paths) {
         graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0, true, 2);
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
     graph.write_graph(output + "/graph.2_in_2_out_round1");
 
     // TODO: the second round may not be necessary
-    graph.resolve_2_in_2_out_mdbg(multidbg, output + "/graph.multidbg.round2");
+    graph.decoupling(multidbg, output + "/graph.multidbg.round2");
     removed_paths = 1;
     while (removed_paths) {
         graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0, true, 2);
@@ -158,9 +158,9 @@ int main(int argc, char* argv[]) {
         graph.merge_non_branching_paths(true);
     }
 
-    decoupled = 1;
-    while (decoupled) {
-        graph.decoupling(decoupled, true);
+    total_removed = 1;
+    while (total_removed) {
+        graph.resolve_edges_in_reverse_complement(total_removed, true);
     }
 
     graph.general_whirl_removal(cnt_rounds, false, true);
@@ -170,9 +170,9 @@ int main(int argc, char* argv[]) {
 
     // Step 8 Further simplifications considering reverse complementary nodes
     std::cout << "----------Stage 8: Further simplifications (with RC)----------" << std::endl;
-    decoupled = 1;
-    while (decoupled) {
-        graph.decoupling(decoupled);
+    total_removed = 1;
+    while (total_removed) {
+        graph.resolve_edges_in_reverse_complement(total_removed);
     }
 
     removed_paths = 1;
@@ -187,9 +187,9 @@ int main(int argc, char* argv[]) {
         graph.merge_non_branching_paths(true);
     }
 
-    decoupled = 1;
-    while (decoupled) {
-        graph.decoupling(decoupled);
+    total_removed = 1;
+    while (total_removed) {
+        graph.resolve_edges_in_reverse_complement(total_removed);
     }
 
     removed_tips = 1;
@@ -198,9 +198,9 @@ int main(int argc, char* argv[]) {
     }
     graph.merge_tips(removed_tips, false);
 
-    decoupled = 1;
-    while (decoupled) {
-        graph.decoupling(decoupled);
+    total_removed = 1;
+    while (total_removed) {
+        graph.resolve_edges_in_reverse_complement(total_removed);
         graph.merge_tips(removed_tips, false);
     }
 
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
     while (removed_paths) {
         decoupled = 1;
         while (decoupled) {
-            graph.decoupling(decoupled);
+            graph.resolve_edges_in_reverse_complement(decoupled);
             graph.merge_tips(removed_tips, false);
             graph.merge_non_branching_paths(true);
         }
@@ -220,7 +220,7 @@ int main(int argc, char* argv[]) {
     while (removed_tips) {
         decoupled = 1;
         while (decoupled) {
-            graph.decoupling(decoupled);
+            graph.resolve_edges_in_reverse_complement(decoupled);
         }
         graph.merge_tips(removed_tips, false);
         graph.merge_non_branching_paths(true);
@@ -234,7 +234,7 @@ int main(int argc, char* argv[]) {
     while (removed_tips) {
         decoupled = 1;
         while (decoupled) {
-            graph.decoupling(decoupled);
+            graph.resolve_edges_in_reverse_complement(decoupled);
         }
         graph.merge_tips(removed_tips, true);
         graph.merge_non_branching_paths(true);

@@ -93,7 +93,7 @@ public:
     void write_graph_contracted(const std::string& prefix, int min_length = 10000);
     void write_graph_colored(const std::string& prefix, const std::string& genomes);
     void write_graph_colored_from_bam(const std::string& prefix, const std::string& bam_processed);
-    void resolve_2_in_2_out_mdbg(std::string multidbg, std::string output);
+    void decoupling(std::string multidbg, std::string output);
     int get_num_nodes();
 
     void multi_bulge_removal(unsigned& removed_bulges, bool skip_rc_bulges = true);
@@ -107,7 +107,7 @@ public:
     void remove_low_coverage_edges(unsigned& removed_edges, double coverage = 10, bool tips = false);
     void remove_low_cov_on_node(std::string node, unsigned removed_edges, double coverage, std::vector<std::string>& nodes_to_remove);
 
-    void decoupling(int& decoupled_stands, bool strict = false);
+    void resolve_edges_in_reverse_complement(int& resolved_edges, bool strict = false);
     template<typename T>
     void merge_vecs(std::vector<T>& e1, std::vector<T>& e2);
 
@@ -129,7 +129,7 @@ private:
     void find_2_in_2_out(Bulge& bulge);
     bool check_2_in_2_out(Path& leg1);
 
-    void decouple_strands(std::string node1, std::string node2, int& decoupled_stands, std::vector<std::string>& nodes_to_remove, bool strict = false);
+    void resolve_edges_rc(std::string node1, std::string node2, int& resolved_edges, std::vector<std::string>& nodes_to_remove, bool strict = false);
     void resolve_2_in_2_out(std::string node1, std::string node2, std::vector<std::string>& nodes_to_remove);
 
     int matches_by_edlib(std::string sequence1, std::string sequence2);
