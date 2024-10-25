@@ -221,13 +221,23 @@ int main(int argc, char* argv[]) {
         }
         graph.merge_tips(removed_tips, false);
         graph.merge_non_branching_paths(true);
+        total_whirls = 1;
+        while (total_whirls)
+            graph.general_whirl_removal(total_whirls, false, true);
+        graph.merge_non_branching_paths(true);
+
     }
+    removed_tips = 1;
     while (removed_tips) {
         decoupled = 1;
         while (decoupled) {
             graph.decoupling(decoupled);
         }
         graph.merge_tips(removed_tips, true);
+        graph.merge_non_branching_paths(true);
+        total_whirls = 1;
+        while (total_whirls)
+            graph.general_whirl_removal(total_whirls, false, true);
         graph.merge_non_branching_paths(true);
     }
 
