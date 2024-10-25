@@ -53,6 +53,7 @@ To install **consensusLJA (cLJA)**, follow the steps below to install the requir
 
    ```bash
    cd consensusLJA && make
+   chmod +x cLJA get_reference.py
    ```
 
 6. **Add cLJA to Your PATH**:  
@@ -126,7 +127,7 @@ cLJA --dot=<string> --fasta=<string> --multidbg=<string> --output=<string>
 
 ### Example Usage:
 
-In the `example` folder under this repository, there is a small test dataset. The output directory from LJA has already been generated in `LJA_output`. You can run **cLJA** using the command line below:
+In the `example` folder under this [google drive link](https://drive.google.com/drive/folders/1DT-jHEwpnPm3bzUTQbUJdy14UhV3s4AY?usp=drive_link), there is a small test dataset. The output directory from LJA has already been generated in `LJA_output`. You can run **cLJA** using the command line below:
 
 ```bash
 cLJA -d LJA_output/01_TopologyBasedCorrection/final_dbg.dot -f LJA_output/01_TopologyBasedCorrection/final_dbg.fasta -m LJA_output/02_MDBG/mdbg_edge_seqs.fasta -o cLJA_output
