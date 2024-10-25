@@ -56,14 +56,14 @@ To install **consensusLJA (cLJA)**, follow the steps below to install the requir
    chmod +x cLJA get_reference.py
    ```
 
-6. **Add cLJA to Your PATH**:  
+6. **Add cLJA to Your PATH (Optional)**:  
    Add the `cLJA` executable to your environment's `PATH`:
 
    ```bash
    export PATH="`pwd`":$PATH
    ```
 
-   > _Note_: You can add this line to your `~/.bashrc` for convenience, so that `cLJA` is available in your `PATH` every time you start a new shell session:
+   > _Note_: You can add this line to your `~/.bashrc` for convenience, so that `cLJA` is available in your `PATH` every time you start a new shell session (optional):
 
    ```bash
    echo -e '\nexport PATH="'$(pwd)'":$PATH' >> ~/.bashrc

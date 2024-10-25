@@ -8,6 +8,8 @@
 #include "edlib.h"
 #include <cmath>
 #include <filesystem>
+#include <unistd.h>
+#include <cstdlib>
 
 int Graph::count_matches(std::string cigar) {
     int matches = 0;
@@ -677,6 +679,17 @@ void Graph::merge_tips_into_edges(unsigned& num_tips) {
     merge_non_branching_paths(true);
 }
 
+std::string getExecutablePath() {
+    char buffer[1024];
+    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+    if (len != -1) {
+        buffer[len] = '\0';
+        std::string execPath = std::string(buffer);
+        return execPath.substr(0, execPath.find_last_of("/"));
+    }
+    return "";
+}
+
 void Graph::resolve_2_in_2_out_mdbg(std::string multidbg, std::string output) {
     unsigned removed_bulges = 1;
     while (removed_bulges) {
@@ -743,7 +756,8 @@ void Graph::resolve_2_in_2_out_mdbg(std::string multidbg, std::string output) {
     // if (system(("minimap2 -ax map-pb " + multidbg + " " + output + ".2in_2out.fasta -t 100 | samtools sort -@ 50 -o " + output + ".2in_2out.bam").c_str()) != 0) {
     //     exit(1);
     // }
-    if (system(("get_reference.py -o " + output + ".2in_2out.bam.stats " + output + ".2in_2out.bam " + output + ".2in_2out.fasta").c_str()) != 0)
+    std::string exeDir = getExecutablePath();
+    if (system((exeDir + "/get_reference.py -o " + output + ".2in_2out.bam.stats " + output + ".2in_2out.bam " + output + ".2in_2out.fasta").c_str()) != 0)
         exit(1);
     write_graph_colored_from_bam(output + ".2in_2out.multi", output + ".2in_2out.bam.stats");
 
