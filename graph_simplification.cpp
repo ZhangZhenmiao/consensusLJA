@@ -1973,6 +1973,20 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
             if (p_pairs.find({ p1_reverse.nodes[x], p1_reverse.nodes[x + 1] }) != p_pairs.end()) {
                 p1.min_multi = std::min(p1.min_multi, graph[p1_reverse.nodes[x]].outgoing_edges[p1_reverse.nodes[x + 1]].at(p1_reverse.bulge_legs[x]).multiplicity / 2);
                 p1_reverse.min_multi = std::min(p1_reverse.min_multi, graph[p1_reverse.nodes[x]].outgoing_edges[p1_reverse.nodes[x + 1]].at(p1_reverse.bulge_legs[x]).multiplicity / 2);
+
+                bool flag_in = false, flag_out = false;
+                if (std::abs(graph[p1_reverse.nodes[x + 1]].incoming_edges[p1_reverse.nodes[x]].at(p1_reverse.bulge_legs[x]).multiplicity - p1_reverse.min_multi * 2) < MIN_MULTI &&
+                    graph[p1_reverse.nodes[x + 1]].incoming_edges[p1_reverse.nodes[x]].size() <= 1 && graph[p1_reverse.nodes[x + 1]].incoming_edges.size() <= 1) {
+                    flag_in = true;
+                }
+                if (std::abs(graph[p1_reverse.nodes[x]].outgoing_edges[p1_reverse.nodes[x + 1]].at(p1_reverse.bulge_legs[x]).multiplicity - p1_reverse.min_multi * 2) < MIN_MULTI &&
+                    graph[p1_reverse.nodes[x]].outgoing_edges[p1_reverse.nodes[x + 1]].size() <= 1 && graph[p1_reverse.nodes[x]].outgoing_edges.size() <= 1) {
+                    flag_out = true;
+                }
+                if (flag_in || flag_out) {
+                    p1.safe_to_extract = false;
+                    p1_reverse.safe_to_extract = false;
+                }
             }
         }
         assert(std::abs(p1.min_multi - p1_reverse.min_multi) < MIN_MULTI);
@@ -1984,6 +1998,20 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
             if (p_pairs.find({ p2_reverse.nodes[x], p2_reverse.nodes[x + 1] }) != p_pairs.end()) {
                 p2.min_multi = std::min(p2.min_multi, graph[p2_reverse.nodes[x]].outgoing_edges[p2_reverse.nodes[x + 1]].at(p2_reverse.bulge_legs[x]).multiplicity / 2);
                 p2_reverse.min_multi = std::min(p2_reverse.min_multi, graph[p2_reverse.nodes[x]].outgoing_edges[p2_reverse.nodes[x + 1]].at(p2_reverse.bulge_legs[x]).multiplicity / 2);
+
+                bool flag_in = false, flag_out = false;
+                if (std::abs(graph[p2_reverse.nodes[x + 1]].incoming_edges[p2_reverse.nodes[x]].at(p2_reverse.bulge_legs[x]).multiplicity - p2_reverse.min_multi * 2) < MIN_MULTI &&
+                    graph[p2_reverse.nodes[x + 1]].incoming_edges[p2_reverse.nodes[x]].size() <= 1 && graph[p2_reverse.nodes[x + 1]].incoming_edges.size() <= 1) {
+                    flag_in = true;
+                }
+                if (std::abs(graph[p2_reverse.nodes[x]].outgoing_edges[p2_reverse.nodes[x + 1]].at(p2_reverse.bulge_legs[x]).multiplicity - p2_reverse.min_multi * 2) < MIN_MULTI &&
+                    graph[p2_reverse.nodes[x]].outgoing_edges[p2_reverse.nodes[x + 1]].size() <= 1 && graph[p2_reverse.nodes[x]].outgoing_edges.size() <= 1) {
+                    flag_out = true;
+                }
+                if (flag_in || flag_out) {
+                    p2.safe_to_extract = false;
+                    p2_reverse.safe_to_extract = false;
+                }
             }
         }
         assert(std::abs(p2.min_multi - p2_reverse.min_multi) < MIN_MULTI);
@@ -2037,6 +2065,9 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
 void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved_edges, std::vector<std::string>& nodes_to_remove, bool strict) {
     std::vector<std::string> incoming_nodes, outgoing_nodes_tmp, outgoing_nodes;
 
+    if (graph.find(node1) == graph.end() || graph.find(node2) == graph.end())
+        return;
+
     for (auto&& e : this->graph[node1].incoming_edges) {
         incoming_nodes.push_back(e.first);
     }
@@ -2069,7 +2100,6 @@ void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved
             return;
     }
     std::cout << "Decouple strands: " << "path1: " << incoming_nodes[0] << "->" << node1 << "->...->" << node2 << "->" << outgoing_nodes[1] << "; path2: " << incoming_nodes[1] << "->" << node1 << "->...->" << node2 << "->" << outgoing_nodes[0] << std::endl;
-
     // process for forward strand
     // remove a paired path from the graph
     Path path1;
@@ -2108,6 +2138,7 @@ void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved
     path_1_r.multiplicity = path1.multiplicity;
     path_2_r.multiplicity = path2.multiplicity;
 
+    // write_graph("debugging_" + path1.nodes.at(0) + "_" + path1.nodes.at(path1.nodes.size() - 1) + "_before");
     Edge edge1(path1.sequence.at(k), path1.length, path1.sequence, path1.multiplicity);
     edge1.path_edges_in_original_graph = path1.path_edges_in_original_graph;
     edge1.path_nodes_in_original_graph = path1.path_nodes_in_original_graph;
@@ -2185,12 +2216,11 @@ void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved
         }
 
     }
-
+    // write_graph("debugging_" + path1.nodes.at(0) + "_" + path1.nodes.at(path1.nodes.size() - 1) + "_after1");
     unsigned bulges = 1;
     multi_bulge_removal(bulges, false);
-
+    // write_graph("debugging_" + path1.nodes.at(0) + "_" + path1.nodes.at(path1.nodes.size() - 1) + "_after2");
     resolved_edges += 2;
-    // write_graph("debugging_" + path1.nodes.at(0) + "_" + path1.nodes.at(path1.nodes.size() - 1) + "_after");
 }
 
 void Graph::resolve_edges_in_reverse_complement(int& resolved_edges, bool strict) {
