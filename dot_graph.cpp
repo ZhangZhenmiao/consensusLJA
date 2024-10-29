@@ -249,11 +249,11 @@ int Graph::get_num_nodes() {
     return this->graph.size();
 }
 
-void Graph::read_graph(std::string& output, std::string& restart_from, std::string& graph_dot, const std::string& graph_fasta) {
+void Graph::read_graph(std::string& output, std::string& restart_from, std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta) {
     if (mkdir(output.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
         if (errno == EEXIST) {
             if (!restart_from.empty())
-                read_from_dot(output + "/" + restart_from + ".dot", output + "/" + restart_from + ".fasta");
+                read_from_dot(output + "/" + restart_from + ".dot", output + "/" + restart_from + ".fasta", output + "/" + restart_from + ".vertices.fasta");
             else {
                 std::cout << "Output directory already exists. Please delete it or set restart_from." << std::endl;
                 exit(0);
@@ -266,53 +266,47 @@ void Graph::read_graph(std::string& output, std::string& restart_from, std::stri
     }
 
     if (graph.empty())
-        read_from_dot(graph_dot, graph_fasta);
+        read_from_dot(graph_dot, graph_fasta, nodes_fasta);
 }
 
 // Read graph from DOT file
-void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph_fasta) {
+void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta) {
     // load fasta sequence
-    unsigned e_id1, e_id2;
+    std::string e_id;
     std::string line, node1, node2, length, multiplicity, start_base;
-    std::unordered_map<std::string, std::string> edge2sequence;
+    std::unordered_map<std::string, std::string> edge2sequence, node2sequence;
 
     // read input fasta
-    unsigned cnt_line = 0;
     std::ifstream fasta_file(graph_fasta);
     while (getline(fasta_file, line)) {
         // line is contig name
         if (line.at(0) == '>') {
-            size_t pos = line.find_first_of('_');
-
-            node1 = line.substr(1, pos - 1);
-            size_t pos_dot = node1.find_first_of('.');
-            e_id1 = std::atoi(node1.substr(pos_dot + 1).c_str());
-            node1 = node1.substr(0, pos_dot);
-
-            node2 = line.substr(pos + 1);
-            pos_dot = node2.find_first_of('.');
-            e_id2 = std::atoi(node2.substr(pos_dot + 1).c_str());
-            node2 = reverse_complementary_node(node2.substr(0, pos_dot));
+            e_id = line.substr(1);
         }
         // line is a contig
         else {
-            std::string node1_r = reverse_complementary_node(node1), node2_r = reverse_complementary_node(node2);
             std::string edge_sequence = line;
-            std::string edge_sequence_r = reverse_complementary(edge_sequence);
-
-            // extract edge labels
-            std::string edge = node1 + "." + std::to_string(e_id1);
-            std::string edge_r = node2_r + "." + std::to_string(e_id2);
-            assert(edge2sequence.find(edge) == edge2sequence.end());
-            assert(edge2sequence.find(edge_r) == edge2sequence.end());
-            edge2sequence[edge] = edge_sequence;
-            edge2sequence[edge_r] = edge_sequence_r;
-            this->label2rc[edge] = edge_r;
-            this->label2rc[edge_r] = edge;
-            // std::cout << "Read " << edge << " and " << edge_r << " from " << graph_fasta << std::endl;
+            assert(edge2sequence.find(e_id) == edge2sequence.end());
+            edge2sequence[e_id] = edge_sequence;
+            std::cout << "Read " << e_id << " from " << graph_fasta << std::endl;
         }
     }
-    // std::cout << "Read sequences from " << graph_fasta << " finished (loaded " << edge2sequence.size() << " edges, including reverse complements)." << std::endl;
+
+    std::ifstream nodes_file(nodes_fasta);
+    std::string node;
+    while (getline(nodes_file, line)) {
+        // line is contig name
+        if (line.at(0) == '>') {
+            node = line.substr(1);
+        }
+        // line is a contig
+        else {
+            std::string node_sequence = line;
+            assert(node2sequence.find(node) == node2sequence.end());
+            node2sequence[node] = node_sequence;
+            std::cout << "Read " << node << " from " << nodes_fasta << std::endl;
+        }
+    }
 
     // load graph
     long cnt_edge = 0;
@@ -325,36 +319,27 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         if (line.find("->") != std::string::npos) {
             // extract node name
             size_t pos1 = line.find("->");
-            std::string start_name = line.substr(1, pos1 - 3);
+            std::string start_name = line.substr(1, pos1 - 1);
             size_t pos2 = line.find('[');
-            std::string end_name = line.substr(pos1 + 4, pos2 - pos1 - 6);
+            std::string end_name = line.substr(pos1 + 2, pos2 - pos1 - 2);
             assert(this->graph.find(start_name) != this->graph.end() && this->graph.find(end_name) != this->graph.end());
 
             // parse edge label: starting base, length, multiplicity and sequence
-            pos1 = line.find(")\" ");
-            std::string label_all = line.substr(pos2 + 8, pos1 - pos2 - 7);
-            std::string edge_label = label_all.substr(0, label_all.find(' '));
-            label_all = label_all.substr(label_all.find(' ') + 1);
-            pos1 = label_all.find('(');
-            assert(pos1 != std::string::npos);
-            char start_base = label_all[0];
-            unsigned length = std::atoi(label_all.substr(2, pos1 - 2).c_str());
-            double multiplicity = std::atof(label_all.substr(pos1 + 1, label_all.size() - pos1 - 2).c_str());
+            pos1 = line.find("size");
+            std::string edge_label = line.substr(pos2 + 14, pos1 - pos2 - 16);
 
-            // std::cout << "Read edge " << start_name << " -> " << end_name << ", " << edge_label << " with multi " << multiplicity << ", start " << start_base << ", len " << length << " from " << graph_dot << std::endl;
+            std::cout << "Read edge " << start_name << " -> " << end_name << ", " << edge_label << " from " << graph_dot << std::endl;
 
             assert(edge2sequence.find(edge_label) != edge2sequence.end());
-            if (this->k == 0)
-                this->k = edge2sequence[edge_label].size() - length;
-            else
-                assert(length == edge2sequence[edge_label].size() - k);
-            assert(start_base == edge2sequence[edge_label].at(k));
+            int length = 0;
+            double multiplicity = 0;
+            char start_base;
             Edge edge = Edge(start_base, length, edge2sequence[edge_label], multiplicity);
+            assert(edge2sequence[edge_label].substr(0, graph[start_name].sequence.size()) == graph[start_name].sequence);
             edge.path_nodes_in_original_graph.push_back(start_name);
             edge.path_nodes_in_original_graph.push_back(end_name);
             edge.path_edges_in_original_graph.push_back(edge_label);
             edge.label = edge_label;
-            edge.rc_label = label2rc[edge_label];
 
             this->graph[start_name].outgoing_edges[end_name].push_back(edge);
             this->graph[end_name].incoming_edges[start_name].push_back(edge);
@@ -362,13 +347,15 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         }
         // line is an node
         else {
-            std::string node_name = line.substr(0, line.find('[') - 1);
+            std::string node_name = line.substr(1, line.find('[') - 1);
             Node node;
+            assert(node2sequence.find(node_name) != node2sequence.end());
+            node.sequence = node2sequence[node_name];
             this->graph[node_name] = node;
         }
     }
     dot_file.close();
-    std::cout << "Read " << get_num_nodes() << " vertices, " << cnt_edge << " edges (k=" << this->k << ")." << std::endl;
+    std::cout << "Read " << get_num_nodes() << " vertices, " << cnt_edge << " edges." << std::endl;
 
     // std::cout << "Node\tIn_edges\tOut_edges\tIn_coverage\tOut_coverage\tDifference" << std::endl;
     // std::unordered_set<std::string> nodes_scanned;

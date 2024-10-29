@@ -31,6 +31,7 @@ class Node {
 public:
     std::unordered_map<std::string, std::vector<Edge>> incoming_edges;
     std::unordered_map<std::string, std::vector<Edge>> outgoing_edges;
+    std::string sequence;
     int number_of_contracted_edge = 0;
     int length_of_contracted_edge = 0;
     double max_in_multi = 0;
@@ -87,8 +88,8 @@ public:
     int k = 0;
     std::unordered_map<std::string, Node> graph;
     std::unordered_map<std::string, std::string> label2rc;
-    void read_graph(std::string& output, std::string& restart_from, std::string& graph_dot, const std::string& graph_fasta);
-    void read_from_dot(const std::string& graph_dot, const std::string& graph_fasta);
+    void read_graph(std::string& output, std::string& restart_from, std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta);
+    void read_from_dot(const std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta);
     void write_graph(const std::string& prefix, int thick = 1000000, bool contracted = false, bool colored = false, std::unordered_set<std::string> nodes = std::unordered_set<std::string>());
     void write_graph_contracted(const std::string& prefix, int min_length = 10000);
     void write_graph_colored(const std::string& prefix, const std::string& genomes);
