@@ -514,11 +514,11 @@ void Graph::multi_bulge_removal(unsigned& removed_bulges, bool skip_rc_bulges) {
                 std::string seq1 = this->collapse_bulge(node1, node2, removed_bulges);
 
                 // if node1 and node2 are reverse complementary nodes, skip collapsing reverse bulge
-                // if (reverse_complementary_node(node2) != node1) {
-                //     std::string seq2 = this->collapse_bulge(reverse_complementary_node(node2), reverse_complementary_node(node1), removed_bulges);
-                //     if (seq1 != reverse_complementary(seq2))
-                //         std::cout << "Problematic bulge collapsing: resulting sequences not reverse complementary" << std::endl;
-                // }
+                if (reverse_complementary_node(node2) != node1) {
+                    std::string seq2 = this->collapse_bulge(reverse_complementary_node(node2), reverse_complementary_node(node1), removed_bulges);
+                    // if (seq1 != reverse_complementary(seq2))
+                    //     std::cout << "Problematic bulge collapsing: resulting sequences not reverse complementary" << std::endl;
+                }
             }
         }
     }
