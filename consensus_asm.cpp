@@ -43,5 +43,6 @@ int main(int argc, char* argv[]) {
         std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
     }
     graph.write_graph(output + "/graph.bulge_removel");
+    graph.write_graph_contracted(output + "/graph.bulge_removel.contracted");
     return 0;
 }

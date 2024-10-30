@@ -112,11 +112,15 @@ bool Graph::add_node_to_path(Path& path, std::string node, int bulge_leg, bool r
     }
 
     // update path sequence
-    path.length += edge.length;
-    if (path.sequence.empty())
+    if (path.sequence.empty()) {
+        path.length = edge.length;
         path.sequence = edge.sequence;
-    else
-        path.sequence += edge.sequence.substr(this->k);
+    }
+    else {
+        path.length = path.length + edge.length - graph[prev_node].sequence.size();
+        path.sequence = path.sequence.substr(0, path.sequence.size() - graph[prev_node].sequence.size()) + edge.sequence;
+    }
+    assert(path.length == path.sequence.size());
 
     if (path.nodes.size() >= 3 && this->graph[prev_node].outgoing_edges.size() > 1)
         path.is_unambiguous = false;
@@ -238,9 +242,9 @@ std::string Graph::merge_edges(std::string node, bool merge_self_loop) {
 void Graph::merge_non_branching_paths(bool merge_self_loop) {
     std::set<std::string> nodes_to_remove;
     for (auto&& node : this->graph) {
-        if (nodes_to_remove.find(node.first) != nodes_to_remove.end() || nodes_to_remove.find(reverse_complementary_node(node.first)) != nodes_to_remove.end())
+        if (nodes_to_remove.find(node.first) != nodes_to_remove.end())
             continue;
-        if (check_non_branching(node.first, merge_self_loop) && check_non_branching(reverse_complementary_node(node.first), merge_self_loop))
+        if (check_non_branching(node.first, merge_self_loop))
             nodes_to_remove.insert(node.first);
     }
 
@@ -248,12 +252,6 @@ void Graph::merge_non_branching_paths(bool merge_self_loop) {
         std::string seq1, seq2;
         if (check_non_branching(node, merge_self_loop))
             seq1 = merge_edges(node, merge_self_loop);
-        if (check_non_branching(reverse_complementary_node(node), merge_self_loop))
-            seq2 = merge_edges(reverse_complementary_node(node), merge_self_loop);
-        // if (!seq1.empty() && !seq2.empty() && seq1 != reverse_complementary(seq2)) {
-        //     std::cout << "Merging non-branching " << node << " and " << reverse_complementary_node(node) << " not reverse complementary (may exist self-reverse complementary edges)." << std::endl;
-        //     // write_graph("debug_" + node);
-        // }
     }
 }
 
@@ -452,53 +450,6 @@ void Graph::merge_tips(unsigned& num_tips, bool restrict_length, bool only_edges
 // remove simple bulges, allow arbitrary multiplicity of legs
 void Graph::multi_bulge_removal(unsigned& removed_bulges, bool skip_rc_bulges) {
     std::vector<std::string> nodes_to_remove;
-    // for (auto&& node : this->graph) {
-    //     std::vector<std::string> outgoing_tips;
-    //     for (auto&& n : graph[node.first].outgoing_edges) {
-    //         if (graph[n.first].outgoing_edges.size() == 0) {
-    //             assert(graph[reverse_complementary_node(n.first)].incoming_edges.size() == 0);
-    //             if (n.second.size() == 1)
-    //                 outgoing_tips.push_back(n.first);
-    //         }
-    //     }
-    //     if (outgoing_tips.size() >= 2) {
-    //         // move edges of all tips to the first tip
-    //         int max_index = 0;
-    //         long max_length = 0;
-    //         for (int i = 0; i < outgoing_tips.size();++i) {
-    //             if (graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length > max_length) {
-    //                 max_length = graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length;
-    //                 max_index = i;
-    //             }
-    //         }
-    //         for (int i = 0; i < outgoing_tips.size();++i) {
-    //             if (i == max_index)
-    //                 continue;
-    //             std::string prefix_tip_target = graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).sequence.substr(k, 100000);
-    //             std::string prefix_tip_to_merge = graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).sequence.substr(k, 100000);
-    //             double sim = 1.0 * matches_by_edlib(prefix_tip_target, prefix_tip_to_merge) / std::min(prefix_tip_target.size(), prefix_tip_to_merge.size());
-    //             if (sim < 0.8)
-    //                 continue;
-    //             std::cout << "Merge tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim (prefix) " << sim << std::endl;
-    //             merge_vecs(graph[node.first].outgoing_edges[outgoing_tips[max_index]], graph[node.first].outgoing_edges[outgoing_tips[i]]);
-    //             merge_vecs(graph[outgoing_tips[max_index]].incoming_edges[node.first], graph[outgoing_tips[i]].incoming_edges[node.first]);
-    //             merge_vecs(graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(outgoing_tips[max_index])], graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(outgoing_tips[i])]);
-    //             merge_vecs(graph[reverse_complementary_node(outgoing_tips[max_index])].outgoing_edges[reverse_complementary_node(node.first)], graph[reverse_complementary_node(outgoing_tips[i])].outgoing_edges[reverse_complementary_node(node.first)]);
-    //             graph[node.first].outgoing_edges.erase(outgoing_tips[i]);
-    //             graph[outgoing_tips[i]].incoming_edges.erase(node.first);
-    //             graph[reverse_complementary_node(node.first)].incoming_edges.erase(reverse_complementary_node(outgoing_tips[i]));
-    //             graph[reverse_complementary_node(outgoing_tips[i])].outgoing_edges.erase(reverse_complementary_node(node.first));
-    //             if (graph[outgoing_tips[i]].incoming_edges.size() == 0) {
-    //                 assert(graph[reverse_complementary_node(outgoing_tips[i])].outgoing_edges.size() == 0);
-    //                 nodes_to_remove.push_back(outgoing_tips[i]);
-    //                 nodes_to_remove.push_back(reverse_complementary_node(outgoing_tips[i]));
-    //             }
-    //         }
-    //     }
-    // }
-    // for (auto&& n : nodes_to_remove) {
-    //     this->graph.erase(n);
-    // }
     removed_bulges = 0;
     for (auto&& node : this->graph) {
         for (auto&& i : node.second.outgoing_edges) {
