@@ -27,6 +27,8 @@ int Graph::count_matches(std::string cigar) {
 }
 
 bool Graph::check_non_branching(std::string node, bool merge_self_loop) {
+    if (graph.find(node) == graph.end())
+        return false;
     // in any case, 1-in-1-out are non-branching
     if (this->graph[node].incoming_edges.size() == 1 && this->graph[node].outgoing_edges.size() == 1) {
         bool flag = true;
@@ -83,14 +85,14 @@ bool Graph::add_node_to_path(Path& path, std::string node, int bulge_leg, bool r
     Edge& edge = this->graph[prev_node].outgoing_edges[node].at(bulge_leg);
     if (!reduce_reverse || prev_node != reverse_complementary_node(node)) {
         path.update_min_multi(edge);
-        path.multiplicity = (path.multiplicity * path.length + edge.multiplicity * edge.length) / (path.length + edge.length);
+        path.multiplicity = (path.multiplicity * (path.length - graph[prev_node].sequence.size()) + edge.multiplicity * edge.length) / (path.length - graph[prev_node].sequence.size() + edge.length);
     }
     else {
         if (path.min_multi == 0)
             path.min_multi = edge.multiplicity / 2;
         else
             path.min_multi = std::min(path.min_multi, edge.multiplicity / 2);
-        path.multiplicity = (path.multiplicity * path.length + edge.multiplicity * edge.length / 2) / (path.length + edge.length);
+        path.multiplicity = (path.multiplicity * (path.length - graph[prev_node].sequence.size()) + edge.multiplicity * edge.length / 2) / (path.length - graph[prev_node].sequence.size() + edge.length);
     }
 
     path.safe_to_extract = true;
@@ -242,9 +244,9 @@ std::string Graph::merge_edges(std::string node, bool merge_self_loop) {
 void Graph::merge_non_branching_paths(bool merge_self_loop) {
     std::set<std::string> nodes_to_remove;
     for (auto&& node : this->graph) {
-        if (nodes_to_remove.find(node.first) != nodes_to_remove.end())
+        if (nodes_to_remove.find(node.first) != nodes_to_remove.end() || nodes_to_remove.find(reverse_complementary_node(node.first)) != nodes_to_remove.end())
             continue;
-        if (check_non_branching(node.first, merge_self_loop))
+        if (check_non_branching(node.first, merge_self_loop) && check_non_branching(reverse_complementary_node(node.first), merge_self_loop))
             nodes_to_remove.insert(node.first);
     }
 
@@ -252,6 +254,8 @@ void Graph::merge_non_branching_paths(bool merge_self_loop) {
         std::string seq1, seq2;
         if (check_non_branching(node, merge_self_loop))
             seq1 = merge_edges(node, merge_self_loop);
+        if (check_non_branching(reverse_complementary_node(node), merge_self_loop))
+            seq2 = merge_edges(reverse_complementary_node(node), merge_self_loop);
     }
 }
 
@@ -456,8 +460,20 @@ void Graph::multi_bulge_removal(unsigned& removed_bulges, bool skip_rc_bulges) {
             if (i.second.size() >= 2) {
                 std::string node1 = node.first;
                 std::string node2 = i.first;
+
+                if (skip_rc_bulges) {
+                    if (node1 == reverse_complementary_node(node2))
+                        continue;
+                }
                 // collapse forward bulge
                 std::string seq1 = this->collapse_bulge(node1, node2, removed_bulges);
+
+                // if node1 and node2 are reverse complementary nodes, skip collapsing reverse bulge
+                if (reverse_complementary_node(node2) != node1) {
+                    std::string seq2 = this->collapse_bulge(reverse_complementary_node(node2), reverse_complementary_node(node1), removed_bulges);
+                    // if (seq1 != reverse_complementary(seq2))
+                    //     std::cout << "Problematic bulge collapsing: resulting sequences not reverse complementary" << std::endl;
+                }
             }
         }
     }
@@ -618,7 +634,7 @@ void Graph::merge_tips_into_edges(unsigned& num_tips) {
     merge_non_branching_paths(true);
 }
 
-std::string getExecutablePath() {
+std::string Graph::getExecutablePath() {
     char buffer[1024];
     ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
     if (len != -1) {
@@ -1369,6 +1385,12 @@ std::string Graph::collapse_complex_bulge_two_multi_edge_paths(Path p1, Path p2,
             extract_index = 1;
         else
             extract_index = 2;
+
+        // always remove the 1-edge leg
+        if (p1.nodes.size() == 2 && p2.nodes.size() > 2)
+            extract_index = 1;
+        else if (p1.nodes.size() > 2 && p2.nodes.size() == 2)
+            extract_index = 2;
     }
     else if (p2_2_in_2_out == false) {
         extract_index = 2;
@@ -1667,9 +1689,9 @@ bool Graph::get_reverse_path(Path& path, Path& path_reverse) {
 void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, int x, double identity, bool use_length, int security_level, bool allow_reverse_comp, bool verbose) {
     // this->write_graph("debug");
     unsigned removed_whirls = 1;
-    while (removed_whirls != 0) {
-        general_whirl_removal(removed_whirls);
-    }
+    // while (removed_whirls != 0) {
+    //     general_whirl_removal(removed_whirls);
+    // }
 
     if (allow_reverse_comp)
         multi_bulge_removal(removed_whirls, false);
@@ -1833,7 +1855,11 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
                 b.check_conflict(bulges[i]);
             }
             // allow bulges without 2-in-2-out edges
-            if (security_level == 3) {
+            if (security_level == 4) {
+                if (b.leg1.nodes.size() == 2 || b.leg2.nodes.size() == 2)
+                    bulges.emplace_back(b);
+            }
+            else if (security_level == 3) {
                 if (b.path_resolutions1.size() + b.path_resolutions2.size() == 0)
                     bulges.emplace_back(b);
             }

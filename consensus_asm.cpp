@@ -3,6 +3,7 @@
 #include "dot_graph.hpp"
 #include "cmdline/cmdline.h"
 #include <filesystem>
+#include <unistd.h>
 
 int main(int argc, char* argv[]) {
     cmdline::parser argParser;
@@ -35,6 +36,8 @@ int main(int argc, char* argv[]) {
     Graph graph;
     graph.read_graph(output, restart_from, graph_dot, graph_fasta, nodes_fasta);
 
+
+    graph.write_graph(output + "/original");
     removed_bulges = 1;
     cnt_rounds = 0;
     while (removed_bulges) {
@@ -43,6 +46,60 @@ int main(int argc, char* argv[]) {
         std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
     }
     graph.write_graph(output + "/graph.bulge_removel");
-    graph.write_graph_contracted(output + "/graph.bulge_removel.contracted");
+    std::string prefix = output + "/graph.bulge_removel";
+    std::string ref_seq = "/Poppy/zmzhang/Rust_fungi/genome/reference.compressed.only_chrs.fasta";
+    if (system(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str()) != 0) {
+        exit(1);
+    }
+    if (!std::filesystem::exists(ref_seq + ".fai")) {
+        if (system(("samtools faidx " + ref_seq).c_str()) != 0)
+            exit(1);
+    }
+    if (system(("cut -f1,2 " + ref_seq + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + prefix + ".ref.header.sam").c_str()) != 0)
+        exit(1);
+    if (system(("cat " + prefix + ".ref.header.sam " + prefix + ".ref.sam | samtools sort -@ 50 -o " + prefix + ".ref.bam").c_str()) != 0) {
+        exit(1);
+    }
+    std::string exeDir = graph.getExecutablePath();
+    if (system((exeDir + "/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str()) != 0)
+        exit(1);
+    graph.write_graph_colored_from_bam(output + "/graph.bulge_removel.color", prefix + ".ref.bam.stats");
+    graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.10k");
+    graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.20k", 20000);
+
+    removed_paths = 1;
+    total_removed = 0;
+    while (removed_paths) {
+        removed_bulges = 1;
+        while (removed_bulges) {
+            graph.multi_bulge_removal(removed_bulges);
+        }
+        graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0, true, 4);
+        total_removed += removed_paths;
+    }
+    std::cout << "Removed " << total_removed << " complex bulges" << std::endl;
+
+    graph.write_graph(output + "/graph.detouring_1_5");
+
+    prefix = output + "/graph.detouring_1_5";
+    ref_seq = "/Poppy/zmzhang/Rust_fungi/genome/reference.compressed.only_chrs.fasta";
+    if (system(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str()) != 0) {
+        exit(1);
+    }
+    if (!std::filesystem::exists(ref_seq + ".fai")) {
+        if (system(("samtools faidx " + ref_seq).c_str()) != 0)
+            exit(1);
+    }
+    if (system(("cut -f1,2 " + ref_seq + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + prefix + ".ref.header.sam").c_str()) != 0)
+        exit(1);
+    if (system(("cat " + prefix + ".ref.header.sam " + prefix + ".ref.sam | samtools sort -@ 50 -o " + prefix + ".ref.bam").c_str()) != 0) {
+        exit(1);
+    }
+    exeDir = graph.getExecutablePath();
+    if (system((exeDir + "/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str()) != 0)
+        exit(1);
+    graph.write_graph_colored_from_bam(output + "/graph.detouring_1_5.color", prefix + ".ref.bam.stats");
+    graph.write_graph_contracted(output + "/graph.detouring_1_5.contracted.color.10k");
+    graph.write_graph_contracted(output + "/graph.detouring_1_5.contracted.color.20k", 20000);
     return 0;
 }

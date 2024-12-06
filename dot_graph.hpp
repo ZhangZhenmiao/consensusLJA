@@ -88,6 +88,7 @@ public:
     int k = 0;
     std::unordered_map<std::string, Node> graph;
     std::unordered_map<std::string, std::string> label2rc;
+    std::unordered_map<std::string, std::string> nodeid2Rev;
     void read_graph(std::string& output, std::string& restart_from, std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta);
     void read_from_dot(const std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta);
     void write_graph(const std::string& prefix, int thick = 1000000, bool contracted = false, bool colored = false, std::unordered_set<std::string> nodes = std::unordered_set<std::string>());
@@ -111,6 +112,7 @@ public:
     void resolve_edges_in_reverse_complement(int& resolved_edges, bool strict = false);
     template<typename T>
     void merge_vecs(std::vector<T>& e1, std::vector<T>& e2);
+    std::string getExecutablePath();
 
 
     Graph();

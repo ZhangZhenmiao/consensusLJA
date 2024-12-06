@@ -288,7 +288,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             std::string edge_sequence = line;
             assert(edge2sequence.find(e_id) == edge2sequence.end());
             edge2sequence[e_id] = edge_sequence;
-            std::cout << "Read " << e_id << " from " << graph_fasta << std::endl;
+            // std::cout << "Read " << e_id << " from " << graph_fasta << std::endl;
         }
     }
 
@@ -304,8 +304,40 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             std::string node_sequence = line;
             assert(node2sequence.find(node) == node2sequence.end());
             node2sequence[node] = node_sequence;
-            std::cout << "Read " << node << " from " << nodes_fasta << std::endl;
+            // std::cout << "Read " << node << " from " << nodes_fasta << std::endl;
         }
+    }
+
+    std::unordered_map<std::string, std::string> idMapping;
+    for (auto it = node2sequence.begin(); it != node2sequence.end(); ) {
+        std::string currentId = it->first;
+        std::string sequence = it->second;
+        std::string revComp = reverse_complementary(sequence);
+
+        // Find reverse complement in the map
+        auto revIt = std::find_if(node2sequence.begin(), node2sequence.end(),
+            [&revComp](const std::pair<std::string, std::string>& pair) {
+                return pair.second == revComp;
+            });
+
+        if (revIt != node2sequence.end() && revIt->first != currentId) {
+            // Rename current ID and reverse complement ID
+            idMapping[currentId] = currentId;
+            idMapping[revIt->first] = "-" + currentId;
+            nodeid2Rev[currentId] = "-" + currentId;
+            nodeid2Rev["-" + currentId] = currentId;
+            // Remove reverse complement from map
+            node2sequence.erase(revIt);
+        }
+        else {
+            // If no reverse complement is found, keep the ID as is
+            assert(revIt->first == currentId);
+            idMapping[currentId] = currentId;
+            nodeid2Rev[currentId] = currentId;
+        }
+
+        // Remove current ID from map
+        it = node2sequence.erase(it);
     }
 
     // load graph
@@ -319,27 +351,27 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         if (line.find("->") != std::string::npos) {
             // extract node name
             size_t pos1 = line.find("->");
-            std::string start_name = line.substr(1, pos1 - 1);
+            std::string start_name = idMapping.at(line.substr(1, pos1 - 1));
             size_t pos2 = line.find('[');
-            std::string end_name = line.substr(pos1 + 2, pos2 - pos1 - 2);
+            std::string end_name = idMapping.at(line.substr(pos1 + 2, pos2 - pos1 - 2));
             assert(this->graph.find(start_name) != this->graph.end() && this->graph.find(end_name) != this->graph.end());
 
             // parse edge label: starting base, length, multiplicity and sequence
             pos1 = line.find("size");
             std::string edge_label = line.substr(pos2 + 14, pos1 - pos2 - 16);
 
-            std::cout << "Read edge " << start_name << " -> " << end_name << ", " << edge_label << " from " << graph_dot << std::endl;
+            std::cout << "Read edge " << start_name << " -> " << end_name << " from " << graph_dot << std::endl;
 
             assert(edge2sequence.find(edge_label) != edge2sequence.end());
             int length = edge2sequence[edge_label].size();
-            double multiplicity = 0;
-            char start_base;
+            double multiplicity = 1;
+            char start_base = edge2sequence[edge_label].at(graph[start_name].sequence.size());
             Edge edge = Edge(start_base, length, edge2sequence[edge_label], multiplicity);
             assert(edge2sequence[edge_label].substr(0, graph[start_name].sequence.size()) == graph[start_name].sequence);
             edge.path_nodes_in_original_graph.push_back(start_name);
             edge.path_nodes_in_original_graph.push_back(end_name);
             edge.path_edges_in_original_graph.push_back(edge_label);
-            edge.label = edge_label;
+            // edge.label = edge_label;
 
             this->graph[start_name].outgoing_edges[end_name].push_back(edge);
             this->graph[end_name].incoming_edges[start_name].push_back(edge);
@@ -349,9 +381,9 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         else {
             std::string node_name = line.substr(1, line.find('[') - 1);
             Node node;
-            assert(node2sequence.find(node_name) != node2sequence.end());
+            assert(idMapping.find(node_name) != idMapping.end());
             node.sequence = node2sequence[node_name];
-            this->graph[node_name] = node;
+            this->graph[idMapping.at(node_name)] = node;
         }
     }
     dot_file.close();
@@ -402,6 +434,18 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
     }
     if (max_contracted > 0)
         std::cout << "Max contracted node: " << max_contracted_node << " has " << max_contracted << " edges." << std::endl;
+
+    // construct labels for vertices
+    std::unordered_map<std::string, std::unordered_set<std::string>> vertice2labels;
+    for (auto&& node : this->graph) {
+        std::string start_node = node.first;
+        for (auto&& edges : node.second.outgoing_edges) {
+            for (auto&& edge : edges.second) {
+                if (!edge.label.empty())
+                    vertice2labels[start_node].insert(edge.label.substr(edge.label.find('.') + 1));
+            }
+        }
+    }
 
     std::unordered_map<std::string, std::string> color_map = {
         {"1A", "#325527"},
@@ -506,14 +550,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
         {"Y", "#969696"}
     };
 
-    std::unordered_set<std::string> edgelabels;
-    for (auto&& node : this->graph) {
-        for (auto&& edges : node.second.outgoing_edges) {
-            for (auto&& edge : edges.second) {
-                edgelabels.insert(edge.label);
-            }
-        }
-    }
+    std::unordered_set <std::string> traversed_labels;
     for (auto&& node : this->graph) {
         std::string start_node = node.first;
         if (contracted && node.second.number_of_contracted_edge > 0)
@@ -524,17 +561,86 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                 continue;
             if (contracted && graph[edges.first].number_of_contracted_edge > 0)
                 end_node = edges.first.substr(0, edges.first.find_first_of('_')) + '_' + edges.first.substr(edges.first.find_last_of('_') + 1) + "_N" + std::to_string(graph[edges.first].number_of_contracted_edge) + "_L" + std::to_string(graph[edges.first].length_of_contracted_edge);
+            // if (edges.second.size() == 1) {
+            //     if (std::abs(graph[start_node].outgoing_edges[edges.first].at(0).multiplicity - graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(start_node)].at(0).multiplicity) > MIN_MULTI)
+            //         std::cout << "Imbalanced multi for " << start_node << "->" << edges.first << " and its reverse: " << graph[start_node].outgoing_edges[edges.first].at(0).multiplicity << " and " << graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(start_node)].at(0).multiplicity << std::endl;
+            //     assert(std::abs(graph[start_node].outgoing_edges[edges.first].at(0).multiplicity - graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(start_node)].at(0).multiplicity) < MIN_MULTI);
+            // }
             for (auto&& edge : edges.second) {
-                num_edges += 1;
-                if (edge.label.empty()) {
-                    edge.label = get_unique_label(edgelabels);
-                    edgelabels.insert(edge.label);
+                if (traversed_labels.find(edge.label) != traversed_labels.end()) {
+                    num_edges += 1;
+                    if (contracted || colored) {
+                        if (edge.ref_ids.empty())
+                            file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << static_cast<int>(round(edge.multiplicity)) << ")\" color=\"black\"]\n";
+                        else {
+                            file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << static_cast<int>(round(edge.multiplicity)) << ")";
+                            for (int i = 0; i < edge.ref_ids.size(); ++i) {
+                                file_dot << "\\n" << edge.ref_ids[i];
+                            }
+                            std::string chr = edge.ref_ids.at(0).substr(0, edge.ref_ids.at(0).find(' '));
+                            if (chr.at(0) == '-') chr = chr.substr(1);
+                            std::string color = color_map[chr];
+                            file_dot << "\" color=\"" << color << "\"]\n";
+                        }
+                    }
+                    else
+                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << edge.multiplicity << ")\" color=\"black\"]\n";
+                    continue;
                 }
+                if (!edge.label.empty()) {
+                    traversed_labels.insert(edge.rc_label);
+                }
+                else {
+                    std::unordered_set<std::string>& forward_labels = vertice2labels[start_node];
+                    std::unordered_set<std::string>& reverse_labels = vertice2labels[reverse_complementary_node(end_node)];
+                    std::string label_forward = start_node + '.' + get_unique_label(forward_labels), label_reverse = reverse_complementary_node(end_node) + '.' + get_unique_label(reverse_labels);
+                    if (edge.sequence == reverse_complementary(edge.sequence)) {
+                        assert(end_node == reverse_complementary_node(start_node));
+                        label_reverse = label_forward;
+                    }
+                    edge.label = label_forward;
+                    edge.rc_label = label_reverse;
+                    // std::cout << "New label " << label_forward << " and " << label_reverse << std::endl;
+                    bool flag = false;
+                    for (auto&& edge_i : graph[end_node].incoming_edges[start_node]) {
+                        if (edge_i.sequence == edge.sequence) {
+                            // the edge should appear only once
+                            assert(flag == false);
+                            flag = true;
+                            edge_i.label = label_forward;
+                            edge_i.rc_label = label_reverse;
+                        }
+                    }
+                    flag = false;
+                    for (auto&& edge_r : graph[reverse_complementary_node(end_node)].outgoing_edges[reverse_complementary_node(start_node)]) {
+                        if (edge_r.sequence == reverse_complementary(edge.sequence)) {
+                            assert(flag == false);
+                            flag = true;
+                            edge_r.rc_label = label_forward;
+                            edge_r.label = label_reverse;
+                        }
+                    }
+                    flag = false;
+                    for (auto&& edge_r_i : graph[reverse_complementary_node(start_node)].incoming_edges[reverse_complementary_node(end_node)]) {
+                        if (edge_r_i.sequence == reverse_complementary(edge.sequence)) {
+                            assert(flag == false);
+                            flag = true;
+                            edge_r_i.rc_label = label_forward;
+                            edge_r_i.label = label_reverse;
+                        }
+                    }
+
+                    traversed_labels.insert(label_reverse);
+                    vertice2labels[start_node].insert(label_forward.substr(label_forward.find('.') + 1));
+                    vertice2labels[reverse_complementary_node(end_node)].insert(label_reverse.substr(label_reverse.find('.') + 1));
+                }
+
+                num_edges += 1;
                 if (contracted || colored) {
                     if (edge.ref_ids.empty())
-                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.length << "\" color=\"black\"]\n";
+                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << static_cast<int>(round(edge.multiplicity)) << ")\" color=\"black\"]\n";
                     else {
-                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.length;
+                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << static_cast<int>(round(edge.multiplicity)) << ")";
                         for (int i = 0; i < edge.ref_ids.size(); ++i) {
                             file_dot << "\\n" << edge.ref_ids[i];
                         }
@@ -545,11 +651,10 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                     }
                 }
                 else
-                    file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.length << "\" color=\"black\"]\n";
-
-                file_fasta << ">" << edge.label << "\n";
+                    file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << edge.multiplicity << ")\" color=\"black\"]\n";
+                file_fasta << ">" << edge.label << "_" << edge.rc_label << "\n";
                 file_fasta << edge.sequence << "\n";
-                file_path << ">" << edge.label << " " << edge.length << "\n";
+                file_path << ">" << edge.label << "_" << edge.rc_label << " " << edge.length << "\n";
                 assert(edge.path_nodes_in_original_graph.size() == edge.path_edges_in_original_graph.size() + 1);
                 if (edge.path_nodes_in_original_graph.size() >= 1)
                     file_path << edge.path_nodes_in_original_graph.at(0);
@@ -589,17 +694,19 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length) {
     for (auto&& node : graph_vis) {
         for (auto&& edge : node.second.outgoing_edges) {
             // do not deal with palindromic bulges
-            if (node.first == edge.first)
+            if (node.first == reverse_complementary_node(edge.first) || node.first == edge.first)
                 continue;
-            if (node1_to_node2_scanned[node.first].find(edge.first) != node1_to_node2_scanned[node.first].end())
+            if (node1_to_node2_scanned[node.first].find(edge.first) != node1_to_node2_scanned[node.first].end() || node1_to_node2_scanned[reverse_complementary_node(edge.first)].find(reverse_complementary_node(node.first)) != node1_to_node2_scanned[reverse_complementary_node(edge.first)].end())
                 continue;
             for (int i = 0; i < edge.second.size();++i) {
                 // the edge should be collapsed
                 if (edge.second.at(i).length <= min_length) {
                     nodes_to_contract.emplace_back(Nodes_To_Contract(node.first, edge.first, edge.second.at(i).length, edge.second.at(i).sequence));
+                    nodes_to_contract.emplace_back(Nodes_To_Contract(reverse_complementary_node(edge.first), reverse_complementary_node(node.first), edge.second.at(i).length, reverse_complementary(edge.second.at(i).sequence)));
                 }
             }
             node1_to_node2_scanned[node.first].insert(edge.first);
+            node1_to_node2_scanned[reverse_complementary_node(edge.first)].insert(reverse_complementary_node(node.first));
         }
     }
 
@@ -962,8 +1069,5 @@ std::string Graph::reverse_complementary(std::string& seq) {
 }
 
 std::string Graph::reverse_complementary_node(std::string node) {
-    if (node.at(0) == '-')
-        return node.substr(1);
-    else
-        return '-' + node;
+    return nodeid2Rev.at(node);
 }
