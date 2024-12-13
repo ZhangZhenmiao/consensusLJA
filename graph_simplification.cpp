@@ -85,14 +85,14 @@ bool Graph::add_node_to_path(Path& path, std::string node, int bulge_leg, bool r
     Edge& edge = this->graph[prev_node].outgoing_edges[node].at(bulge_leg);
     if (!reduce_reverse || prev_node != reverse_complementary_node(node)) {
         path.update_min_multi(edge);
-        path.multiplicity = (path.multiplicity * (path.length - graph[prev_node].sequence.size()) + edge.multiplicity * edge.length) / (path.length - graph[prev_node].sequence.size() + edge.length);
+        path.multiplicity = (path.multiplicity * path.length + edge.multiplicity * edge.length) / (path.length + edge.length);
     }
     else {
         if (path.min_multi == 0)
             path.min_multi = edge.multiplicity / 2;
         else
             path.min_multi = std::min(path.min_multi, edge.multiplicity / 2);
-        path.multiplicity = (path.multiplicity * (path.length - graph[prev_node].sequence.size()) + edge.multiplicity * edge.length / 2) / (path.length - graph[prev_node].sequence.size() + edge.length);
+        path.multiplicity = (path.multiplicity * path.length + edge.multiplicity * edge.length / 2) / (path.length + edge.length);
     }
 
     path.safe_to_extract = true;

@@ -274,7 +274,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
     // load fasta sequence
     std::string e_id;
     std::string line, node1, node2, length, multiplicity, start_base;
-    std::unordered_map<std::string, std::string> edge2sequence, node2sequence;
+    std::unordered_map<std::string, std::string> edge2sequence, node2sequence, nodenew2sequence;
 
     // read input fasta
     std::ifstream fasta_file(graph_fasta);
@@ -326,6 +326,8 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             idMapping[revIt->first] = "-" + currentId;
             nodeid2Rev[currentId] = "-" + currentId;
             nodeid2Rev["-" + currentId] = currentId;
+            nodenew2sequence[currentId] = sequence;
+            nodenew2sequence["-" + currentId] = revComp;
             // Remove reverse complement from map
             node2sequence.erase(revIt);
         }
@@ -334,6 +336,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             assert(revIt->first == currentId);
             idMapping[currentId] = currentId;
             nodeid2Rev[currentId] = currentId;
+            nodenew2sequence[currentId] = sequence;
         }
 
         // Remove current ID from map
@@ -382,7 +385,8 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             std::string node_name = line.substr(1, line.find('[') - 1);
             Node node;
             assert(idMapping.find(node_name) != idMapping.end());
-            node.sequence = node2sequence[node_name];
+            node.sequence = nodenew2sequence[idMapping.at(node_name)];
+            // std::cout << node.sequence.size() << std::endl;
             this->graph[idMapping.at(node_name)] = node;
         }
     }
@@ -426,7 +430,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
         if (contracted && node.second.number_of_contracted_edge > 0)
             file_dot << "\"" << node.first.substr(0, node.first.find_first_of('_')) + "_" + node.first.substr(node.first.find_last_of('_') + 1) + "_N" + std::to_string(node.second.number_of_contracted_edge) + "_L" + std::to_string(node.second.length_of_contracted_edge) << "\" [style=filled fillcolor=\"white\"]\n";
         else
-            file_dot << node.first << " [style=filled fillcolor=\"white\"]\n";
+            file_dot << node.first << " [style=filled fillcolor=\"white\" label=\"" << node.first + "_L" + std::to_string(graph[node.first].sequence.size()) << "\"]\n";
         if (node.second.number_of_contracted_edge > max_contracted) {
             max_contracted_node = node.first.substr(0, node.first.find_first_of('_')) + "_" + node.first.substr(node.first.find_last_of('_') + 1) + "_N" + std::to_string(node.second.number_of_contracted_edge) + "_L" + std::to_string(node.second.length_of_contracted_edge);
             max_contracted = node.second.number_of_contracted_edge;
