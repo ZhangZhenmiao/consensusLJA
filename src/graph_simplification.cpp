@@ -697,7 +697,7 @@ void Graph::decoupling(std::string multidbg, std::string output) {
     //     exit(1);
     // }
     std::string exeDir = getExecutablePath();
-    if (system((exeDir + "/get_reference.py -o " + output + ".2in_2out.bam.stats " + output + ".2in_2out.bam " + output + ".2in_2out.fasta").c_str()) != 0)
+    if (system((exeDir + "/../src/scripts/get_reference.py -o " + output + ".2in_2out.bam.stats " + output + ".2in_2out.bam " + output + ".2in_2out.fasta").c_str()) != 0)
         exit(1);
     write_graph_colored_from_bam(output + ".2in_2out.multi", output + ".2in_2out.bam.stats");
 

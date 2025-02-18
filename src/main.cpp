@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
     std::string exeDir = graph.getExecutablePath();
-    if (system((exeDir + "/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str()) != 0)
+    if (system((exeDir + "/../src/scripts/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str()) != 0)
         exit(1);
     graph.write_graph_colored_from_bam(output + "/graph.bulge_removel.color", prefix + ".ref.bam.stats");
     graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.10k");
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
     exeDir = graph.getExecutablePath();
-    if (system((exeDir + "/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str()) != 0)
+    if (system((exeDir + "/../src/scripts/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str()) != 0)
         exit(1);
     graph.write_graph_colored_from_bam(output + "/graph.detouring_1_5.color", prefix + ".ref.bam.stats");
     graph.write_graph_contracted(output + "/graph.detouring_1_5.contracted.color.10k");

@@ -177,6 +177,30 @@ src/dot_graph.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dot_graph.cpp.s
 .PHONY : src/dot_graph.cpp.s
 
+src/graph_io.o: src/graph_io.cpp.o
+.PHONY : src/graph_io.o
+
+# target to build an object file
+src/graph_io.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/graph_io.cpp.o
+.PHONY : src/graph_io.cpp.o
+
+src/graph_io.i: src/graph_io.cpp.i
+.PHONY : src/graph_io.i
+
+# target to preprocess a source file
+src/graph_io.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/graph_io.cpp.i
+.PHONY : src/graph_io.cpp.i
+
+src/graph_io.s: src/graph_io.cpp.s
+.PHONY : src/graph_io.s
+
+# target to generate assembly for a file
+src/graph_io.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/graph_io.cpp.s
+.PHONY : src/graph_io.cpp.s
+
 src/graph_simplification.o: src/graph_simplification.cpp.o
 .PHONY : src/graph_simplification.o
 
@@ -225,6 +249,30 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+src/utility.o: src/utility.cpp.o
+.PHONY : src/utility.o
+
+# target to build an object file
+src/utility.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/utility.cpp.o
+.PHONY : src/utility.cpp.o
+
+src/utility.i: src/utility.cpp.i
+.PHONY : src/utility.i
+
+# target to preprocess a source file
+src/utility.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/utility.cpp.i
+.PHONY : src/utility.cpp.i
+
+src/utility.s: src/utility.cpp.s
+.PHONY : src/utility.s
+
+# target to generate assembly for a file
+src/utility.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/utility.cpp.s
+.PHONY : src/utility.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -240,12 +288,18 @@ help:
 	@echo "... src/dot_graph.o"
 	@echo "... src/dot_graph.i"
 	@echo "... src/dot_graph.s"
+	@echo "... src/graph_io.o"
+	@echo "... src/graph_io.i"
+	@echo "... src/graph_io.s"
 	@echo "... src/graph_simplification.o"
 	@echo "... src/graph_simplification.i"
 	@echo "... src/graph_simplification.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/utility.o"
+	@echo "... src/utility.i"
+	@echo "... src/utility.s"
 .PHONY : help
 
 

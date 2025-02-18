@@ -8,6 +8,25 @@
 #include <cmath>
 #include <sstream>
 
+template<typename T>
+void Node::mergeMaps(std::unordered_map<std::string, std::vector<T>>& map1, const std::unordered_map<std::string, std::vector<T>>& map2) {
+    for (const auto& pair : map2) {
+        if (map1.find(pair.first) != map1.end()) {
+            map1[pair.first].insert(map1[pair.first].end(), pair.second.begin(), pair.second.end());
+        }
+        else {
+            map1[pair.first] = pair.second;
+        }
+    }
+}
+
+template void Graph::merge_vecs<std::string>(std::vector<std::string>&, std::vector<std::string>&);
+template void Graph::merge_vecs<Edge>(std::vector<Edge>&, std::vector<Edge>&);
+template<typename T>
+void Graph::merge_vecs(std::vector<T>& e1, std::vector<T>& e2) {
+    e1.insert(e1.end(), e2.begin(), e2.end());
+}
+
 void Graph::read_graph(std::string& output, std::string& restart_from, std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta) {
     if (mkdir(output.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
         if (errno == EEXIST) {
