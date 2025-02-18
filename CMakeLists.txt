@@ -22,7 +22,6 @@ find_package(OpenMP REQUIRED)
 add_executable(cLJA
     src/main.cpp
     src/dot_graph.cpp
-    src/read_aln.cpp
     src/graph_simplification.cpp
     lib/edlib/src/edlib.cpp
 )

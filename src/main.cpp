@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include "dot_graph.hpp"
-#include "cmdline/cmdline.h"
+#include "cmdline.h"
 #include <filesystem>
 #include <unistd.h>
 
