@@ -49,3 +49,18 @@ std::string Graph::reverse_complementary(std::string& seq) {
 std::string Graph::reverse_complementary_node(std::string node) {
     return nodeid2Rev.at(node);
 }
+
+int Graph::count_matches(std::string cigar) {
+    int matches = 0;
+    int num = 0;
+    for (char c : cigar) {
+        if (std::isdigit(c))
+            num = num * 10 + (c - '0');
+        else {
+            if (c == 'M')
+                matches += num;
+            num = 0;
+        }
+    }
+    return matches;
+}

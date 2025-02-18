@@ -11,21 +11,6 @@
 #include <unistd.h>
 #include <cstdlib>
 
-int Graph::count_matches(std::string cigar) {
-    int matches = 0;
-    int num = 0;
-    for (char c : cigar) {
-        if (std::isdigit(c))
-            num = num * 10 + (c - '0');
-        else {
-            if (c == 'M')
-                matches += num;
-            num = 0;
-        }
-    }
-    return matches;
-}
-
 bool Graph::check_non_branching(std::string node, bool merge_self_loop) {
     if (graph.find(node) == graph.end())
         return false;
