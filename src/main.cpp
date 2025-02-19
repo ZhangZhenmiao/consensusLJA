@@ -9,16 +9,18 @@ int main(int argc, char* argv[]) {
     cmdline::parser argParser;
     argParser.add<std::string>("dot", 'd', "graph.dot file under LJA output", true);
     argParser.add<std::string>("fasta", 'f', "the graph.fasta file under LJA output", true);
+    argParser.add<std::string>("graph_dbg", 'g', "the graph.dot file under 01_TopologyBasedCorrection for getting multiplicity", true);
+    argParser.add<std::string>("paths_dbg", 'p', "the paths file for getting multiplicity", true);
     argParser.add<std::string>("nodes", 'n', "the mdbg_vertex_seqs.fasta file under LJA output", true);
-    // argParser.add<std::string>("restart", 'r', "restart from", true);
     argParser.add<std::string>("output", 'o', "the output directory (should be new)", true);
 
     argParser.parse_check(argc, argv);
     std::string graph_dot = argParser.get<std::string>("dot");
     std::string graph_fasta = argParser.get<std::string>("fasta");
     std::string nodes_fasta = argParser.get<std::string>("nodes");
-    std::string restart_from = ""; // TODO: enable program restart at middle
     std::string output = argParser.get<std::string>("output");
+    std::string graph_dbg = argParser.get<std::string>("graph_dbg");
+    std::string paths_dbg = argParser.get<std::string>("paths_dbg");
 
     // define count variables
     unsigned removed_paths = 1;
@@ -34,8 +36,7 @@ int main(int argc, char* argv[]) {
     // Step 1 Read graph
     std::cout << "----------Read graph----------" << std::endl;
     Graph graph;
-    graph.read_graph(output, restart_from, graph_dot, graph_fasta, nodes_fasta);
-
+    graph.read_graph(output, graph_dot, graph_fasta, nodes_fasta, graph_dbg, paths_dbg);
 
     graph.write_graph(output + "/original");
     removed_bulges = 1;

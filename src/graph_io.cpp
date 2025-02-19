@@ -27,15 +27,11 @@ void Graph::merge_vecs(std::vector<T>& e1, std::vector<T>& e2) {
     e1.insert(e1.end(), e2.begin(), e2.end());
 }
 
-void Graph::read_graph(std::string& output, std::string& restart_from, std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta) {
+void Graph::read_graph(std::string& output, std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta, const std::string& graph_dbg, const std::string& paths_dbg) {
     if (mkdir(output.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
         if (errno == EEXIST) {
-            if (!restart_from.empty())
-                read_from_dot(output + "/" + restart_from + ".dot", output + "/" + restart_from + ".fasta", output + "/" + restart_from + ".vertices.fasta");
-            else {
-                std::cout << "Output directory already exists. Please delete it or set restart_from." << std::endl;
-                exit(0);
-            }
+            std::cout << "Output directory already exists." << std::endl;
+            exit(0);
         }
         else {
             std::cout << "Create output directory faliled." << std::endl;
@@ -44,15 +40,64 @@ void Graph::read_graph(std::string& output, std::string& restart_from, std::stri
     }
 
     if (graph.empty())
-        read_from_dot(graph_dot, graph_fasta, nodes_fasta);
+        read_from_dot(graph_dot, graph_fasta, nodes_fasta, graph_dbg, paths_dbg);
 }
 
 // Read graph from DOT file
-void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta) {
+void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta, const std::string& graph_dbg, const std::string& paths_dbg) {
     // load fasta sequence
     std::string e_id;
     std::string line, node1, node2, length, multiplicity, start_base;
     std::unordered_map<std::string, std::string> edge2sequence, node2sequence, nodenew2sequence;
+    std::unordered_map<std::string, double> edgedbg2multi, edge2multi;
+
+    // load edge multiplicities
+    std::ifstream graph_dbg_file(graph_dbg);
+    while (getline(graph_dbg_file, line)) {
+        if (line.find("->") != std::string::npos) {
+            size_t pos1 = line.find("->");
+            std::string start_name = line.substr(1, pos1 - 3);
+            size_t pos2 = line.find('[');
+            std::string end_name = line.substr(pos1 + 4, pos2 - pos1 - 6);
+
+            // parse edge label: starting base, length, multiplicity
+            pos1 = line.find(")\" ");
+            std::string label_all = line.substr(pos2 + 8, pos1 - pos2 - 7);
+            std::string edge_label = label_all.substr(0, label_all.find(' '));
+            label_all = label_all.substr(label_all.find(' ') + 1);
+            pos1 = label_all.find('(');
+            assert(pos1 != std::string::npos);
+            char start_base = label_all[0];
+            unsigned length = std::atoi(label_all.substr(2, pos1 - 2).c_str());
+            double multiplicity = std::atof(label_all.substr(pos1 + 1, label_all.size() - pos1 - 2).c_str());
+            edgedbg2multi[edge_label] = multiplicity;
+            std::cout << "Multi for " << edge_label << " is " << multiplicity << std::endl;
+        }
+    }
+    graph_dbg_file.close();
+
+    //load edge paths
+    std::ifstream paths_dbg_file(paths_dbg);
+    std::string edge_name;
+    while (getline(paths_dbg_file, line)) {
+        if (line.at(0) == '>') {
+            edge_name = line.substr(1);
+        }
+        else {
+            double min_multi = -1;
+            while (line.find(' ') != std::string::npos) {
+                std::string edge_id = line.substr(0, line.find(' '));
+                assert(edgedbg2multi.find(edge_id) != edgedbg2multi.end());
+                if (min_multi < 0 || edgedbg2multi[edge_id] < min_multi)
+                    min_multi = edgedbg2multi[edge_id];
+                line = line.substr(line.find(' ') + 1);
+            }
+            assert(min_multi >= 0);
+            std::cout << "Min multi for " << edge_name << " is " << min_multi << std::endl;
+            edge2multi[edge_name] = min_multi;
+        }
+    }
+    paths_dbg_file.close();
 
     // read input fasta
     std::ifstream fasta_file(graph_fasta);
@@ -144,10 +189,10 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             std::cout << "Read edge " << start_name << " -> " << end_name << " from " << graph_dot << std::endl;
 
             assert(edge2sequence.find(edge_label) != edge2sequence.end());
+            assert(edge2multi.find(edge_label) != edge2multi.end());
             int length = edge2sequence[edge_label].size();
-            double multiplicity = 1;
             char start_base = edge2sequence[edge_label].at(graph[start_name].sequence.size());
-            Edge edge = Edge(start_base, length, edge2sequence[edge_label], multiplicity);
+            Edge edge = Edge(start_base, length, edge2sequence[edge_label], edge2multi[edge_label]);
             assert(edge2sequence[edge_label].substr(0, graph[start_name].sequence.size()) == graph[start_name].sequence);
             edge.path_nodes_in_original_graph.push_back(start_name);
             edge.path_nodes_in_original_graph.push_back(end_name);
@@ -199,8 +244,15 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
     for (auto&& node : this->graph) {
         if (!nodes_retain.empty() && nodes_retain.find(node.first) == nodes_retain.end())
             continue;
-        if (contracted && node.second.number_of_contracted_edge > 0)
-            file_dot << "\"" << node.first.substr(0, node.first.find_first_of('_')) + "_" + node.first.substr(node.first.find_last_of('_') + 1) + "_N" + std::to_string(node.second.number_of_contracted_edge) + "_L" + std::to_string(node.second.length_of_contracted_edge) << "\" [style=filled fillcolor=\"white\"]\n";
+        if (contracted && node.second.number_of_contracted_edge > 0) {
+            std::string node_o = node.first.substr(0, node.first.find_first_of('_')) + "_" + node.first.substr(node.first.find_last_of('_') + 1) + "_N" + std::to_string(node.second.number_of_contracted_edge) + "_L" + std::to_string(node.second.length_of_contracted_edge);
+            if (node.second.circles >= 2) {
+                node_o += ("\\nC" + std::to_string(node.second.circles));
+                node_o += ("_CL" + std::to_string(node.second.total_length));
+                node_o += ("_CM" + std::to_string(int(node.second.median_length)));
+            }
+            file_dot << "\"" << node_o << "\" [style=filled fillcolor=\"white\"]\n";
+        }
         else
             file_dot << node.first << " [style=filled fillcolor=\"white\" label=\"" << node.first + "_L" + std::to_string(graph[node.first].sequence.size()) << "\"]\n";
         if (node.second.number_of_contracted_edge > max_contracted) {
@@ -329,19 +381,26 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
     std::unordered_set <std::string> traversed_labels;
     for (auto&& node : this->graph) {
         std::string start_node = node.first;
-        if (contracted && node.second.number_of_contracted_edge > 0)
+        if (contracted && node.second.number_of_contracted_edge > 0) {
             start_node = node.first.substr(0, node.first.find_first_of('_')) + "_" + node.first.substr(node.first.find_last_of('_') + 1) + "_N" + std::to_string(node.second.number_of_contracted_edge) + "_L" + std::to_string(node.second.length_of_contracted_edge);
+            if (node.second.circles >= 2) {
+                start_node += ("\\nC" + std::to_string(node.second.circles));
+                start_node += ("_CL" + std::to_string(node.second.total_length));
+                start_node += ("_CM" + std::to_string(int(node.second.median_length)));
+            }
+        }
         for (auto&& edges : node.second.outgoing_edges) {
             std::string end_node = edges.first;
             if (!nodes_retain.empty() && nodes_retain.find(node.first) == nodes_retain.end() && nodes_retain.find(end_node) == nodes_retain.end())
                 continue;
-            if (contracted && graph[edges.first].number_of_contracted_edge > 0)
+            if (contracted && graph[edges.first].number_of_contracted_edge > 0) {
                 end_node = edges.first.substr(0, edges.first.find_first_of('_')) + '_' + edges.first.substr(edges.first.find_last_of('_') + 1) + "_N" + std::to_string(graph[edges.first].number_of_contracted_edge) + "_L" + std::to_string(graph[edges.first].length_of_contracted_edge);
-            // if (edges.second.size() == 1) {
-            //     if (std::abs(graph[start_node].outgoing_edges[edges.first].at(0).multiplicity - graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(start_node)].at(0).multiplicity) > MIN_MULTI)
-            //         std::cout << "Imbalanced multi for " << start_node << "->" << edges.first << " and its reverse: " << graph[start_node].outgoing_edges[edges.first].at(0).multiplicity << " and " << graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(start_node)].at(0).multiplicity << std::endl;
-            //     assert(std::abs(graph[start_node].outgoing_edges[edges.first].at(0).multiplicity - graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(start_node)].at(0).multiplicity) < MIN_MULTI);
-            // }
+                if (graph[edges.first].circles >= 2) {
+                    end_node += ("\\nC" + std::to_string(graph[edges.first].circles));
+                    end_node += ("_CL" + std::to_string(graph[edges.first].total_length));
+                    end_node += ("_CM" + std::to_string(int(graph[edges.first].median_length)));
+                }
+            }
             for (auto&& edge : edges.second) {
                 if (traversed_labels.find(edge.label) != traversed_labels.end()) {
                     num_edges += 1;
@@ -673,6 +732,30 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length) {
         }
         for (auto&& node : graph_vis[node_contracted].incoming_edges) {
             assert(graph_vis[node.first].outgoing_edges[node_contracted].size() == graph_vis[node_contracted].incoming_edges[node.first].size());
+        }
+    }
+
+    // remove self-loops, add statistics to the contracted node
+    for (auto&& node : graph_vis) {
+        if (graph_vis[node.first].outgoing_edges[node.first].size() >= 2) {
+            graph_vis[node.first].circles = graph_vis[node.first].outgoing_edges[node.first].size();
+            long total_len = 0;
+            std::vector<int> lens;
+            for (auto&& e : graph_vis[node.first].outgoing_edges[node.first]) {
+                total_len += e.length;
+                lens.push_back(e.length);
+            }
+            std::sort(lens.begin(), lens.end());
+            size_t size = lens.size();
+            if (size % 2 == 0) {
+                graph_vis[node.first].median_length = (lens[size / 2 - 1] + lens[size / 2]) / 2.0;
+            }
+            else {
+                graph_vis[node.first].median_length = lens[size / 2];
+            }
+            graph_vis[node.first].total_length = total_len;
+            graph_vis[node.first].outgoing_edges.erase(node.first);
+            graph_vis[node.first].incoming_edges.erase(node.first);
         }
     }
     auto graph_cp = graph;
