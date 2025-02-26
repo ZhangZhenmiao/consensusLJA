@@ -68,21 +68,70 @@ int main(int argc, char* argv[]) {
     graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.10k");
     graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.20k", 20000);
 
+    removed_whirls = 1;
+    total_removed = 0;
+    while (removed_whirls) {
+        graph.general_whirl_removal(removed_whirls);
+        std::cout << "Removed " << removed_whirls << " general whirls" << std::endl;
+        total_removed += removed_whirls;
+    }
+    std::cout << "Removed " << total_removed << " general whirls in total" << std::endl;
+
+    // Step 3 Complex bulge collapsing
     removed_paths = 1;
     total_removed = 0;
     while (removed_paths) {
-        removed_bulges = 1;
-        while (removed_bulges) {
-            graph.multi_bulge_removal(removed_bulges);
-        }
-        graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0, true, 4);
+        graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 3, 0.8, true, 3);
         total_removed += removed_paths;
     }
-    std::cout << "Removed " << total_removed << " complex bulges" << std::endl;
+    graph.write_graph(output + "/graph.complex_bulge_stage3.1");
+    std::cout << "Removed complex bulges: " << total_removed << std::endl;
 
-    graph.write_graph(output + "/graph.detouring_1_5");
+    // Step 3.2 Collapse paths < 4 edges, semi-secure, do not allow reverse complementary
+    removed_paths = 1;
+    total_removed = 0;
+    while (removed_paths) {
+        graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 4, 0.8, true, 2);
+        total_removed += removed_paths;
+    }
+    graph.write_graph(output + "/graph.complex_bulge_stage3.2");
+    std::cout << "Removed complex bulges: " << total_removed << std::endl;
 
-    prefix = output + "/graph.detouring_1_5";
+    // Step 3.3 Collapse paths < 5 edges, semi-secure, do not allow reverse complementary
+    removed_paths = 1;
+    total_removed = 0;
+    while (removed_paths) {
+        graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.8, true, 2);
+        total_removed += removed_paths;
+    }
+    graph.write_graph(output + "/graph.complex_bulge_stage3.3");
+    std::cout << "Removed complex bulges: " << total_removed << std::endl;
+
+    total_removed = 1;
+    while (total_removed) {
+        graph.resolve_edges_in_reverse_complement(total_removed, true);
+    }
+    graph.write_graph(output + "/graph.resolve_edges_in_reverse_complement_rc");
+
+    // Step 5 Broken bulges and tips
+    removed_bulges = 1;
+    while (removed_bulges) {
+        graph.gluing_broken_bulges(removed_bulges);
+    }
+    graph.write_graph(output + "/graph.tips_processed");
+
+    removed_paths = 1;
+    total_removed = 0;
+    while (removed_paths) {
+        graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0, true, 2);
+        total_removed += removed_paths;
+        graph.merge_non_branching_paths(true);
+    }
+    std::cout << "Removed complex bulges: " << total_removed << std::endl;
+
+    graph.write_graph(output + "/graph.final");
+
+    prefix = output + "/graph.final";
     ref_seq = "/Poppy/zmzhang/Rust_fungi/genome/reference.compressed.only_chrs.fasta";
     if (system(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str()) != 0) {
         exit(1);
@@ -99,8 +148,9 @@ int main(int argc, char* argv[]) {
     exeDir = graph.getExecutablePath();
     if (system((exeDir + "/../src/scripts/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str()) != 0)
         exit(1);
-    graph.write_graph_colored_from_bam(output + "/graph.detouring_1_5.color", prefix + ".ref.bam.stats");
-    graph.write_graph_contracted(output + "/graph.detouring_1_5.contracted.color.10k");
-    graph.write_graph_contracted(output + "/graph.detouring_1_5.contracted.color.20k", 20000);
+    graph.write_graph_colored_from_bam(output + "/graph.final.color", prefix + ".ref.bam.stats");
+    graph.write_graph_contracted(output + "/graph.final.contracted.color.10k");
+    graph.write_graph_contracted(output + "/graph.final.contracted.color.15k", 15000);
+    graph.write_graph_contracted(output + "/graph.final.contracted.color.20k", 20000);
     return 0;
 }

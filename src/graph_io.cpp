@@ -51,7 +51,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
     std::unordered_map<std::string, std::string> edge2sequence, node2sequence, nodenew2sequence;
     std::unordered_map<std::string, double> edgedbg2multi, edge2multi;
 
-    // load edge multiplicities
+    // load edge multiplicities from dbg
     std::ifstream graph_dbg_file(graph_dbg);
     while (getline(graph_dbg_file, line)) {
         if (line.find("->") != std::string::npos) {
@@ -76,7 +76,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
     }
     graph_dbg_file.close();
 
-    //load edge paths
+    //load multidbg edge paths
     std::ifstream paths_dbg_file(paths_dbg);
     std::string edge_name;
     while (getline(paths_dbg_file, line)) {

@@ -64,8 +64,6 @@ bool Graph::add_node_to_path(Path& path, std::string node, int bulge_leg, bool r
     path.path_nodes_in_original_graph.pop_back();
     merge_vecs(path.path_nodes_in_original_graph, graph[prev_node].outgoing_edges[node].at(bulge_leg).path_nodes_in_original_graph);
     merge_vecs(path.path_edges_in_original_graph, graph[prev_node].outgoing_edges[node].at(bulge_leg).path_edges_in_original_graph);
-    if (path.path_nodes_in_original_graph.size() != path.path_edges_in_original_graph.size() + 1)
-        write_graph("debug_add_node" + node);
     assert(path.path_nodes_in_original_graph.size() == path.path_edges_in_original_graph.size() + 1);
     Edge& edge = this->graph[prev_node].outgoing_edges[node].at(bulge_leg);
     if (!reduce_reverse || prev_node != reverse_complementary_node(node)) {
@@ -456,8 +454,6 @@ void Graph::multi_bulge_removal(unsigned& removed_bulges, bool skip_rc_bulges) {
                 // if node1 and node2 are reverse complementary nodes, skip collapsing reverse bulge
                 if (reverse_complementary_node(node2) != node1) {
                     std::string seq2 = this->collapse_bulge(reverse_complementary_node(node2), reverse_complementary_node(node1), removed_bulges);
-                    // if (seq1 != reverse_complementary(seq2))
-                    //     std::cout << "Problematic bulge collapsing: resulting sequences not reverse complementary" << std::endl;
                 }
             }
         }
@@ -491,29 +487,29 @@ void Graph::gluing_broken_bulges(unsigned& removed_bulges) {
             }
 
             if (!incoming_tip.empty() && !outgoing_tip.empty() && outgoing_tip != node2.first && incoming_tip != node.first) {
-                std::string seq_broken = outgoing_edge.sequence + incoming_edge.sequence.substr(k);
+                std::string seq_broken = outgoing_edge.sequence + incoming_edge.sequence.substr(graph[incoming_tip].sequence.size());
                 // double similarity = 1.0 * matches_by_edlib(seq_broken, node2.second.at(0).sequence) / std::max(seq_broken.size(), node2.second.at(0).sequence.size());
                 double similarity = 1.0 * std::min(outgoing_edge.length + incoming_edge.length, node2.second.at(0).length) / std::max(outgoing_edge.length + incoming_edge.length, node2.second.at(0).length);
                 if (similarity < 0.9)
                     continue;
                 std::cout << "Broken bulge (and reverse complementary): " << node.first << "->" << node2.first << ", " << node.first << "->" << outgoing_tip << " " << incoming_tip << "->" << node2.first << ", sim " << similarity << std::endl;
                 std::vector<std::string> nodes;
-                std::string out_tip_seq = outgoing_edge.sequence.substr(outgoing_edge.sequence.size() - k);
+                std::string out_tip_seq = outgoing_edge.sequence.substr(outgoing_edge.sequence.size() - graph[outgoing_tip].sequence.size());
                 for (auto&& n : graph[incoming_tip].outgoing_edges) {
                     nodes.push_back(n.first);
                     for (auto&& e : n.second) {
-                        e.sequence = out_tip_seq + e.sequence.substr(k);
+                        e.sequence = out_tip_seq + e.sequence.substr(graph[incoming_tip].sequence.size());
                     }
                     for (auto&& e : graph[n.first].incoming_edges[incoming_tip]) {
-                        e.sequence = out_tip_seq + e.sequence.substr(k);
+                        e.sequence = out_tip_seq + e.sequence.substr(graph[incoming_tip].sequence.size());
                     }
                 }
                 for (auto&& n : graph[reverse_complementary_node(incoming_tip)].incoming_edges) {
                     for (auto&& e : n.second) {
-                        e.sequence = e.sequence.substr(0, e.sequence.size() - k) + reverse_complementary(out_tip_seq);
+                        e.sequence = e.sequence.substr(0, e.sequence.size() - graph[reverse_complementary_node(incoming_tip)].sequence.size()) + reverse_complementary(out_tip_seq);
                     }
                     for (auto&& e : graph[n.first].outgoing_edges[reverse_complementary_node(incoming_tip)]) {
-                        e.sequence = e.sequence.substr(0, e.sequence.size() - k) + reverse_complementary(out_tip_seq);
+                        e.sequence = e.sequence.substr(0, e.sequence.size() - graph[reverse_complementary_node(incoming_tip)].sequence.size()) + reverse_complementary(out_tip_seq);
                     }
                 }
                 for (auto&& n : nodes) {
@@ -1379,15 +1375,20 @@ std::string Graph::collapse_complex_bulge_two_multi_edge_paths(Path p1, Path p2,
     }
     else if (p2_2_in_2_out == false) {
         extract_index = 2;
-        if (!p2.safe_to_extract)
+        if (!p2.safe_to_extract) {
+            std::cout << "p2 not safe" << std::endl;
             return "";
+        }
     }
     else if (p1_2_in_2_out == false) {
         extract_index = 1;
-        if (!p1.safe_to_extract)
+        if (!p1.safe_to_extract) {
+            std::cout << "p1 not safe" << std::endl;
             return "";
+        }
     }
     else {
+        std::cout << "both p1 and p2 have 2-in-2-out" << std::endl;
         return "";
     }
 
@@ -1674,9 +1675,9 @@ bool Graph::get_reverse_path(Path& path, Path& path_reverse) {
 void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, int x, double identity, bool use_length, int security_level, bool allow_reverse_comp, bool verbose) {
     // this->write_graph("debug");
     unsigned removed_whirls = 1;
-    // while (removed_whirls != 0) {
-    //     general_whirl_removal(removed_whirls);
-    // }
+    while (removed_whirls != 0) {
+        general_whirl_removal(removed_whirls);
+    }
 
     if (allow_reverse_comp)
         multi_bulge_removal(removed_whirls, false);
