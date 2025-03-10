@@ -39,7 +39,7 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                 if query_name not in high_identity_alignments:
                     high_identity_alignments[query_name] = []
                 
-                ref_id = alignment.reference_name[alignment.reference_name.find('_') + 1:] if alignment.is_forward else '-' + alignment.reference_name[alignment.reference_name.find('_') + 1:]
+                ref_id = alignment.reference_name[alignment.reference_name.find('_') + 1:]
                 id_map = {
                     "chr1_mat_hsa1": "1M", 
                     "chr2_mat_hsa3": "2M", 

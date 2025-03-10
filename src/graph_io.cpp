@@ -76,29 +76,6 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
     }
     graph_dbg_file.close();
 
-    //load multidbg edge paths
-    std::ifstream paths_dbg_file(paths_dbg);
-    std::string edge_name;
-    while (getline(paths_dbg_file, line)) {
-        if (line.at(0) == '>') {
-            edge_name = line.substr(1);
-        }
-        else {
-            double min_multi = -1;
-            while (line.find(' ') != std::string::npos) {
-                std::string edge_id = line.substr(0, line.find(' '));
-                assert(edgedbg2multi.find(edge_id) != edgedbg2multi.end());
-                if (min_multi < 0 || edgedbg2multi[edge_id] < min_multi)
-                    min_multi = edgedbg2multi[edge_id];
-                line = line.substr(line.find(' ') + 1);
-            }
-            assert(min_multi >= 0);
-            std::cout << "Min multi for " << edge_name << " is " << min_multi << std::endl;
-            edge2multi[edge_name] = min_multi;
-        }
-    }
-    paths_dbg_file.close();
-
     // read input fasta
     std::ifstream fasta_file(graph_fasta);
     while (getline(fasta_file, line)) {
@@ -166,6 +143,31 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         it = node2sequence.erase(it);
     }
 
+    //load multidbg edge paths
+    std::ifstream paths_dbg_file(paths_dbg);
+    std::string edge_name;
+    while (getline(paths_dbg_file, line)) {
+        if (line.at(0) == '>') {
+            edge_name = line.substr(1);
+        }
+        else {
+            std::cout << edge_name << ": Start ";
+            double min_multi = -1;
+            while (line.find(' ') != std::string::npos) {
+                std::string edge_id = line.substr(0, line.find(' '));
+                assert(edgedbg2multi.find(edge_id) != edgedbg2multi.end());
+                if (min_multi < 0 || edgedbg2multi[edge_id] < min_multi)
+                    min_multi = edgedbg2multi[edge_id];
+                line = line.substr(line.find(' ') + 1);
+                std::cout << " -> " << edge_id << "(" << edgedbg2multi[edge_id] << ")";
+            }
+            assert(min_multi >= 0);
+            std::cout << "; Min multi for " << edge_name << " is " << min_multi << std::endl;
+            edge2multi[edge_name] = min_multi;
+        }
+    }
+    paths_dbg_file.close();
+
     // load graph
     long cnt_edge = 0;
     std::ifstream dot_file(graph_dot);
@@ -197,7 +199,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             edge.path_nodes_in_original_graph.push_back(start_name);
             edge.path_nodes_in_original_graph.push_back(end_name);
             edge.path_edges_in_original_graph.push_back(edge_label);
-            // edge.label = edge_label;
+            edge.label = edge_label;
 
             this->graph[start_name].outgoing_edges[end_name].push_back(edge);
             this->graph[end_name].incoming_edges[start_name].push_back(edge);
