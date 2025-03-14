@@ -38,119 +38,129 @@ int main(int argc, char* argv[]) {
     Graph graph;
     graph.read_graph(output, graph_dot, graph_fasta, nodes_fasta, graph_dbg, paths_dbg);
 
-    graph.write_graph(output + "/original");
-    removed_bulges = 1;
-    cnt_rounds = 0;
-    while (removed_bulges) {
-        std::cout << "----------Stage 1: Simple bulge collapsing round " << ++cnt_rounds << "----------" << std::endl;
-        graph.multi_bulge_removal(removed_bulges);
-        std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
-    }
-    graph.write_graph(output + "/graph.bulge_removel");
-    std::string prefix = output + "/graph.bulge_removel";
-    std::string ref_seq = "/Poppy/zmzhang/Rust_fungi/genome/reference.compressed.only_chrs.fasta";
-    if (system(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str()) != 0) {
-        exit(1);
-    }
-    if (!std::filesystem::exists(ref_seq + ".fai")) {
-        if (system(("samtools faidx " + ref_seq).c_str()) != 0)
-            exit(1);
-    }
-    if (system(("cut -f1,2 " + ref_seq + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + prefix + ".ref.header.sam").c_str()) != 0)
-        exit(1);
-    if (system(("cat " + prefix + ".ref.header.sam " + prefix + ".ref.sam | samtools sort -@ 50 -o " + prefix + ".ref.bam").c_str()) != 0) {
-        exit(1);
-    }
-    std::string exeDir = graph.getExecutablePath();
-    if (system((exeDir + "/../src/scripts/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str()) != 0)
-        exit(1);
-    graph.write_graph_colored_from_bam(output + "/graph.bulge_removel.color", prefix + ".ref.bam.stats");
-    graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.10k");
-    graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.20k", 20000);
+    std::cout << "----------Stage 0: clean graph----------" << std::endl;
+    graph.remove_low_coverage_edges(removed_edges);
+    std::cout << "Removed " << removed_edges << " low-coverage edges" << std::endl;
+    // graph.write_graph(output + "/graph.cleaned");
+    // graph.get_annotation(output + "/graph.cleaned");
+    // graph.write_graph_contracted(output + "/graph.cleaned.contracted.10k");
+    // graph.write_graph_contracted(output + "/graph.cleaned.contracted.20k", 20000);
 
+    std::cout << "----------Stage 1: simple bulge collapsing----------" << std::endl;
+    removed_bulges = 1;
+    total_removed = 0;
+    while (removed_bulges) {
+        graph.multi_bulge_removal(removed_bulges);
+        total_removed += removed_bulges;
+    }
+    std::cout << "Removed " << total_removed << " simple bulges" << std::endl;
+    graph.write_graph(output + "/graph.bulge_removel");
+    // graph.get_annotation(output + "/graph.bulge_removel");
+    // graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.10k");
+    // graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.20k", 20000);
+
+    std::cout << "----------Stage 2: whirl removal----------" << std::endl;
     removed_whirls = 1;
     total_removed = 0;
     while (removed_whirls) {
         graph.general_whirl_removal(removed_whirls);
-        std::cout << "Removed " << removed_whirls << " general whirls" << std::endl;
         total_removed += removed_whirls;
     }
-    std::cout << "Removed " << total_removed << " general whirls in total" << std::endl;
+    std::cout << "Removed " << total_removed << " general whirls" << std::endl;
 
-    // Step 3 Complex bulge collapsing
+    std::cout << "----------Stage 3: N-M bulge collapsing----------" << std::endl;
+    // secure N-M bulges, len=3, sim=0.8
     removed_paths = 1;
     total_removed = 0;
     while (removed_paths) {
         graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 3, 0.8, true, 3);
         total_removed += removed_paths;
     }
-    graph.write_graph(output + "/graph.complex_bulge_stage3.1");
-    std::cout << "Removed complex bulges: " << total_removed << std::endl;
-
-    // Step 3.2 Collapse paths < 4 edges, semi-secure, do not allow reverse complementary
+    // semi-secure N-M bulges, len=4, sim=0.8
     removed_paths = 1;
-    total_removed = 0;
     while (removed_paths) {
         graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 4, 0.8, true, 2);
         total_removed += removed_paths;
     }
-    graph.write_graph(output + "/graph.complex_bulge_stage3.2");
-    std::cout << "Removed complex bulges: " << total_removed << std::endl;
-
-    // Step 3.3 Collapse paths < 5 edges, semi-secure, do not allow reverse complementary
+    // semi-secure N-M bulges, len=5, sim=0.8
     removed_paths = 1;
-    total_removed = 0;
     while (removed_paths) {
         graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.8, true, 2);
         total_removed += removed_paths;
     }
-    graph.write_graph(output + "/graph.complex_bulge_stage3.3");
-    std::cout << "Removed complex bulges: " << total_removed << std::endl;
 
-    total_removed = 1;
-    while (total_removed) {
-        graph.resolve_edges_in_reverse_complement(total_removed, true);
-    }
-    graph.write_graph(output + "/graph.resolve_edges_in_reverse_complement_rc");
-
-    // Step 5 Broken bulges and tips
-    removed_bulges = 1;
-    while (removed_bulges) {
-        graph.gluing_broken_bulges(removed_bulges);
-    }
-    graph.write_graph(output + "/graph.tips_processed");
-
+    // semi-secure N-M bulges, len=5, sim=0
     removed_paths = 1;
-    total_removed = 0;
     while (removed_paths) {
-        graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0, true, 2);
+        graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.6, true, 2);
         total_removed += removed_paths;
-        graph.merge_non_branching_paths(true);
     }
     std::cout << "Removed complex bulges: " << total_removed << std::endl;
+    graph.write_graph(output + "/graph.complex_bulge");
+    // graph.get_annotation(output + "/graph.complex_bulge");
+    // graph.write_graph_contracted(output + "/graph.complex_bulge.contracted.10k");
+    // graph.write_graph_contracted(output + "/graph.complex_bulge.contracted.20k", 20000);
 
-    graph.write_graph(output + "/graph.final");
+    std::cout << "----------Stage 4: merge tips into edges----------" << std::endl;
+    removed_tips = 1;
+    total_removed = 0;
+    while (removed_tips) {
+        graph.merge_tips_into_edges(removed_tips);
+        total_removed += removed_tips;
+    }
 
-    prefix = output + "/graph.final";
-    ref_seq = "/Poppy/zmzhang/Rust_fungi/genome/reference.compressed.only_chrs.fasta";
-    if (system(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str()) != 0) {
-        exit(1);
+    std::cout << "Removed tips: " << total_removed << std::endl;
+    graph.write_graph(output + "/graph.remove_tips");
+    // graph.get_annotation(output + "/graph.remove_tips");
+    // graph.write_graph_contracted(output + "/graph.remove_tips.contracted.10k");
+    // graph.write_graph_contracted(output + "/graph.remove_tips.contracted.20k", 20000);
+
+    std::cout << "----------Stage 5: decoupling strands----------" << std::endl;
+    decoupled = 1;
+    total_removed = 0;
+    while (decoupled) {
+        graph.resolve_edges_in_reverse_complement(decoupled);
+        total_removed += decoupled;
     }
-    if (!std::filesystem::exists(ref_seq + ".fai")) {
-        if (system(("samtools faidx " + ref_seq).c_str()) != 0)
-            exit(1);
+
+    std::cout << "Removed 2-in-2-out: " << total_removed << std::endl;
+    graph.write_graph(output + "/graph.decoupling");
+    // graph.get_annotation(output + "/graph.decoupling");
+    // graph.write_graph_contracted(output + "/graph.decoupling.contracted.10k");
+    // graph.write_graph_contracted(output + "/graph.decoupling.contracted.20k", 20000);
+
+    std::cout << "----------Stage 6: for complex components----------" << std::endl;
+
+    removed_tips = 1;
+    total_removed = 0;
+    while (removed_tips) {
+        graph.merge_tips_into_edges(removed_tips, 0.2);
+        total_removed += removed_tips;
+        removed_paths = 1;
+        while (removed_paths) {
+            graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 8, 0.6, true, 2);
+            std::cout << "Removed complex bulges: " << removed_paths << std::endl;
+        }
     }
-    if (system(("cut -f1,2 " + ref_seq + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + prefix + ".ref.header.sam").c_str()) != 0)
-        exit(1);
-    if (system(("cat " + prefix + ".ref.header.sam " + prefix + ".ref.sam | samtools sort -@ 50 -o " + prefix + ".ref.bam").c_str()) != 0) {
-        exit(1);
+    std::cout << "Removed tips: " << total_removed << std::endl;
+
+    removed_whirls = 1;
+    while (removed_whirls) {
+        graph.general_whirl_removal(removed_whirls, false, true);
+        graph.merge_non_branching_paths(true);
+        std::cout << "Removed whirls: " << removed_whirls << std::endl;
     }
-    exeDir = graph.getExecutablePath();
-    if (system((exeDir + "/../src/scripts/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str()) != 0)
-        exit(1);
-    graph.write_graph_colored_from_bam(output + "/graph.final.color", prefix + ".ref.bam.stats");
-    graph.write_graph_contracted(output + "/graph.final.contracted.color.10k");
-    graph.write_graph_contracted(output + "/graph.final.contracted.color.15k", 15000);
-    graph.write_graph_contracted(output + "/graph.final.contracted.color.20k", 20000);
+
+    decoupled = 1;
+    while (decoupled) {
+        graph.resolve_edges_in_reverse_complement(decoupled);
+        std::cout << "Decoupled strands: " << decoupled << std::endl;
+    }
+
+    graph.write_graph(output + "/graph.complex_comp");
+    graph.get_annotation(output + "/graph.complex_comp");
+    graph.write_graph_contracted(output + "/graph.complex_comp.contracted.10k");
+    graph.write_graph_contracted(output + "/graph.complex_comp.contracted.20k", 20000);
+
     return 0;
 }

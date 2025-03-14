@@ -50,6 +50,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
     std::string line, node1, node2, length, multiplicity, start_base;
     std::unordered_map<std::string, std::string> edge2sequence, node2sequence, nodenew2sequence;
     std::unordered_map<std::string, double> edgedbg2multi, edge2multi;
+    std::unordered_map<std::string, double> edgedbg2len;
 
     // load edge multiplicities from dbg
     std::ifstream graph_dbg_file(graph_dbg);
@@ -71,7 +72,8 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             unsigned length = std::atoi(label_all.substr(2, pos1 - 2).c_str());
             double multiplicity = std::atof(label_all.substr(pos1 + 1, label_all.size() - pos1 - 2).c_str());
             edgedbg2multi[edge_label] = multiplicity;
-            std::cout << "Multi for " << edge_label << " is " << multiplicity << std::endl;
+            edgedbg2len[edge_label] = length;
+            // std::cout << "Multi for " << edge_label << " is " << multiplicity << ", len " << length << std::endl;
         }
     }
     graph_dbg_file.close();
@@ -151,18 +153,26 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             edge_name = line.substr(1);
         }
         else {
-            std::cout << edge_name << ": Start ";
-            double min_multi = -1;
+            // std::cout << edge_name << ": Start";
+            std::vector<double> multis;
             while (line.find(' ') != std::string::npos) {
                 std::string edge_id = line.substr(0, line.find(' '));
                 assert(edgedbg2multi.find(edge_id) != edgedbg2multi.end());
-                if (min_multi < 0 || edgedbg2multi[edge_id] < min_multi)
-                    min_multi = edgedbg2multi[edge_id];
+                multis.push_back(edgedbg2multi[edge_id]);
                 line = line.substr(line.find(' ') + 1);
-                std::cout << " -> " << edge_id << "(" << edgedbg2multi[edge_id] << ")";
+                // std::cout << " -> " << edge_id << " " << edgedbg2len[edge_id] << " (" << edgedbg2multi[edge_id] << ")";
             }
-            assert(min_multi >= 0);
-            std::cout << "; Min multi for " << edge_name << " is " << min_multi << std::endl;
+            double min_multi = 0;
+            std::sort(multis.begin(), multis.end());
+            for (auto&& m : multis) {
+                if (m >= 10) {
+                    min_multi = m;
+                    break;
+                }
+            }
+            if (min_multi == 0)
+                min_multi = multis.at(multis.size() - 1);
+            // std::cout << "; Min multi for " << edge_name << " is " << min_multi << std::endl;
             edge2multi[edge_name] = min_multi;
         }
     }
@@ -199,7 +209,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             edge.path_nodes_in_original_graph.push_back(start_name);
             edge.path_nodes_in_original_graph.push_back(end_name);
             edge.path_edges_in_original_graph.push_back(edge_label);
-            edge.label = edge_label;
+            // edge.label = edge_label;
 
             this->graph[start_name].outgoing_edges[end_name].push_back(edge);
             this->graph[end_name].incoming_edges[start_name].push_back(edge);

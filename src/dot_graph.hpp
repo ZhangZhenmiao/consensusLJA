@@ -106,19 +106,19 @@ public:
     void multi_bulge_removal(unsigned& removed_bulges, bool skip_rc_bulges = true);
     void merge_non_branching_paths(bool merge_self_loop = false);
     void gluing_broken_bulges(unsigned& removed_bulges);
-    void merge_tips_into_edges(unsigned& num_tips);
+    void merge_tips_into_edges(unsigned& num_tips, double ratio = 0.8);
     void merge_tips(unsigned& num_tips, bool restrict_length = true, bool only_edges = false);
 
     void general_whirl_removal(unsigned& removed_whirls, bool simple_whirl = false, bool force = false);
-    void resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, int x, double identity, bool use_length = false, int security_level = 3, bool allow_reverse_comp = false, bool verbose = false);
+    void resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, int x, double identity, bool use_length = false, int security_level = 3, bool allow_reverse_comp = false, bool allow_tip = false, bool verbose = false);
     void remove_low_coverage_edges(unsigned& removed_edges, double coverage = 10, bool tips = false);
-    void remove_low_cov_on_node(std::string node, unsigned removed_edges, double coverage, std::vector<std::string>& nodes_to_remove);
+    void remove_low_cov_on_node(std::string node, unsigned& removed_edges, double coverage, std::vector<std::string>& nodes_to_remove);
 
     void resolve_edges_in_reverse_complement(int& resolved_edges, bool strict = false);
     template<typename T>
     void merge_vecs(std::vector<T>& e1, std::vector<T>& e2);
     std::string getExecutablePath();
-
+    void get_annotation(std::string prefix);
 
     Graph();
 private:
@@ -132,7 +132,7 @@ private:
 
     void remove_whirl(Path& unambiguous_path, std::vector<std::string>& nodes_to_remove);
 
-    std::string collapse_complex_bulge_two_multi_edge_paths(Path p1, Path p2, bool p1_2_in_2_out, bool p2_2_in_2_out, double max_identity, std::vector<std::string>& nodes_to_remove);
+    std::string collapse_complex_bulge_two_multi_edge_paths(Path p1, Path p2, bool p1_2_in_2_out, bool p2_2_in_2_out, double max_identity, std::vector<std::string>& nodes_to_remove, bool allow_tip);
     bool process_palindromic_bulges(Path& p1, Path& p2, std::vector<std::string>& nodes_to_remove, bool verbose = false, std::string output = "");
     void find_2_in_2_out(Bulge& bulge);
     bool check_2_in_2_out(Path& leg1);
