@@ -97,9 +97,9 @@ int main(int argc, char* argv[]) {
     }
     std::cout << "Removed complex bulges: " << total_removed << std::endl;
     graph.write_graph(output + "/graph.complex_bulge");
-    // graph.get_annotation(output + "/graph.complex_bulge");
-    // graph.write_graph_contracted(output + "/graph.complex_bulge.contracted.10k");
-    // graph.write_graph_contracted(output + "/graph.complex_bulge.contracted.20k", 20000);
+    graph.get_annotation(output + "/graph.complex_bulge");
+    graph.write_graph_contracted(output + "/graph.complex_bulge.contracted.10k");
+    graph.write_graph_contracted(output + "/graph.complex_bulge.contracted.20k", 20000);
 
     std::cout << "----------Stage 4: merge tips into edges----------" << std::endl;
     removed_tips = 1;
@@ -125,9 +125,9 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Removed 2-in-2-out: " << total_removed << std::endl;
     graph.write_graph(output + "/graph.decoupling");
-    // graph.get_annotation(output + "/graph.decoupling");
-    // graph.write_graph_contracted(output + "/graph.decoupling.contracted.10k");
-    // graph.write_graph_contracted(output + "/graph.decoupling.contracted.20k", 20000);
+    graph.get_annotation(output + "/graph.decoupling");
+    graph.write_graph_contracted(output + "/graph.decoupling.contracted.10k");
+    graph.write_graph_contracted(output + "/graph.decoupling.contracted.20k", 20000);
 
     std::cout << "----------Stage 6: for complex components----------" << std::endl;
 
