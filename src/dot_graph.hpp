@@ -102,6 +102,7 @@ public:
     void write_graph_colored_from_bam(const std::string& prefix, const std::string& bam_processed);
     void decoupling(std::string multidbg, std::string output);
     int get_num_nodes();
+    std::string get_contracted_name(std::string node);
 
     void multi_bulge_removal(unsigned& removed_bulges, bool skip_rc_bulges = true);
     void merge_non_branching_paths(bool merge_self_loop = false);

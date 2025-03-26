@@ -12,8 +12,10 @@
 #include <cstdlib>
 
 bool Graph::check_non_branching(std::string node, bool merge_self_loop) {
-    if (graph.find(node) == graph.end())
+    if (graph.find(node) == graph.end()) {
+        // std::cout << "Check non-branching " << node << ": " << false << ", no node" << std::endl;
         return false;
+    }
     // in any case, 1-in-1-out are non-branching
     if (this->graph[node].incoming_edges.size() == 1 && this->graph[node].outgoing_edges.size() == 1) {
         bool flag = true;
@@ -25,6 +27,7 @@ bool Graph::check_non_branching(std::string node, bool merge_self_loop) {
             if (n.second.size() > 1)
                 flag = false;
         }
+        // std::cout << "Check non-branching (regular) " << node << ": " << flag << std::endl;
         return flag;
     }
     // 1-in-1-out plus a self-loop
@@ -38,10 +41,12 @@ bool Graph::check_non_branching(std::string node, bool merge_self_loop) {
             if (n.second.size() > 1)
                 flag = false;
         }
+        // std::cout << "Check non-branching (self-loop) " << node << ": " << flag << std::endl;
         return flag;
     }
-    else
+    else {
         return false;
+    }
 }
 
 bool Graph::add_node_to_path(Path& path, std::string node, int bulge_leg, bool reduce_reverse) {
