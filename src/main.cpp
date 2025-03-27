@@ -126,7 +126,6 @@ int main(int argc, char* argv[]) {
     std::cout << "Removed 2-in-2-out: " << total_removed << std::endl;
     graph.write_graph(output + "/graph.decoupling");
     // graph.get_annotation(output + "/graph.decoupling");
-    // graph.write_graph_contracted(output + "/graph.decoupling.contracted.10k");
 
     std::cout << "----------Stage 6: for complex components----------" << std::endl;
 
@@ -160,9 +159,15 @@ int main(int argc, char* argv[]) {
 
     std::cout << "----------Stage 7: contract graph----------" << std::endl;
 
-    graph.get_annotation(output + "/graph.complex_comp");
-    // graph.write_graph_contracted(output + "/graph.complex_comp.contracted.10k");
     graph.write_graph_contracted(output + "/graph.complex_comp.contracted.20k", 20000);
+
+    removed_tips = 1;
+    while (removed_tips) {
+        graph.merge_tips_into_edges(removed_tips, 0.2);
+        graph.merge_tips(removed_tips);
+    }
+    graph.write_graph(output + "/graph.final");
+    graph.get_annotation(output + "/graph.final");
 
     return 0;
 }

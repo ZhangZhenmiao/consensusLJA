@@ -240,13 +240,17 @@ std::string Graph::get_unique_label(std::unordered_set<std::string>& labels) {
 }
 
 std::string Graph::get_contracted_name(std::string node) {
-    std::string node_o = node.substr(0, node.find_first_of('_')) + "_" + node.substr(node.find_last_of('_') + 1) + "_N" + std::to_string(graph[node].number_of_contracted_edge) + "_L" + std::to_string(graph[node].length_of_contracted_edge);
+    return node.substr(0, node.find_first_of('_')) + "+" + node.substr(node.find_last_of('_') + 1);
+}
+
+std::string Graph::get_contracted_label(std::string node) {
+    std::string label = node.substr(0, node.find_first_of('_')) + "_" + node.substr(node.find_last_of('_') + 1) + "_N" + std::to_string(graph[node].number_of_contracted_edge) + "_L" + std::to_string(graph[node].length_of_contracted_edge);
     if (graph[node].circles >= 2) {
-        node_o += ("\\nC" + std::to_string(graph[node].circles));
-        node_o += ("_CL" + std::to_string(graph[node].total_length));
-        node_o += ("_CM" + std::to_string(int(graph[node].median_length)));
+        label += ("\\nC" + std::to_string(graph[node].circles));
+        label += ("_CL" + std::to_string(graph[node].total_length));
+        label += ("_CM" + std::to_string(int(graph[node].median_length)));
     }
-    return node_o;
+    return label;
 }
 
 void Graph::write_graph(const std::string& prefix, int thick, bool contracted, bool colored, std::unordered_set<std::string> nodes_retain) {
@@ -266,11 +270,11 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
     for (auto&& node : this->graph) {
         if (!nodes_retain.empty() && nodes_retain.find(node.first) == nodes_retain.end())
             continue;
-        if (contracted && node.second.number_of_contracted_edge > 0) {
+        if (node.second.number_of_contracted_edge > 0) {
             std::string node_o = get_contracted_name(node.first);
             nodeid2Rev[node_o] = get_contracted_name(reverse_complementary_node(node.first));
             nodeid2Rev[get_contracted_name(reverse_complementary_node(node.first))] = get_contracted_name(node.first);
-            file_dot << "\"" << node_o << "\" [style=filled fillcolor=\"white\"]\n";
+            file_dot << "\"" << node_o << "\" [style=filled fillcolor=\"white\" label=\"" << get_contracted_label(node.first) << "\"]\n";
         }
         else
             file_dot << node.first << " [style=filled fillcolor=\"white\" label=\"" << node.first + "_L" + std::to_string(graph[node.first].sequence.size()) << "\"]\n";
@@ -400,14 +404,14 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
     std::unordered_set <std::string> traversed_labels;
     for (auto&& node : this->graph) {
         std::string start_node = node.first;
-        if (contracted && node.second.number_of_contracted_edge > 0) {
+        if (node.second.number_of_contracted_edge > 0) {
             start_node = get_contracted_name(node.first);
         }
         for (auto&& edges : node.second.outgoing_edges) {
             std::string end_node = edges.first;
             if (!nodes_retain.empty() && nodes_retain.find(node.first) == nodes_retain.end() && nodes_retain.find(end_node) == nodes_retain.end())
                 continue;
-            if (contracted && graph[edges.first].number_of_contracted_edge > 0) {
+            if (graph[edges.first].number_of_contracted_edge > 0) {
                 end_node = get_contracted_name(edges.first);
             }
             for (auto&& edge : edges.second) {
@@ -446,7 +450,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                     edge.rc_label = label_reverse;
                     // std::cout << "New label " << label_forward << " and " << label_reverse << std::endl;
                     bool flag = false;
-                    for (auto&& edge_i : graph[end_node].incoming_edges[start_node]) {
+                    for (auto&& edge_i : graph[edges.first].incoming_edges[node.first]) {
                         if (edge_i.sequence == edge.sequence) {
                             // the edge should appear only once
                             assert(flag == false);
@@ -456,7 +460,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                         }
                     }
                     flag = false;
-                    for (auto&& edge_r : graph[reverse_complementary_node(end_node)].outgoing_edges[reverse_complementary_node(start_node)]) {
+                    for (auto&& edge_r : graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(node.first)]) {
                         if (edge_r.sequence == reverse_complementary(edge.sequence)) {
                             assert(flag == false);
                             flag = true;
@@ -465,7 +469,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                         }
                     }
                     flag = false;
-                    for (auto&& edge_r_i : graph[reverse_complementary_node(start_node)].incoming_edges[reverse_complementary_node(end_node)]) {
+                    for (auto&& edge_r_i : graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(edges.first)]) {
                         if (edge_r_i.sequence == reverse_complementary(edge.sequence)) {
                             assert(flag == false);
                             flag = true;

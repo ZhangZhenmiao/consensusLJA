@@ -90,7 +90,6 @@ public:
 
 class Graph {
 public:
-    int k = 0;
     std::unordered_map<std::string, Node> graph;
     std::unordered_map<std::string, std::string> label2rc;
     std::unordered_map<std::string, std::string> nodeid2Rev;
@@ -103,12 +102,13 @@ public:
     void decoupling(std::string multidbg, std::string output);
     int get_num_nodes();
     std::string get_contracted_name(std::string node);
+    std::string get_contracted_label(std::string node);
 
     void multi_bulge_removal(unsigned& removed_bulges, bool skip_rc_bulges = true);
     void merge_non_branching_paths(bool merge_self_loop = false);
     void gluing_broken_bulges(unsigned& removed_bulges);
     void merge_tips_into_edges(unsigned& num_tips, double ratio = 0.8);
-    void merge_tips(unsigned& num_tips, bool restrict_length = true, bool only_edges = false);
+    void merge_tips(unsigned& num_tips);
 
     void general_whirl_removal(unsigned& removed_whirls, bool simple_whirl = false, bool force = false);
     void resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, int x, double identity, bool use_length = false, int security_level = 3, bool allow_reverse_comp = false, bool allow_tip = false, bool verbose = false);
