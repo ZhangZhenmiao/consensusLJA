@@ -459,24 +459,27 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                             edge_i.rc_label = label_reverse;
                         }
                     }
+                    assert(flag);
                     flag = false;
                     for (auto&& edge_r : graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(node.first)]) {
-                        if (edge_r.sequence == reverse_complementary(edge.sequence)) {
+                        if (edge_r.sequence == reverse_complementary(edge.sequence) || graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(node.first)].size() == 1) {
                             assert(flag == false);
                             flag = true;
                             edge_r.rc_label = label_forward;
                             edge_r.label = label_reverse;
                         }
                     }
+                    assert(flag);
                     flag = false;
                     for (auto&& edge_r_i : graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(edges.first)]) {
-                        if (edge_r_i.sequence == reverse_complementary(edge.sequence)) {
+                        if (edge_r_i.sequence == reverse_complementary(edge.sequence) || graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(edges.first)].size() == 1) {
                             assert(flag == false);
                             flag = true;
                             edge_r_i.rc_label = label_forward;
                             edge_r_i.label = label_reverse;
                         }
                     }
+                    assert(flag);
 
                     traversed_labels.insert(label_reverse);
                     vertice2labels[start_node].insert(label_forward.substr(label_forward.find('.') + 1));
@@ -520,7 +523,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
     std::cout << "Total number of edges: " << num_edges << std::endl;
 }
 
-void Graph::write_graph_contracted(const std::string& prefix, int min_length) {
+void Graph::write_graph_contracted(const std::string& prefix, int min_length, bool simplify) {
     // std::cout << "----------Contracted visulization----------" << std::endl;
     std::unordered_map<std::string, Node> graph_vis = this->graph;
     struct Nodes_To_Contract
@@ -750,273 +753,281 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length) {
         }
     }
 
-    // remove self-loops, add statistics to the contracted node
-    for (auto&& node : graph_vis) {
-        if (graph_vis[node.first].outgoing_edges.find(node.first) != graph_vis[node.first].outgoing_edges.end() && graph_vis[node.first].outgoing_edges[node.first].size() >= 1 && graph_vis[node.first].number_of_contracted_edge >= 1) {
-            graph_vis[node.first].circles = graph_vis[node.first].outgoing_edges[node.first].size();
-            long total_len = 0;
-            std::vector<int> lens;
-            for (auto&& e : graph_vis[node.first].outgoing_edges[node.first]) {
-                total_len += e.length;
-                lens.push_back(e.length);
-            }
+    if (simplify) {
+        // remove self-loops, add statistics to the contracted node
+        for (auto&& node : graph_vis) {
+            if (graph_vis[node.first].outgoing_edges.find(node.first) != graph_vis[node.first].outgoing_edges.end() && graph_vis[node.first].outgoing_edges[node.first].size() >= 1 && graph_vis[node.first].number_of_contracted_edge >= 1) {
+                graph_vis[node.first].circles = graph_vis[node.first].outgoing_edges[node.first].size();
+                long total_len = 0;
+                std::vector<int> lens;
+                for (auto&& e : graph_vis[node.first].outgoing_edges[node.first]) {
+                    total_len += e.length;
+                    lens.push_back(e.length);
+                }
 
-            for (auto&& e : graph_vis[node.first].outgoing_edges[node.first]) {
-                graph_vis[node.first].sequence += ("NNNNNNNNNNNNNNNNNNNN" + e.sequence);
-                total_len += e.length;
-                lens.push_back(e.length);
-            }
-            graph_vis[node.first].sequence += "NNNNNNNNNNNNNNNNNNNN";
+                for (auto&& e : graph_vis[node.first].outgoing_edges[node.first]) {
+                    graph_vis[node.first].sequence += ("NNNNNNNNNNNNNNNNNNNN" + e.sequence);
+                    total_len += e.length;
+                    lens.push_back(e.length);
+                }
+                graph_vis[node.first].sequence += "NNNNNNNNNNNNNNNNNNNN";
 
-            std::sort(lens.begin(), lens.end());
-            size_t size = lens.size();
-            if (size % 2 == 0) {
-                graph_vis[node.first].median_length = (lens[size / 2 - 1] + lens[size / 2]) / 2.0;
+                std::sort(lens.begin(), lens.end());
+                size_t size = lens.size();
+                if (size % 2 == 0) {
+                    graph_vis[node.first].median_length = (lens[size / 2 - 1] + lens[size / 2]) / 2.0;
+                }
+                else {
+                    graph_vis[node.first].median_length = lens[size / 2];
+                }
+                graph_vis[node.first].total_length = total_len;
+                graph_vis[node.first].outgoing_edges.erase(node.first);
+                graph_vis[node.first].incoming_edges.erase(node.first);
             }
-            else {
-                graph_vis[node.first].median_length = lens[size / 2];
-            }
-            graph_vis[node.first].total_length = total_len;
-            graph_vis[node.first].outgoing_edges.erase(node.first);
-            graph_vis[node.first].incoming_edges.erase(node.first);
         }
-    }
 
-    // contract edges of similar length to contracted nodes
-    int contracted_edges = 1;
-    while (contracted_edges) {
-        contracted_edges = 0;
+        // contract edges of similar length to contracted nodes
+        int contracted_edges = 1;
+        while (contracted_edges) {
+            contracted_edges = 0;
 
-        std::unordered_set<std::string> nodes_to_remove;
+            std::unordered_set<std::string> nodes_to_remove;
+            for (auto&& node : graph_vis) {
+                //skip non-contracted nodes and contracted nodes with no circles
+                if (node.second.number_of_contracted_edge == 0 || node.second.median_length == 0)
+                    continue;
+
+                std::vector<std::string> n_ins;
+                for (auto&& n_in : graph_vis[node.first].incoming_edges) {
+                    bool flag = false;
+                    for (auto&& e : n_in.second) {
+                        if (e.length * 0.8 < node.second.median_length) {
+                            flag = true;
+                            break;
+                        }
+                    }
+                    if (!flag)
+                        continue;
+                    n_ins.push_back(n_in.first);
+                }
+
+
+                for (auto&& n_in : n_ins) {
+                    std::cout << "Contract edge " << n_in << " -> " << node.first << std::endl;
+                    for (auto&& e : graph_vis[n_in].outgoing_edges[node.first]) {
+                        contracted_edges += 1;
+                        graph_vis[node.first].number_of_contracted_edge += 1;
+                        graph_vis[node.first].circles += 1;
+                        graph_vis[node.first].length_of_contracted_edge += e.length;
+                        if (graph_vis[node.first].sequence.empty())
+                            graph_vis[node.first].sequence = "NNNNNNNNNNNNNNNNNNNN";
+                        graph_vis[node.first].sequence += (e.sequence + "NNNNNNNNNNNNNNNNNNNN");
+                    }
+                    if (graph_vis[n_in].outgoing_edges.find(n_in) != graph_vis[n_in].outgoing_edges.end()) {
+                        for (auto&& e : graph_vis[n_in].outgoing_edges[n_in]) {
+                            contracted_edges += 1;
+                            graph_vis[node.first].number_of_contracted_edge += 1;
+                            graph_vis[node.first].circles += 1;
+                            graph_vis[node.first].length_of_contracted_edge += e.length;
+                            if (graph_vis[node.first].sequence.empty())
+                                graph_vis[node.first].sequence = "NNNNNNNNNNNNNNNNNNNN";
+                            graph_vis[node.first].sequence += (e.sequence + "NNNNNNNNNNNNNNNNNNNN");
+                        }
+                        graph_vis[n_in].outgoing_edges.erase(n_in);
+                        graph_vis[n_in].incoming_edges.erase(n_in);
+                    }
+
+                    if (n_in != node.first) {
+
+                        graph_vis[n_in].outgoing_edges.erase(node.first);
+                        graph_vis[node.first].incoming_edges.erase(n_in);
+
+                        graph_vis[node.first].mergeMaps(graph_vis[node.first].incoming_edges, graph_vis[n_in].incoming_edges);
+                        graph_vis[node.first].mergeMaps(graph_vis[node.first].outgoing_edges, graph_vis[n_in].outgoing_edges);
+                        for (auto&& n : graph_vis[n_in].incoming_edges) {
+                            if (n.first == node.first || n.first == n_in) {
+                                graph_vis[n.first].outgoing_edges.erase(n_in);
+                                continue;
+                            }
+                            merge_vecs(graph_vis[n.first].outgoing_edges[node.first], graph_vis[n.first].outgoing_edges[n_in]);
+                            graph_vis[n.first].outgoing_edges.erase(n_in);
+                        }
+                        for (auto&& n : graph_vis[n_in].outgoing_edges) {
+                            if (n.first == node.first || n.first == n_in) {
+                                graph_vis[n.first].incoming_edges.erase(n_in);
+                                continue;
+                            }
+                            merge_vecs(graph_vis[n.first].incoming_edges[node.first], graph_vis[n.first].incoming_edges[n_in]);
+                            graph_vis[n.first].incoming_edges.erase(n_in);
+                        }
+
+                        nodes_to_remove.insert(n_in);
+                    }
+                }
+
+                std::vector<std::string> n_outs;
+                for (auto&& n_out : graph_vis[node.first].outgoing_edges) {
+                    bool flag = false;
+                    for (auto&& e : n_out.second) {
+                        if (e.length * 0.8 < node.second.median_length) {
+                            flag = true;
+                            break;
+                        }
+                    }
+                    if (!flag)
+                        continue;
+                    n_outs.push_back(n_out.first);
+                }
+                for (auto&& n_out : n_outs) {
+                    std::cout << "Contract edge " << node.first << " -> " << n_out << std::endl;
+                    for (auto&& e : graph_vis[n_out].incoming_edges[node.first]) {
+                        contracted_edges += 1;
+                        graph_vis[node.first].number_of_contracted_edge += 1;
+                        graph_vis[node.first].circles += 1;
+                        graph_vis[node.first].length_of_contracted_edge += e.length;
+                        if (graph_vis[node.first].sequence.empty())
+                            graph_vis[node.first].sequence = "NNNNNNNNNNNNNNNNNNNN";
+                        graph_vis[node.first].sequence += (e.sequence + "NNNNNNNNNNNNNNNNNNNN");
+                    }
+                    if (graph_vis[n_out].incoming_edges.find(n_out) != graph_vis[n_out].incoming_edges.end()) {
+                        for (auto&& e : graph_vis[n_out].incoming_edges[n_out]) {
+                            contracted_edges += 1;
+                            graph_vis[node.first].number_of_contracted_edge += 1;
+                            graph_vis[node.first].circles += 1;
+                            graph_vis[node.first].length_of_contracted_edge += e.length;
+                            if (graph_vis[node.first].sequence.empty())
+                                graph_vis[node.first].sequence = "NNNNNNNNNNNNNNNNNNNN";
+                            graph_vis[node.first].sequence += (e.sequence + "NNNNNNNNNNNNNNNNNNNN");
+                        }
+                        graph_vis[n_out].outgoing_edges.erase(n_out);
+                        graph_vis[n_out].incoming_edges.erase(n_out);
+                    }
+                    if (n_out != node.first) {
+                        graph_vis[n_out].incoming_edges.erase(node.first);
+                        graph_vis[node.first].outgoing_edges.erase(n_out);
+
+                        graph_vis[node.first].mergeMaps(graph_vis[node.first].incoming_edges, graph_vis[n_out].incoming_edges);
+                        graph_vis[node.first].mergeMaps(graph_vis[node.first].outgoing_edges, graph_vis[n_out].outgoing_edges);
+
+                        for (auto&& n : graph_vis[n_out].incoming_edges) {
+                            if (n.first == node.first || n.first == n_out) {
+                                graph_vis[n.first].outgoing_edges.erase(n_out);
+                                continue;
+                            }
+                            merge_vecs(graph_vis[n.first].outgoing_edges[node.first], graph_vis[n.first].outgoing_edges[n_out]);
+                            graph_vis[n.first].outgoing_edges.erase(n_out);
+                        }
+                        for (auto&& n : graph_vis[n_out].outgoing_edges) {
+                            if (n.first == node.first || n.first == n_out) {
+                                graph_vis[n.first].incoming_edges.erase(n_out);
+                                continue;
+                            }
+                            merge_vecs(graph_vis[n.first].incoming_edges[node.first], graph_vis[n.first].incoming_edges[n_out]);
+                            graph_vis[n.first].incoming_edges.erase(n_out);
+                        }
+
+                        nodes_to_remove.insert(n_out);
+                    }
+                }
+            }
+
+            for (auto&& n : nodes_to_remove)
+                graph_vis.erase(n);
+        }
+
+        // update sequences related to contracted node
         for (auto&& node : graph_vis) {
             //skip non-contracted nodes and contracted nodes with no circles
-            if (node.second.number_of_contracted_edge == 0 || node.second.median_length == 0)
+            if (node.second.number_of_contracted_edge == 0)
                 continue;
 
-            std::vector<std::string> n_ins;
-            for (auto&& n_in : graph_vis[node.first].incoming_edges) {
-                bool flag = false;
-                for (auto&& e : n_in.second) {
-                    if (e.length * 0.8 < node.second.median_length) {
-                        flag = true;
-                        break;
-                    }
-                }
-                if (!flag)
-                    continue;
-                n_ins.push_back(n_in.first);
-            }
+            bool flag = false;
+            if (node.second.incoming_edges.size() == 1 && node.second.outgoing_edges.size() == 1) {
+                std::string in_node, out_node;
+                for (auto&& e : node.second.incoming_edges)
+                    in_node = e.first;
+                for (auto&& e : node.second.outgoing_edges)
+                    out_node = e.first;
 
+                std::vector<std::string>& in_path = graph_vis[in_node].outgoing_edges.at(node.first).at(0).path_nodes_in_original_graph;
+                std::vector<std::string>& out_path = graph_vis[node.first].outgoing_edges.at(out_node).at(0).path_nodes_in_original_graph;
 
-            for (auto&& n_in : n_ins) {
-                std::cout << "Contract edge " << n_in << " -> " << node.first << std::endl;
-                for (auto&& e : graph_vis[n_in].outgoing_edges[node.first]) {
-                    contracted_edges += 1;
-                    graph_vis[node.first].number_of_contracted_edge += 1;
-                    graph_vis[node.first].circles += 1;
-                    graph_vis[node.first].length_of_contracted_edge += e.length;
-                    if (graph_vis[node.first].sequence.empty())
-                        graph_vis[node.first].sequence = "NNNNNNNNNNNNNNNNNNNN";
-                    graph_vis[node.first].sequence += (e.sequence + "NNNNNNNNNNNNNNNNNNNN");
-                }
-                if (graph_vis[n_in].outgoing_edges.find(n_in) != graph_vis[n_in].outgoing_edges.end()) {
-                    for (auto&& e : graph_vis[n_in].outgoing_edges[n_in]) {
-                        contracted_edges += 1;
-                        graph_vis[node.first].number_of_contracted_edge += 1;
-                        graph_vis[node.first].circles += 1;
-                        graph_vis[node.first].length_of_contracted_edge += e.length;
-                        if (graph_vis[node.first].sequence.empty())
-                            graph_vis[node.first].sequence = "NNNNNNNNNNNNNNNNNNNN";
-                        graph_vis[node.first].sequence += (e.sequence + "NNNNNNNNNNNNNNNNNNNN");
-                    }
-                    graph_vis[n_in].outgoing_edges.erase(n_in);
-                    graph_vis[n_in].incoming_edges.erase(n_in);
-                }
-
-                if (n_in != node.first) {
-
-                    graph_vis[n_in].outgoing_edges.erase(node.first);
-                    graph_vis[node.first].incoming_edges.erase(n_in);
-
-                    graph_vis[node.first].mergeMaps(graph_vis[node.first].incoming_edges, graph_vis[n_in].incoming_edges);
-                    graph_vis[node.first].mergeMaps(graph_vis[node.first].outgoing_edges, graph_vis[n_in].outgoing_edges);
-                    for (auto&& n : graph_vis[n_in].incoming_edges) {
-                        if (n.first == node.first || n.first == n_in) {
-                            graph_vis[n.first].outgoing_edges.erase(n_in);
-                            continue;
+                if (in_path.at(in_path.size() - 1) == out_path.at(0)) {
+                    graph_vis[node.first].sequence = graph.at(in_path.at(in_path.size() - 1)).sequence;
+                    flag = true;
+                    for (auto&& e : node.second.incoming_edges) {
+                        for (auto&& e_in : e.second) {
+                            assert(e_in.length == e_in.sequence.size());
+                            assert(e_in.sequence.substr(e_in.sequence.size() - graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
                         }
-                        merge_vecs(graph_vis[n.first].outgoing_edges[node.first], graph_vis[n.first].outgoing_edges[n_in]);
-                        graph_vis[n.first].outgoing_edges.erase(n_in);
-                    }
-                    for (auto&& n : graph_vis[n_in].outgoing_edges) {
-                        if (n.first == node.first || n.first == n_in) {
-                            graph_vis[n.first].incoming_edges.erase(n_in);
-                            continue;
+                        for (auto&& e_out : graph_vis[e.first].outgoing_edges[node.first]) {
+                            assert(e_out.length == e_out.sequence.size());
+                            assert(e_out.sequence.substr(e_out.sequence.size() - graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
                         }
-                        merge_vecs(graph_vis[n.first].incoming_edges[node.first], graph_vis[n.first].incoming_edges[n_in]);
-                        graph_vis[n.first].incoming_edges.erase(n_in);
                     }
-
-                    nodes_to_remove.insert(n_in);
+                    for (auto&& e : node.second.outgoing_edges) {
+                        for (auto&& e_out : e.second) {
+                            assert(e_out.length == e_out.sequence.size());
+                            assert(e_out.sequence.substr(0, graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
+                        }
+                        for (auto&& e_in : graph_vis[e.first].incoming_edges[node.first]) {
+                            assert(e_in.length == e_in.sequence.size());
+                            assert(e_in.sequence.substr(0, graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
+                        }
+                    }
+                    std::cout << "Modify contracted node sequence for " << node.first << ", new length " << graph_vis[node.first].sequence.size() << std::endl;
                 }
             }
 
-            std::vector<std::string> n_outs;
-            for (auto&& n_out : graph_vis[node.first].outgoing_edges) {
-                bool flag = false;
-                for (auto&& e : n_out.second) {
-                    if (e.length * 0.8 < node.second.median_length) {
-                        flag = true;
-                        break;
-                    }
-                }
-                if (!flag)
-                    continue;
-                n_outs.push_back(n_out.first);
+            if (node.second.sequence.empty()) {
+                node.second.sequence = "NNNNNNNNNNNNNNNNNNNN";
             }
-            for (auto&& n_out : n_outs) {
-                std::cout << "Contract edge " << node.first << " -> " << n_out << std::endl;
-                for (auto&& e : graph_vis[n_out].incoming_edges[node.first]) {
-                    contracted_edges += 1;
-                    graph_vis[node.first].number_of_contracted_edge += 1;
-                    graph_vis[node.first].circles += 1;
-                    graph_vis[node.first].length_of_contracted_edge += e.length;
-                    if (graph_vis[node.first].sequence.empty())
-                        graph_vis[node.first].sequence = "NNNNNNNNNNNNNNNNNNNN";
-                    graph_vis[node.first].sequence += (e.sequence + "NNNNNNNNNNNNNNNNNNNN");
-                }
-                if (graph_vis[n_out].incoming_edges.find(n_out) != graph_vis[n_out].incoming_edges.end()) {
-                    for (auto&& e : graph_vis[n_out].incoming_edges[n_out]) {
-                        contracted_edges += 1;
-                        graph_vis[node.first].number_of_contracted_edge += 1;
-                        graph_vis[node.first].circles += 1;
-                        graph_vis[node.first].length_of_contracted_edge += e.length;
-                        if (graph_vis[node.first].sequence.empty())
-                            graph_vis[node.first].sequence = "NNNNNNNNNNNNNNNNNNNN";
-                        graph_vis[node.first].sequence += (e.sequence + "NNNNNNNNNNNNNNNNNNNN");
-                    }
-                    graph_vis[n_out].outgoing_edges.erase(n_out);
-                    graph_vis[n_out].incoming_edges.erase(n_out);
-                }
-                if (n_out != node.first) {
-                    graph_vis[n_out].incoming_edges.erase(node.first);
-                    graph_vis[node.first].outgoing_edges.erase(n_out);
 
-                    graph_vis[node.first].mergeMaps(graph_vis[node.first].incoming_edges, graph_vis[n_out].incoming_edges);
-                    graph_vis[node.first].mergeMaps(graph_vis[node.first].outgoing_edges, graph_vis[n_out].outgoing_edges);
-
-                    for (auto&& n : graph_vis[n_out].incoming_edges) {
-                        if (n.first == node.first || n.first == n_out) {
-                            graph_vis[n.first].outgoing_edges.erase(n_out);
-                            continue;
-                        }
-                        merge_vecs(graph_vis[n.first].outgoing_edges[node.first], graph_vis[n.first].outgoing_edges[n_out]);
-                        graph_vis[n.first].outgoing_edges.erase(n_out);
-                    }
-                    for (auto&& n : graph_vis[n_out].outgoing_edges) {
-                        if (n.first == node.first || n.first == n_out) {
-                            graph_vis[n.first].incoming_edges.erase(n_out);
-                            continue;
-                        }
-                        merge_vecs(graph_vis[n.first].incoming_edges[node.first], graph_vis[n.first].incoming_edges[n_out]);
-                        graph_vis[n.first].incoming_edges.erase(n_out);
-                    }
-
-                    nodes_to_remove.insert(n_out);
-                }
-            }
-        }
-
-        for (auto&& n : nodes_to_remove)
-            graph_vis.erase(n);
-    }
-
-    // update sequences related to contracted node
-    for (auto&& node : graph_vis) {
-        //skip non-contracted nodes and contracted nodes with no circles
-        if (node.second.number_of_contracted_edge == 0)
-            continue;
-
-        bool flag = false;
-        if (node.second.incoming_edges.size() == 1 && node.second.outgoing_edges.size() == 1) {
-            std::string in_node, out_node;
-            for (auto&& e : node.second.incoming_edges)
-                in_node = e.first;
-            for (auto&& e : node.second.outgoing_edges)
-                out_node = e.first;
-
-            std::vector<std::string>& in_path = graph_vis[in_node].outgoing_edges.at(node.first).at(0).path_nodes_in_original_graph;
-            std::vector<std::string>& out_path = graph_vis[node.first].outgoing_edges.at(out_node).at(0).path_nodes_in_original_graph;
-
-            if (in_path.at(in_path.size() - 1) == out_path.at(0)) {
-                graph_vis[node.first].sequence = graph.at(in_path.at(in_path.size() - 1)).sequence;
-                flag = true;
+            // add sequences of contracted node to edges for consistency, skip continuous path of incoming and outgoing edges
+            if (!flag) {
                 for (auto&& e : node.second.incoming_edges) {
                     for (auto&& e_in : e.second) {
-                        assert(e_in.length == e_in.sequence.size());
-                        assert(e_in.sequence.substr(e_in.sequence.size() - graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
+                        e_in.sequence = e_in.sequence + node.second.sequence;
+                        e_in.length += graph_vis[node.first].sequence.size();
+                        assert(e_in.sequence.size() == e_in.length);
                     }
                     for (auto&& e_out : graph_vis[e.first].outgoing_edges[node.first]) {
-                        assert(e_out.length == e_out.sequence.size());
-                        assert(e_out.sequence.substr(e_out.sequence.size() - graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
+                        e_out.sequence = e_out.sequence + node.second.sequence;
+                        e_out.length += graph_vis[node.first].sequence.size();
+                        assert(e_out.sequence.length() == e_out.length);
                     }
                 }
                 for (auto&& e : node.second.outgoing_edges) {
                     for (auto&& e_out : e.second) {
-                        assert(e_out.length == e_out.sequence.size());
-                        assert(e_out.sequence.substr(0, graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
+                        e_out.sequence = node.second.sequence + e_out.sequence;
+                        e_out.length += graph_vis[node.first].sequence.size();
+                        assert(e_out.sequence.length() == e_out.length);
                     }
                     for (auto&& e_in : graph_vis[e.first].incoming_edges[node.first]) {
-                        assert(e_in.length == e_in.sequence.size());
-                        assert(e_in.sequence.substr(0, graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
+                        e_in.sequence = node.second.sequence + e_in.sequence;
+                        e_in.length += graph_vis[node.first].sequence.size();
+                        assert(e_in.sequence.size() == e_in.length);
                     }
                 }
-                std::cout << "Modify contracted node sequence for " << node.first << ", new length " << graph_vis[node.first].sequence.size() << std::endl;
             }
+
         }
 
-        if (node.second.sequence.empty()) {
-            node.second.sequence = "NNNNNNNNNNNNNNNNNNNN";
+        // auto graph_cp = graph;
+        this->graph = graph_vis;
+        // this->graph = graph_cp;
+        unsigned removed_bulges = 1;
+        while (removed_bulges) {
+            multi_bulge_removal(removed_bulges);
         }
-
-        // add sequences of contracted node to edges for consistency, skip continuous path of incoming and outgoing edges
-        if (!flag) {
-            for (auto&& e : node.second.incoming_edges) {
-                for (auto&& e_in : e.second) {
-                    e_in.sequence = e_in.sequence + node.second.sequence;
-                    e_in.length += graph_vis[node.first].sequence.size();
-                    assert(e_in.sequence.size() == e_in.length);
-                }
-                for (auto&& e_out : graph_vis[e.first].outgoing_edges[node.first]) {
-                    e_out.sequence = e_out.sequence + node.second.sequence;
-                    e_out.length += graph_vis[node.first].sequence.size();
-                    assert(e_out.sequence.length() == e_out.length);
-                }
-            }
-            for (auto&& e : node.second.outgoing_edges) {
-                for (auto&& e_out : e.second) {
-                    e_out.sequence = node.second.sequence + e_out.sequence;
-                    e_out.length += graph_vis[node.first].sequence.size();
-                    assert(e_out.sequence.length() == e_out.length);
-                }
-                for (auto&& e_in : graph_vis[e.first].incoming_edges[node.first]) {
-                    e_in.sequence = node.second.sequence + e_in.sequence;
-                    e_in.length += graph_vis[node.first].sequence.size();
-                    assert(e_in.sequence.size() == e_in.length);
-                }
-            }
-        }
-
+        this->write_graph(prefix, 1000000, true);
     }
-
-    // auto graph_cp = graph;
-    this->graph = graph_vis;
-    // this->graph = graph_cp;
-    unsigned removed_bulges = 1;
-    while (removed_bulges) {
-        multi_bulge_removal(removed_bulges);
+    else {
+        auto graph_cp = graph;
+        this->graph = graph_vis;
+        this->write_graph(prefix, 1000000, true);
+        this->graph = graph_cp;
     }
-    this->write_graph(prefix, 1000000, true);
     return;
 }
 

@@ -41,10 +41,10 @@ int main(int argc, char* argv[]) {
     std::cout << "----------Stage 0: clean graph----------" << std::endl;
     graph.remove_low_coverage_edges(removed_edges);
     std::cout << "Removed " << removed_edges << " low-coverage edges" << std::endl;
-    // graph.write_graph(output + "/graph.cleaned");
-    // graph.get_annotation(output + "/graph.cleaned");
+    graph.write_graph(output + "/graph.cleaned");
+    graph.get_annotation(output + "/graph.cleaned");
     // graph.write_graph_contracted(output + "/graph.cleaned.contracted.10k");
-    // graph.write_graph_contracted(output + "/graph.cleaned.contracted.20k", 20000);
+    graph.write_graph_contracted(output + "/graph.cleaned.contracted.20k", 20000);
 
     std::cout << "----------Stage 1: simple bulge collapsing----------" << std::endl;
     removed_bulges = 1;
@@ -55,9 +55,9 @@ int main(int argc, char* argv[]) {
     }
     std::cout << "Removed " << total_removed << " simple bulges" << std::endl;
     graph.write_graph(output + "/graph.bulge_removel");
-    // graph.get_annotation(output + "/graph.bulge_removel");
+    graph.get_annotation(output + "/graph.bulge_removel");
     // graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.10k");
-    // graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.20k", 20000);
+    graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.20k", 20000);
 
     std::cout << "----------Stage 2: whirl removal----------" << std::endl;
     removed_whirls = 1;
@@ -97,25 +97,11 @@ int main(int argc, char* argv[]) {
     }
     std::cout << "Removed complex bulges: " << total_removed << std::endl;
     graph.write_graph(output + "/graph.complex_bulge");
-    // graph.get_annotation(output + "/graph.complex_bulge");
+    graph.get_annotation(output + "/graph.complex_bulge");
     // graph.write_graph_contracted(output + "/graph.complex_bulge.contracted.10k");
-    // graph.write_graph_contracted(output + "/graph.complex_bulge.contracted.20k", 20000);
+    graph.write_graph_contracted(output + "/graph.complex_bulge.contracted.20k", 20000);
 
-    std::cout << "----------Stage 4: merge tips into edges----------" << std::endl;
-    removed_tips = 1;
-    total_removed = 0;
-    while (removed_tips) {
-        graph.merge_tips_into_edges(removed_tips);
-        total_removed += removed_tips;
-    }
-
-    std::cout << "Removed tips: " << total_removed << std::endl;
-    graph.write_graph(output + "/graph.remove_tips");
-    // graph.get_annotation(output + "/graph.remove_tips");
-    // graph.write_graph_contracted(output + "/graph.remove_tips.contracted.10k");
-    // graph.write_graph_contracted(output + "/graph.remove_tips.contracted.20k", 20000);
-
-    std::cout << "----------Stage 5: decoupling strands----------" << std::endl;
+    std::cout << "----------Stage 4: decoupling strands----------" << std::endl;
     decoupled = 1;
     total_removed = 0;
     while (decoupled) {
@@ -127,11 +113,27 @@ int main(int argc, char* argv[]) {
     graph.write_graph(output + "/graph.decoupling");
     // graph.get_annotation(output + "/graph.decoupling");
 
+    std::cout << "----------Stage 5: merge tips into edges----------" << std::endl;
+    removed_tips = 1;
+    total_removed = 0;
+    while (removed_tips) {
+        graph.resolve_edges_in_reverse_complement(decoupled);
+        graph.merge_tips_into_edges(removed_tips);
+        total_removed += removed_tips;
+    }
+
+    std::cout << "Removed tips: " << total_removed << std::endl;
+    graph.write_graph(output + "/graph.remove_tips");
+    // graph.get_annotation(output + "/graph.remove_tips");
+    // graph.write_graph_contracted(output + "/graph.remove_tips.contracted.10k");
+    // graph.write_graph_contracted(output + "/graph.remove_tips.contracted.20k", 20000);
+
     std::cout << "----------Stage 6: for complex components----------" << std::endl;
 
     removed_tips = 1;
     total_removed = 0;
     while (removed_tips) {
+        graph.resolve_edges_in_reverse_complement(decoupled);
         graph.merge_tips_into_edges(removed_tips, 0.2);
         total_removed += removed_tips;
         removed_paths = 1;
@@ -161,11 +163,17 @@ int main(int argc, char* argv[]) {
 
     graph.write_graph_contracted(output + "/graph.complex_comp.contracted.20k", 20000);
 
+    graph.write_graph_contracted(output + "/graph.complex_comp_simplify.contracted.20k", 20000, true);
+
     removed_tips = 1;
     while (removed_tips) {
+        graph.resolve_edges_in_reverse_complement(decoupled);
         graph.merge_tips_into_edges(removed_tips, 0.2);
         graph.merge_tips(removed_tips);
     }
+
+    //ensure the output does not contain simple bulges
+    graph.multi_bulge_removal(removed_bulges, false);
     graph.write_graph(output + "/graph.final");
     graph.get_annotation(output + "/graph.final");
 

@@ -96,7 +96,7 @@ public:
     void read_graph(std::string& output, std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta, const std::string& graph_dbg, const std::string& paths_dbg);
     void read_from_dot(const std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta, const std::string& graph_dbg, const std::string& paths_dbg);
     void write_graph(const std::string& prefix, int thick = 1000000, bool contracted = false, bool colored = false, std::unordered_set<std::string> nodes = std::unordered_set<std::string>());
-    void write_graph_contracted(const std::string& prefix, int min_length = 10000);
+    void write_graph_contracted(const std::string& prefix, int min_length = 10000, bool simplify = false);
     void write_graph_colored(const std::string& prefix, const std::string& genomes);
     void write_graph_colored_from_bam(const std::string& prefix, const std::string& bam_processed);
     void decoupling(std::string multidbg, std::string output);
