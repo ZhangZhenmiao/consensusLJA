@@ -170,6 +170,9 @@ int main(int argc, char* argv[]) {
 
     removed_tips = 1;
     while (removed_tips) {
+        removed_paths = 1;
+        while (removed_paths)
+            graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.9, true, 2, true, true);
         graph.resolve_edges_in_reverse_complement(decoupled);
         graph.merge_tips_into_edges(removed_tips, 0.2);
         graph.merge_tips(removed_tips);

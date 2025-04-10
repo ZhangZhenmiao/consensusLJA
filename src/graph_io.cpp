@@ -155,25 +155,47 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         else {
             // std::cout << edge_name << ": Start";
             std::vector<double> multis;
+            std::vector<double> multis_long;
             while (line.find(' ') != std::string::npos) {
                 std::string edge_id = line.substr(0, line.find(' '));
                 assert(edgedbg2multi.find(edge_id) != edgedbg2multi.end());
                 multis.push_back(edgedbg2multi[edge_id]);
+                if (edgedbg2len[edge_id] >= 100000)
+                    multis_long.push_back(edgedbg2multi[edge_id]);
                 line = line.substr(line.find(' ') + 1);
                 // std::cout << " -> " << edge_id << " " << edgedbg2len[edge_id] << " (" << edgedbg2multi[edge_id] << ")";
             }
-            double min_multi = 0;
-            std::sort(multis.begin(), multis.end());
-            for (auto&& m : multis) {
-                if (m >= 10) {
-                    min_multi = m;
-                    break;
+
+            if (multis_long.size()) {
+                double min_multi = 0;
+                std::sort(multis_long.begin(), multis_long.end());
+                for (auto&& m : multis_long) {
+                    if (m >= 10) {
+                        min_multi = m;
+                        break;
+                    }
                 }
+                if (min_multi == 0)
+                    min_multi = multis_long.at(multis_long.size() - 1);
+
+                // std::cout << "; Min multi for " << edge_name << " is " << min_multi << std::endl;
+                edge2multi[edge_name] = min_multi;
             }
-            if (min_multi == 0)
-                min_multi = multis.at(multis.size() - 1);
-            // std::cout << "; Min multi for " << edge_name << " is " << min_multi << std::endl;
-            edge2multi[edge_name] = min_multi;
+            else {
+                double min_multi = 0;
+                std::sort(multis.begin(), multis.end());
+                for (auto&& m : multis) {
+                    if (m >= 10) {
+                        min_multi = m;
+                        break;
+                    }
+                }
+                if (min_multi == 0)
+                    min_multi = multis.at(multis.size() - 1);
+
+                // std::cout << "; Min multi for " << edge_name << " is " << min_multi << std::endl;
+                edge2multi[edge_name] = min_multi;
+            }
         }
     }
     paths_dbg_file.close();
@@ -1033,6 +1055,7 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
         // this->graph = graph_cp;
         unsigned removed_bulges = 1;
         while (removed_bulges) {
+            merge_non_branching_paths(true);
             multi_bulge_removal(removed_bulges);
         }
         this->write_graph(prefix, 1000000, true);
