@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/liblja_sequence.a CMakeFiles/lja_sequence.dir/contigs.cpp.o CMakeFiles/lja_sequence.dir/sequence.cpp.o CMakeFiles/lja_sequence.dir/seqio.cpp.o
+/usr/bin/ranlib ../../../lib/liblja_sequence.a

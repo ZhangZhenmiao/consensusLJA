@@ -1,0 +1,1 @@
+/usr/bin/c++  -std=c++17 -lstdc++fs -ggdb3 -fopenmp -O3 -rdynamic CMakeFiles/dot_bulge_stats.dir/dot_bulge_stats.cpp.o -o ../../../bin/dot_bulge_stats  ../../../lib/liblja_common.a -lm -fopenmp -lstdc++fs 

@@ -1,0 +1,1 @@
+/usr/bin/c++  -std=c++17 -lstdc++fs -ggdb3 -fopenmp -O3 -rdynamic CMakeFiles/analyse_alignment.dir/analyse_alignment.cpp.o -o ../../../bin/analyse_alignment  ../../../lib/liblja_common.a ../../../lib/liblja_sequence.a ../../../lib/liblja_alignment.a -lz ../../../lib/liblja_common.a -fopenmp -lstdc++fs -lm ../../../lib/libksw2.a 

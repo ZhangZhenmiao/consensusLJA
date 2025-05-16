@@ -83,66 +83,122 @@ CMakeFiles/cLJA.dir/src/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/main.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/main.cpp -o CMakeFiles/cLJA.dir/src/main.cpp.s
 
-CMakeFiles/cLJA.dir/src/dot_graph.cpp.o: CMakeFiles/cLJA.dir/flags.make
-CMakeFiles/cLJA.dir/src/dot_graph.cpp.o: src/dot_graph.cpp
-CMakeFiles/cLJA.dir/src/dot_graph.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/cLJA.dir/src/dot_graph.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/src/dot_graph.cpp.o -MF CMakeFiles/cLJA.dir/src/dot_graph.cpp.o.d -o CMakeFiles/cLJA.dir/src/dot_graph.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dot_graph.cpp
+CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.o: CMakeFiles/cLJA.dir/flags.make
+CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.o: src/dbg/dot_graph.cpp
+CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.o -MF CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.o.d -o CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/dot_graph.cpp
 
-CMakeFiles/cLJA.dir/src/dot_graph.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cLJA.dir/src/dot_graph.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dot_graph.cpp > CMakeFiles/cLJA.dir/src/dot_graph.cpp.i
+CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/dot_graph.cpp > CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.i
 
-CMakeFiles/cLJA.dir/src/dot_graph.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/dot_graph.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dot_graph.cpp -o CMakeFiles/cLJA.dir/src/dot_graph.cpp.s
+CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/dot_graph.cpp -o CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.s
 
-CMakeFiles/cLJA.dir/src/graph_io.cpp.o: CMakeFiles/cLJA.dir/flags.make
-CMakeFiles/cLJA.dir/src/graph_io.cpp.o: src/graph_io.cpp
-CMakeFiles/cLJA.dir/src/graph_io.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/cLJA.dir/src/graph_io.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/src/graph_io.cpp.o -MF CMakeFiles/cLJA.dir/src/graph_io.cpp.o.d -o CMakeFiles/cLJA.dir/src/graph_io.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/src/graph_io.cpp
+CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.o: CMakeFiles/cLJA.dir/flags.make
+CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.o: src/dbg/graph_simplification.cpp
+CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.o -MF CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.o.d -o CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/graph_simplification.cpp
 
-CMakeFiles/cLJA.dir/src/graph_io.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cLJA.dir/src/graph_io.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Poppy/zmzhang/Consensus_Assembly/cLJA/src/graph_io.cpp > CMakeFiles/cLJA.dir/src/graph_io.cpp.i
+CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/graph_simplification.cpp > CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.i
 
-CMakeFiles/cLJA.dir/src/graph_io.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/graph_io.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/graph_io.cpp -o CMakeFiles/cLJA.dir/src/graph_io.cpp.s
+CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/graph_simplification.cpp -o CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.s
 
-CMakeFiles/cLJA.dir/src/graph_simplification.cpp.o: CMakeFiles/cLJA.dir/flags.make
-CMakeFiles/cLJA.dir/src/graph_simplification.cpp.o: src/graph_simplification.cpp
-CMakeFiles/cLJA.dir/src/graph_simplification.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/cLJA.dir/src/graph_simplification.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/src/graph_simplification.cpp.o -MF CMakeFiles/cLJA.dir/src/graph_simplification.cpp.o.d -o CMakeFiles/cLJA.dir/src/graph_simplification.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/src/graph_simplification.cpp
+CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.o: CMakeFiles/cLJA.dir/flags.make
+CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.o: src/dbg/read_aln.cpp
+CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.o -MF CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.o.d -o CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/read_aln.cpp
 
-CMakeFiles/cLJA.dir/src/graph_simplification.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cLJA.dir/src/graph_simplification.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Poppy/zmzhang/Consensus_Assembly/cLJA/src/graph_simplification.cpp > CMakeFiles/cLJA.dir/src/graph_simplification.cpp.i
+CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/read_aln.cpp > CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.i
 
-CMakeFiles/cLJA.dir/src/graph_simplification.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/graph_simplification.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/graph_simplification.cpp -o CMakeFiles/cLJA.dir/src/graph_simplification.cpp.s
+CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/read_aln.cpp -o CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.s
 
-CMakeFiles/cLJA.dir/src/utility.cpp.o: CMakeFiles/cLJA.dir/flags.make
-CMakeFiles/cLJA.dir/src/utility.cpp.o: src/utility.cpp
-CMakeFiles/cLJA.dir/src/utility.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/cLJA.dir/src/utility.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/src/utility.cpp.o -MF CMakeFiles/cLJA.dir/src/utility.cpp.o.d -o CMakeFiles/cLJA.dir/src/utility.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/src/utility.cpp
+CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.o: CMakeFiles/cLJA.dir/flags.make
+CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.o: src/dbg/run_dbg.cpp
+CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.o -MF CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.o.d -o CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/run_dbg.cpp
 
-CMakeFiles/cLJA.dir/src/utility.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cLJA.dir/src/utility.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Poppy/zmzhang/Consensus_Assembly/cLJA/src/utility.cpp > CMakeFiles/cLJA.dir/src/utility.cpp.i
+CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/run_dbg.cpp > CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.i
 
-CMakeFiles/cLJA.dir/src/utility.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/utility.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/utility.cpp -o CMakeFiles/cLJA.dir/src/utility.cpp.s
+CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/run_dbg.cpp -o CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.s
+
+CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.o: CMakeFiles/cLJA.dir/flags.make
+CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.o: src/multidbg/dot_graph.cpp
+CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.o -MF CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.o.d -o CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/dot_graph.cpp
+
+CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/dot_graph.cpp > CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.i
+
+CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/dot_graph.cpp -o CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.s
+
+CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.o: CMakeFiles/cLJA.dir/flags.make
+CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.o: src/multidbg/graph_io.cpp
+CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.o -MF CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.o.d -o CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/graph_io.cpp
+
+CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/graph_io.cpp > CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.i
+
+CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/graph_io.cpp -o CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.s
+
+CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.o: CMakeFiles/cLJA.dir/flags.make
+CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.o: src/multidbg/graph_simplification.cpp
+CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.o -MF CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.o.d -o CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/graph_simplification.cpp
+
+CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/graph_simplification.cpp > CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.i
+
+CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/graph_simplification.cpp -o CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.s
+
+CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.o: CMakeFiles/cLJA.dir/flags.make
+CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.o: src/multidbg/run_multidbg.cpp
+CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.o -MF CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.o.d -o CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/run_multidbg.cpp
+
+CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/run_multidbg.cpp > CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.i
+
+CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/run_multidbg.cpp -o CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.s
 
 CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.o: CMakeFiles/cLJA.dir/flags.make
 CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.o: lib/edlib/src/edlib.cpp
 CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.o: CMakeFiles/cLJA.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.o -MF CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.o.d -o CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.o -c /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/edlib/src/edlib.cpp
 
 CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.i: cmake_force
@@ -156,26 +212,34 @@ CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.s: cmake_force
 # Object files for target cLJA
 cLJA_OBJECTS = \
 "CMakeFiles/cLJA.dir/src/main.cpp.o" \
-"CMakeFiles/cLJA.dir/src/dot_graph.cpp.o" \
-"CMakeFiles/cLJA.dir/src/graph_io.cpp.o" \
-"CMakeFiles/cLJA.dir/src/graph_simplification.cpp.o" \
-"CMakeFiles/cLJA.dir/src/utility.cpp.o" \
+"CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.o" \
+"CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.o" \
+"CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.o" \
+"CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.o" \
+"CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.o" \
+"CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.o" \
+"CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.o" \
+"CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.o" \
 "CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.o"
 
 # External object files for target cLJA
 cLJA_EXTERNAL_OBJECTS =
 
 bin/cLJA: CMakeFiles/cLJA.dir/src/main.cpp.o
-bin/cLJA: CMakeFiles/cLJA.dir/src/dot_graph.cpp.o
-bin/cLJA: CMakeFiles/cLJA.dir/src/graph_io.cpp.o
-bin/cLJA: CMakeFiles/cLJA.dir/src/graph_simplification.cpp.o
-bin/cLJA: CMakeFiles/cLJA.dir/src/utility.cpp.o
+bin/cLJA: CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.o
+bin/cLJA: CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.o
+bin/cLJA: CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.o
+bin/cLJA: CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.o
+bin/cLJA: CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.o
+bin/cLJA: CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.o
+bin/cLJA: CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.o
+bin/cLJA: CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.o
 bin/cLJA: CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.o
 bin/cLJA: CMakeFiles/cLJA.dir/build.make
 bin/cLJA: /usr/lib/gcc/x86_64-linux-gnu/11/libgomp.so
 bin/cLJA: /usr/lib/x86_64-linux-gnu/libpthread.a
 bin/cLJA: CMakeFiles/cLJA.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX executable bin/cLJA"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Linking CXX executable bin/cLJA"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/cLJA.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

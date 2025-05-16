@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/cmdline -I/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/edlib/include
+CXX_INCLUDES = -I/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/cmdline -I/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/edlib/include -I/Poppy/zmzhang/Consensus_Assembly/cLJA/src
 
 CXX_FLAGS = -g -g -fopenmp -std=c++20
 

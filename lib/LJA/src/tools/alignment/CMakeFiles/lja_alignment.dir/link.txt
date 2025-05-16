@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/liblja_alignment.a CMakeFiles/lja_alignment.dir/ksw_aligner.cpp.o CMakeFiles/lja_alignment.dir/alignment_form.cpp.o
+/usr/bin/ranlib ../../../lib/liblja_alignment.a

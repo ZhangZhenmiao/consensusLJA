@@ -153,77 +153,101 @@ lib/edlib/src/edlib.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/lib/edlib/src/edlib.cpp.s
 .PHONY : lib/edlib/src/edlib.cpp.s
 
-src/dot_graph.o: src/dot_graph.cpp.o
-.PHONY : src/dot_graph.o
+src/dbg/dot_graph.o: src/dbg/dot_graph.cpp.o
+.PHONY : src/dbg/dot_graph.o
 
 # target to build an object file
-src/dot_graph.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dot_graph.cpp.o
-.PHONY : src/dot_graph.cpp.o
+src/dbg/dot_graph.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.o
+.PHONY : src/dbg/dot_graph.cpp.o
 
-src/dot_graph.i: src/dot_graph.cpp.i
-.PHONY : src/dot_graph.i
+src/dbg/dot_graph.i: src/dbg/dot_graph.cpp.i
+.PHONY : src/dbg/dot_graph.i
 
 # target to preprocess a source file
-src/dot_graph.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dot_graph.cpp.i
-.PHONY : src/dot_graph.cpp.i
+src/dbg/dot_graph.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.i
+.PHONY : src/dbg/dot_graph.cpp.i
 
-src/dot_graph.s: src/dot_graph.cpp.s
-.PHONY : src/dot_graph.s
+src/dbg/dot_graph.s: src/dbg/dot_graph.cpp.s
+.PHONY : src/dbg/dot_graph.s
 
 # target to generate assembly for a file
-src/dot_graph.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dot_graph.cpp.s
-.PHONY : src/dot_graph.cpp.s
+src/dbg/dot_graph.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dbg/dot_graph.cpp.s
+.PHONY : src/dbg/dot_graph.cpp.s
 
-src/graph_io.o: src/graph_io.cpp.o
-.PHONY : src/graph_io.o
+src/dbg/graph_simplification.o: src/dbg/graph_simplification.cpp.o
+.PHONY : src/dbg/graph_simplification.o
 
 # target to build an object file
-src/graph_io.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/graph_io.cpp.o
-.PHONY : src/graph_io.cpp.o
+src/dbg/graph_simplification.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.o
+.PHONY : src/dbg/graph_simplification.cpp.o
 
-src/graph_io.i: src/graph_io.cpp.i
-.PHONY : src/graph_io.i
+src/dbg/graph_simplification.i: src/dbg/graph_simplification.cpp.i
+.PHONY : src/dbg/graph_simplification.i
 
 # target to preprocess a source file
-src/graph_io.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/graph_io.cpp.i
-.PHONY : src/graph_io.cpp.i
+src/dbg/graph_simplification.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.i
+.PHONY : src/dbg/graph_simplification.cpp.i
 
-src/graph_io.s: src/graph_io.cpp.s
-.PHONY : src/graph_io.s
+src/dbg/graph_simplification.s: src/dbg/graph_simplification.cpp.s
+.PHONY : src/dbg/graph_simplification.s
 
 # target to generate assembly for a file
-src/graph_io.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/graph_io.cpp.s
-.PHONY : src/graph_io.cpp.s
+src/dbg/graph_simplification.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dbg/graph_simplification.cpp.s
+.PHONY : src/dbg/graph_simplification.cpp.s
 
-src/graph_simplification.o: src/graph_simplification.cpp.o
-.PHONY : src/graph_simplification.o
+src/dbg/read_aln.o: src/dbg/read_aln.cpp.o
+.PHONY : src/dbg/read_aln.o
 
 # target to build an object file
-src/graph_simplification.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/graph_simplification.cpp.o
-.PHONY : src/graph_simplification.cpp.o
+src/dbg/read_aln.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.o
+.PHONY : src/dbg/read_aln.cpp.o
 
-src/graph_simplification.i: src/graph_simplification.cpp.i
-.PHONY : src/graph_simplification.i
+src/dbg/read_aln.i: src/dbg/read_aln.cpp.i
+.PHONY : src/dbg/read_aln.i
 
 # target to preprocess a source file
-src/graph_simplification.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/graph_simplification.cpp.i
-.PHONY : src/graph_simplification.cpp.i
+src/dbg/read_aln.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.i
+.PHONY : src/dbg/read_aln.cpp.i
 
-src/graph_simplification.s: src/graph_simplification.cpp.s
-.PHONY : src/graph_simplification.s
+src/dbg/read_aln.s: src/dbg/read_aln.cpp.s
+.PHONY : src/dbg/read_aln.s
 
 # target to generate assembly for a file
-src/graph_simplification.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/graph_simplification.cpp.s
-.PHONY : src/graph_simplification.cpp.s
+src/dbg/read_aln.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dbg/read_aln.cpp.s
+.PHONY : src/dbg/read_aln.cpp.s
+
+src/dbg/run_dbg.o: src/dbg/run_dbg.cpp.o
+.PHONY : src/dbg/run_dbg.o
+
+# target to build an object file
+src/dbg/run_dbg.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.o
+.PHONY : src/dbg/run_dbg.cpp.o
+
+src/dbg/run_dbg.i: src/dbg/run_dbg.cpp.i
+.PHONY : src/dbg/run_dbg.i
+
+# target to preprocess a source file
+src/dbg/run_dbg.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.i
+.PHONY : src/dbg/run_dbg.cpp.i
+
+src/dbg/run_dbg.s: src/dbg/run_dbg.cpp.s
+.PHONY : src/dbg/run_dbg.s
+
+# target to generate assembly for a file
+src/dbg/run_dbg.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/dbg/run_dbg.cpp.s
+.PHONY : src/dbg/run_dbg.cpp.s
 
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
@@ -249,29 +273,101 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
-src/utility.o: src/utility.cpp.o
-.PHONY : src/utility.o
+src/multidbg/dot_graph.o: src/multidbg/dot_graph.cpp.o
+.PHONY : src/multidbg/dot_graph.o
 
 # target to build an object file
-src/utility.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/utility.cpp.o
-.PHONY : src/utility.cpp.o
+src/multidbg/dot_graph.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.o
+.PHONY : src/multidbg/dot_graph.cpp.o
 
-src/utility.i: src/utility.cpp.i
-.PHONY : src/utility.i
+src/multidbg/dot_graph.i: src/multidbg/dot_graph.cpp.i
+.PHONY : src/multidbg/dot_graph.i
 
 # target to preprocess a source file
-src/utility.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/utility.cpp.i
-.PHONY : src/utility.cpp.i
+src/multidbg/dot_graph.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.i
+.PHONY : src/multidbg/dot_graph.cpp.i
 
-src/utility.s: src/utility.cpp.s
-.PHONY : src/utility.s
+src/multidbg/dot_graph.s: src/multidbg/dot_graph.cpp.s
+.PHONY : src/multidbg/dot_graph.s
 
 # target to generate assembly for a file
-src/utility.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/utility.cpp.s
-.PHONY : src/utility.cpp.s
+src/multidbg/dot_graph.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/multidbg/dot_graph.cpp.s
+.PHONY : src/multidbg/dot_graph.cpp.s
+
+src/multidbg/graph_io.o: src/multidbg/graph_io.cpp.o
+.PHONY : src/multidbg/graph_io.o
+
+# target to build an object file
+src/multidbg/graph_io.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.o
+.PHONY : src/multidbg/graph_io.cpp.o
+
+src/multidbg/graph_io.i: src/multidbg/graph_io.cpp.i
+.PHONY : src/multidbg/graph_io.i
+
+# target to preprocess a source file
+src/multidbg/graph_io.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.i
+.PHONY : src/multidbg/graph_io.cpp.i
+
+src/multidbg/graph_io.s: src/multidbg/graph_io.cpp.s
+.PHONY : src/multidbg/graph_io.s
+
+# target to generate assembly for a file
+src/multidbg/graph_io.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.s
+.PHONY : src/multidbg/graph_io.cpp.s
+
+src/multidbg/graph_simplification.o: src/multidbg/graph_simplification.cpp.o
+.PHONY : src/multidbg/graph_simplification.o
+
+# target to build an object file
+src/multidbg/graph_simplification.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.o
+.PHONY : src/multidbg/graph_simplification.cpp.o
+
+src/multidbg/graph_simplification.i: src/multidbg/graph_simplification.cpp.i
+.PHONY : src/multidbg/graph_simplification.i
+
+# target to preprocess a source file
+src/multidbg/graph_simplification.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.i
+.PHONY : src/multidbg/graph_simplification.cpp.i
+
+src/multidbg/graph_simplification.s: src/multidbg/graph_simplification.cpp.s
+.PHONY : src/multidbg/graph_simplification.s
+
+# target to generate assembly for a file
+src/multidbg/graph_simplification.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.s
+.PHONY : src/multidbg/graph_simplification.cpp.s
+
+src/multidbg/run_multidbg.o: src/multidbg/run_multidbg.cpp.o
+.PHONY : src/multidbg/run_multidbg.o
+
+# target to build an object file
+src/multidbg/run_multidbg.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.o
+.PHONY : src/multidbg/run_multidbg.cpp.o
+
+src/multidbg/run_multidbg.i: src/multidbg/run_multidbg.cpp.i
+.PHONY : src/multidbg/run_multidbg.i
+
+# target to preprocess a source file
+src/multidbg/run_multidbg.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.i
+.PHONY : src/multidbg/run_multidbg.cpp.i
+
+src/multidbg/run_multidbg.s: src/multidbg/run_multidbg.cpp.s
+.PHONY : src/multidbg/run_multidbg.s
+
+# target to generate assembly for a file
+src/multidbg/run_multidbg.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cLJA.dir/build.make CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.s
+.PHONY : src/multidbg/run_multidbg.cpp.s
 
 # Help Target
 help:
@@ -285,21 +381,33 @@ help:
 	@echo "... lib/edlib/src/edlib.o"
 	@echo "... lib/edlib/src/edlib.i"
 	@echo "... lib/edlib/src/edlib.s"
-	@echo "... src/dot_graph.o"
-	@echo "... src/dot_graph.i"
-	@echo "... src/dot_graph.s"
-	@echo "... src/graph_io.o"
-	@echo "... src/graph_io.i"
-	@echo "... src/graph_io.s"
-	@echo "... src/graph_simplification.o"
-	@echo "... src/graph_simplification.i"
-	@echo "... src/graph_simplification.s"
+	@echo "... src/dbg/dot_graph.o"
+	@echo "... src/dbg/dot_graph.i"
+	@echo "... src/dbg/dot_graph.s"
+	@echo "... src/dbg/graph_simplification.o"
+	@echo "... src/dbg/graph_simplification.i"
+	@echo "... src/dbg/graph_simplification.s"
+	@echo "... src/dbg/read_aln.o"
+	@echo "... src/dbg/read_aln.i"
+	@echo "... src/dbg/read_aln.s"
+	@echo "... src/dbg/run_dbg.o"
+	@echo "... src/dbg/run_dbg.i"
+	@echo "... src/dbg/run_dbg.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
-	@echo "... src/utility.o"
-	@echo "... src/utility.i"
-	@echo "... src/utility.s"
+	@echo "... src/multidbg/dot_graph.o"
+	@echo "... src/multidbg/dot_graph.i"
+	@echo "... src/multidbg/dot_graph.s"
+	@echo "... src/multidbg/graph_io.o"
+	@echo "... src/multidbg/graph_io.i"
+	@echo "... src/multidbg/graph_io.s"
+	@echo "... src/multidbg/graph_simplification.o"
+	@echo "... src/multidbg/graph_simplification.i"
+	@echo "... src/multidbg/graph_simplification.s"
+	@echo "... src/multidbg/run_multidbg.o"
+	@echo "... src/multidbg/run_multidbg.i"
+	@echo "... src/multidbg/run_multidbg.s"
 .PHONY : help
 
 

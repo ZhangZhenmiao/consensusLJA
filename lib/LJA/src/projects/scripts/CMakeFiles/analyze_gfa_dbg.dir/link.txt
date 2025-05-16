@@ -1,0 +1,1 @@
+/usr/bin/c++  -std=c++17 -lstdc++fs -ggdb3 -fopenmp -O3 -rdynamic CMakeFiles/analyze_gfa_dbg.dir/analyze_gfa_dbg.cpp.o -o ../../../bin/analyze_gfa_dbg  ../../../lib/liblja_common.a ../../../lib/liblja_sequence.a ../../../lib/liblja_dbg.a ../../../lib/liblja_ag.a ../../../lib/liblja_common.a ../../../lib/liblja_sequence.a -lz -lm -fopenmp -lstdc++fs 

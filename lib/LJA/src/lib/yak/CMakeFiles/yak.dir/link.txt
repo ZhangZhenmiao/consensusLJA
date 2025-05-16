@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/libyak.a CMakeFiles/yak.dir/6gjdn.c.o CMakeFiles/yak.dir/bbf.c.o CMakeFiles/yak.dir/bseq.c.o CMakeFiles/yak.dir/chkerr.c.o CMakeFiles/yak.dir/count.c.o CMakeFiles/yak.dir/htab.c.o CMakeFiles/yak.dir/inspect.c.o CMakeFiles/yak.dir/kthread.c.o CMakeFiles/yak.dir/main.c.o CMakeFiles/yak.dir/misc.c.o CMakeFiles/yak.dir/qv.c.o CMakeFiles/yak.dir/sys.c.o CMakeFiles/yak.dir/triobin.c.o CMakeFiles/yak.dir/trioeval.c.o CMakeFiles/yak.dir/yak_lib.c.o
+/usr/bin/ranlib ../../../lib/libyak.a

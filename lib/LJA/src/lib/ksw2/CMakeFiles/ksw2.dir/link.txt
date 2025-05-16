@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/libksw2.a CMakeFiles/ksw2.dir/ksw2_extz2_sse.c.o
+/usr/bin/ranlib ../../../lib/libksw2.a

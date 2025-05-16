@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/liblja_homopolish.a CMakeFiles/lja_homopolish.dir/homopolish.cpp.o CMakeFiles/lja_homopolish.dir/uncompressed_output.cpp.o CMakeFiles/lja_homopolish.dir/polishing_stage.cpp.o
+/usr/bin/ranlib ../../../lib/liblja_homopolish.a

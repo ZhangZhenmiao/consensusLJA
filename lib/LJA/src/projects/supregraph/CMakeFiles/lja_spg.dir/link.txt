@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/liblja_spg.a CMakeFiles/lja_spg.dir/supregraph.cpp.o CMakeFiles/lja_spg.dir/vertex_resolution.cpp.o CMakeFiles/lja_spg.dir/supregraph_base.cpp.o CMakeFiles/lja_spg.dir/unique_vertex_storage.cpp.o CMakeFiles/lja_spg.dir/read_storage.cpp.o CMakeFiles/lja_spg.dir/list_path.cpp.o CMakeFiles/lja_spg.dir/decision_rules.cpp.o CMakeFiles/lja_spg.dir/listeners.cpp.o
+/usr/bin/ranlib ../../../lib/liblja_spg.a

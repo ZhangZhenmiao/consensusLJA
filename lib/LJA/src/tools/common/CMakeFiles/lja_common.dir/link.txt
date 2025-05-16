@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/liblja_common.a CMakeFiles/lja_common.dir/cl_parser.cpp.o CMakeFiles/lja_common.dir/pipeline_tools.cpp.o CMakeFiles/lja_common.dir/rolling_hash.cpp.o
+/usr/bin/ranlib ../../../lib/liblja_common.a

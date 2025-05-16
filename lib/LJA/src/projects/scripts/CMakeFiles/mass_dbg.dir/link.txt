@@ -1,0 +1,1 @@
+/usr/bin/c++  -std=c++17 -lstdc++fs -ggdb3 -fopenmp -O3 -rdynamic CMakeFiles/mass_dbg.dir/mass_dbg.cpp.o -o ../../../bin/mass_dbg  ../../../lib/liblja_common.a ../../../lib/liblja_dbg.a ../../../lib/liblja_sequence.a ../../../lib/liblja_ag.a ../../../lib/liblja_common.a ../../../lib/liblja_sequence.a -lz -lm -fopenmp -lstdc++fs 

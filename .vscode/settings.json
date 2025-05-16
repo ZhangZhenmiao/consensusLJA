@@ -58,6 +58,20 @@
         "streambuf": "cpp",
         "typeinfo": "cpp",
         "filesystem": "cpp",
-        "cassert": "cpp"
+        "cassert": "cpp",
+        "csignal": "cpp",
+        "any": "cpp",
+        "bitset": "cpp",
+        "complex": "cpp",
+        "condition_variable": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp",
+        "mutex": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp",
+        "thread": "cpp",
+        "cinttypes": "cpp",
+        "typeindex": "cpp",
+        "variant": "cpp"
     }
 }

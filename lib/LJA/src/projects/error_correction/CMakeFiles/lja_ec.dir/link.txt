@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/liblja_ec.a CMakeFiles/lja_ec.dir/correction_utils.cpp.o CMakeFiles/lja_ec.dir/manyk_correction.cpp.o CMakeFiles/lja_ec.dir/multiplicity_estimation.cpp.o CMakeFiles/lja_ec.dir/tournament_correction.cpp.o CMakeFiles/lja_ec.dir/dimer_correction.cpp.o CMakeFiles/lja_ec.dir/tip_correction.cpp.o CMakeFiles/lja_ec.dir/mult_correction.cpp.o CMakeFiles/lja_ec.dir/precorrection.cpp.o CMakeFiles/lja_ec.dir/diploidy_analysis.cpp.o CMakeFiles/lja_ec.dir/reliable_fillers.cpp.o CMakeFiles/lja_ec.dir/gap_closing.cpp.o
+/usr/bin/ranlib ../../../lib/liblja_ec.a

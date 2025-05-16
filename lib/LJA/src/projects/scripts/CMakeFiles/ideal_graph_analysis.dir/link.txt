@@ -1,0 +1,1 @@
+/usr/bin/c++  -std=c++17 -lstdc++fs -ggdb3 -fopenmp -O3 -rdynamic CMakeFiles/ideal_graph_analysis.dir/ideal_graph_analysis.cpp.o -o ../../../bin/ideal_graph_analysis  ../../../lib/liblja_common.a ../../../lib/liblja_dbg.a ../../../lib/liblja_sequence.a ../../../lib/liblja_ag.a ../../../lib/liblja_common.a ../../../lib/liblja_sequence.a -lz -lm -fopenmp -lstdc++fs 

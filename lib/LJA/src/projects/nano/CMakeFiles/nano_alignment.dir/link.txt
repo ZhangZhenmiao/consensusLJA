@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/libnano_alignment.a CMakeFiles/nano_alignment.dir/ReadsAligner.cpp.o CMakeFiles/nano_alignment.dir/alignment_correction.cpp.o
+/usr/bin/ranlib ../../../lib/libnano_alignment.a
