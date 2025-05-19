@@ -9,14 +9,6 @@
 using namespace multidbg;
 
 void MDBGRunner::simplifyMDBG() {
-
-    std::string graph_dot = dot;
-    std::string graph_fasta = fasta;
-    std::string nodes_fasta = nodes;
-    std::string output = output;
-    std::string graph_dbg = graph_dbg;
-    std::string paths_dbg = paths_dbg;
-
     // define count variables
     unsigned removed_paths = 1;
     unsigned removed_whirls = 1;
@@ -34,12 +26,20 @@ void MDBGRunner::simplifyMDBG() {
     graph.read_graph(output, graph_dot, graph_fasta, nodes_fasta, graph_dbg, paths_dbg);
 
     std::cout << "----------Stage 0: clean graph----------" << std::endl;
-    graph.remove_low_coverage_edges(removed_edges);
-    std::cout << "Removed " << removed_edges << " low-coverage edges" << std::endl;
+    removed_edges = 1;
+    while (removed_edges) {
+        graph.remove_low_coverage_edges(removed_edges, graph.first_minima, true);
+        std::cout << "Removed " << removed_edges << " low-coverage tips" << std::endl;
+    }
     graph.write_graph(output + "/graph.cleaned");
     graph.get_annotation(output + "/graph.cleaned");
     // graph.write_graph_contracted(output + "/graph.cleaned.contracted.10k");
     graph.write_graph_contracted(output + "/graph.cleaned.contracted.20k", 20000);
+
+    std::string prefix = output + "/graph.cleaned";
+    execute_command(remove_chimeric + " " + reads + " " + prefix + " " + prefix + " " + compress + " " + analyze_chimeric);
+    graph.remove_chimeric_edge(prefix + ".chimeric.txt");
+    graph.write_graph(output + "/graph.chimeric_removed");
 
     std::cout << "----------Stage 1: simple bulge collapsing----------" << std::endl;
     removed_bulges = 1;
@@ -135,18 +135,11 @@ void MDBGRunner::simplifyMDBG() {
         total_removed += removed_tips;
         removed_paths = 1;
         while (removed_paths) {
-            graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 8, 0.6, true, 2);
+            graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 6, 0.6, true, 2);
             std::cout << "Removed complex bulges: " << removed_paths << std::endl;
         }
     }
     std::cout << "Removed tips: " << total_removed << std::endl;
-
-    removed_whirls = 1;
-    while (removed_whirls) {
-        graph.general_whirl_removal(removed_whirls, false, true);
-        graph.merge_non_branching_paths(true);
-        std::cout << "Removed whirls: " << removed_whirls << std::endl;
-    }
 
     decoupled = 1;
     while (decoupled) {
@@ -168,12 +161,19 @@ void MDBGRunner::simplifyMDBG() {
         removed_paths = 1;
         while (removed_paths)
             graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.9, true, 2, true, true);
+        graph.remove_low_coverage_edges(removed_edges, graph.error_peak);
         graph.resolve_edges_in_reverse_complement(decoupled);
         graph.merge_tips_into_edges(removed_tips, 0.2);
         graph.merge_tips(removed_tips);
     }
 
     //ensure the output does not contain simple bulges
+    removed_whirls = 1;
+    while (removed_whirls) {
+        graph.general_whirl_removal(removed_whirls, false, true);
+        graph.merge_non_branching_paths(true);
+        std::cout << "Removed whirls: " << removed_whirls << std::endl;
+    }
     graph.multi_bulge_removal(removed_bulges, false);
     graph.write_graph(output + "/graph.final");
     graph.get_annotation(output + "/graph.final");

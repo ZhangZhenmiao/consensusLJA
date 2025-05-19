@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <unistd.h>
 #include <cstdlib>
+#include "utils.hpp"
 
 using namespace dbg;
 
@@ -634,17 +635,6 @@ void Graph::merge_tips_into_edges(unsigned& num_tips) {
     for (auto&& n : nodes_to_remove)
         graph.erase(n);
     merge_non_branching_paths();
-}
-
-std::string getExecutablePath() {
-    char buffer[1024];
-    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
-    if (len != -1) {
-        buffer[len] = '\0';
-        std::string execPath = std::string(buffer);
-        return execPath.substr(0, execPath.find_last_of("/"));
-    }
-    return "";
 }
 
 void Graph::decoupling(std::string multidbg, std::string output) {
@@ -2266,7 +2256,7 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
     for (auto&& n2 : graph[node].outgoing_edges) {
         std::vector<int> indices;
         for (int i = 0; i < n2.second.size(); ++i) {
-            if (n2.second.at(i).multiplicity < coverage || n2.second.at(i).multiplicity == 0) {
+            if (n2.second.at(i).multiplicity <= coverage || n2.second.at(i).multiplicity == 0) {
                 indices.push_back(i);
                 removed_edges += 1;
                 for (auto&& r : n2.second.at(i).reads) {
@@ -2284,7 +2274,7 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
 
         indices.clear();
         for (int i = 0; i < graph[n2.first].incoming_edges[node].size(); ++i) {
-            if (graph[n2.first].incoming_edges[node].at(i).multiplicity < coverage || graph[n2.first].incoming_edges[node].at(i).multiplicity == 0) {
+            if (graph[n2.first].incoming_edges[node].at(i).multiplicity <= coverage || graph[n2.first].incoming_edges[node].at(i).multiplicity == 0) {
                 indices.push_back(i);
             }
         }
@@ -2297,7 +2287,7 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
     for (auto&& n2 : graph[node].incoming_edges) {
         std::vector<int> indices;
         for (int i = 0; i < n2.second.size(); ++i) {
-            if (n2.second.at(i).multiplicity < coverage || n2.second.at(i).multiplicity == 0) {
+            if (n2.second.at(i).multiplicity <= coverage || n2.second.at(i).multiplicity == 0) {
                 indices.push_back(i);
             }
         }
@@ -2307,7 +2297,7 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
 
         indices.clear();
         for (int i = 0; i < graph[n2.first].outgoing_edges[node].size(); ++i) {
-            if (graph[n2.first].outgoing_edges[node].at(i).multiplicity < coverage || graph[n2.first].outgoing_edges[node].at(i).multiplicity == 0) {
+            if (graph[n2.first].outgoing_edges[node].at(i).multiplicity <= coverage || graph[n2.first].outgoing_edges[node].at(i).multiplicity == 0) {
                 indices.push_back(i);
                 removed_edges += 1;
                 for (auto&& r : graph[n2.first].outgoing_edges[node].at(i).reads) {
@@ -2336,6 +2326,8 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
 }
 
 void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, bool tips) {
+    if (coverage < 0)
+        coverage = 0;
     removed_edges = 0;
     std::vector<std::string> nodes_to_remove;
     std::unordered_set<std::string> scanned_nodes;

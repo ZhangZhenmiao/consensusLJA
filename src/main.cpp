@@ -5,13 +5,13 @@
 
 int main(int argc, char* argv[]) {
     cmdline::parser argParser;
-    argParser.add<std::string>("dot", 'd', "graph.dot file under LJA output", true);
-    argParser.add<std::string>("fasta", 'f', "the graph.fasta file under LJA output", true);
-    argParser.add<std::string>("aln", 'a', "the graph.aln file under LJA output", true);
-    argParser.add<std::string>("output", 'o', "the output directory (should be new)", true);
+    argParser.add<std::string>("reads", 'r', "path to reads", true);
+    argParser.add<std::string>("output", 'o', "the output directory", true);
+    argParser.add<int>("threads", 't', "number of threads", false, 50);
 
     argParser.parse_check(argc, argv);
 
-    DBGRunner(argParser.get<std::string>("dot"), argParser.get<std::string>("fasta"), argParser.get<std::string>("aln"), argParser.get<std::string>("output"));
+    DBGRunner dbgrunner = DBGRunner(argParser.get<std::string>("reads"), argParser.get<std::string>("output"), argParser.get<int>("threads"));
+    MDBGRunner(argParser.get<std::string>("output"), argParser.get<std::string>("reads"), argParser.get<int>("threads"));
     return 0;
 }

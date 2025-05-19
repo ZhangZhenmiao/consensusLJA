@@ -29,6 +29,7 @@ file(GLOB MULTIDBG_SOURCES src/multidbg/*.cpp)
 # Add the executable
 add_executable(cLJA
     src/main.cpp
+    src/utils.cpp
     ${DBG_SOURCES}
     ${MULTIDBG_SOURCES}
     lib/edlib/src/edlib.cpp

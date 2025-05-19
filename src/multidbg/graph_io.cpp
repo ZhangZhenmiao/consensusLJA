@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+#include <filesystem>
+#include <map>
+namespace fs = std::filesystem;
 
 using namespace multidbg;
 
@@ -30,19 +33,70 @@ void Graph::merge_vecs(std::vector<T>& e1, std::vector<T>& e2) {
 }
 
 void Graph::read_graph(std::string& output, std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta, const std::string& graph_dbg, const std::string& paths_dbg) {
-    if (mkdir(output.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
-        if (errno == EEXIST) {
-            std::cout << "Output directory already exists." << std::endl;
-            exit(0);
+    fs::create_directory(output);
+    if (graph.empty())
+        read_from_dot(graph_dot, graph_fasta, nodes_fasta, graph_dbg, paths_dbg);
+}
+
+// Create histogram from edge multiplicities (bin size = 1)
+std::map<int, int> Graph::create_histogram(const std::vector<double>& edges) {
+    std::map<int, int> hist;
+    for (double val : edges) {
+        int bin = static_cast<int>(std::round(val));
+        hist[bin]++;
+    }
+    return hist;
+}
+
+// Find peaks and valleys in histogram
+void Graph::analyze_histogram(const std::map<int, int>& hist) {
+    if (hist.size() < 3) {
+        std::cerr << "Not enough data points for analysis histogram" << std::endl;
+        return;
+    }
+
+    std::vector<std::pair<int, int>> peaks;
+    std::vector<std::pair<int, int>> valleys;
+    auto it = hist.begin();
+
+    // Skip first and last bins for neighbor comparisons
+    ++it;
+    auto end = hist.end();
+    --end;
+
+    for (; it != end; ++it) {
+        auto prev = std::prev(it);
+        auto next = std::next(it);
+
+        // Peak detection (higher than both neighbors)
+        if (it->second > prev->second && it->second > next->second) {
+            peaks.emplace_back(it->first, it->second);
         }
-        else {
-            std::cout << "Create output directory faliled." << std::endl;
-            exit(0);
+        // Valley detection (lower than both neighbors)
+        else if (it->second < prev->second && it->second < next->second) {
+            valleys.emplace_back(it->first, it->second);
         }
     }
 
-    if (graph.empty())
-        read_from_dot(graph_dot, graph_fasta, nodes_fasta, graph_dbg, paths_dbg);
+    // Output results
+    if (!peaks.empty()) {
+        std::cout << "First peak at multiplicity: " << peaks[0].first
+            << " (count: " << peaks[0].second << ")\n";
+
+        error_peak = peaks[0].first;
+
+        std::cout << "Subsequent local minima: ";
+        for (const auto& [valley, count] : valleys) {
+            if (valley > peaks[0].first) {
+                std::cout << valley << " (count: " << count << ")\n";
+                first_minima = valley;
+                break;
+            }
+        }
+    }
+    else {
+        std::cout << "No peaks found in histogram" << std::endl;
+    }
 }
 
 // Read graph from DOT file
@@ -172,7 +226,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
                 double min_multi = 0;
                 std::sort(multis_long.begin(), multis_long.end());
                 for (auto&& m : multis_long) {
-                    if (m >= 10) {
+                    if (m > 0) {
                         min_multi = m;
                         break;
                     }
@@ -187,7 +241,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
                 double min_multi = 0;
                 std::sort(multis.begin(), multis.end());
                 for (auto&& m : multis) {
-                    if (m >= 10) {
+                    if (m > 0) {
                         min_multi = m;
                         break;
                     }
@@ -204,6 +258,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
 
     // load graph
     long cnt_edge = 0;
+    std::vector<double> edge_multis;
     std::ifstream dot_file(graph_dot);
     while (getline(dot_file, line)) {
         // line is neithor a node nor an edge
@@ -238,6 +293,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             this->graph[start_name].outgoing_edges[end_name].push_back(edge);
             this->graph[end_name].incoming_edges[start_name].push_back(edge);
             cnt_edge += 1;
+            edge_multis.push_back(edge2multi[edge_label]);
         }
         // line is an node
         else {
@@ -250,6 +306,8 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         }
     }
     dot_file.close();
+    auto hist = create_histogram(edge_multis);
+    analyze_histogram(hist);
     std::cout << "Read " << get_num_nodes() << " vertices, " << cnt_edge << " edges." << std::endl;
 }
 

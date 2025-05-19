@@ -12,6 +12,10 @@
 #include <sstream>
 #include <iomanip>
 #include <sys/stat.h>
+#include <map>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 using namespace dbg;
 
@@ -252,24 +256,71 @@ int Graph::get_num_nodes() {
 }
 
 void Graph::read_graph(std::string& output, std::string& restart_from, std::string& graph_dot, const std::string& graph_fasta, const std::string& graph_aln) {
-    if (mkdir(output.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
-        if (errno == EEXIST) {
-            if (!restart_from.empty())
-                read_from_dot(output + "/" + restart_from + ".dot", output + "/" + restart_from + ".fasta");
-            else {
-                std::cout << "Output directory already exists. Please delete it or set restart_from." << std::endl;
-                exit(0);
-            }
-        }
-        else {
-            std::cout << "Create output directory faliled." << std::endl;
-            exit(0);
-        }
-    }
-
+    fs::create_directory(output);
     if (graph.empty())
         read_from_dot(graph_dot, graph_fasta);
     load_read_path(graph_aln);
+}
+
+// Create histogram from edge multiplicities (bin size = 1)
+std::map<int, int> Graph::create_histogram(const std::vector<double>& edges) {
+    std::map<int, int> hist;
+    for (double val : edges) {
+        int bin = static_cast<int>(std::round(val));
+        hist[bin]++;
+    }
+    return hist;
+}
+
+// Find peaks and valleys in histogram
+void Graph::analyze_histogram(const std::map<int, int>& hist) {
+    if (hist.size() < 3) {
+        std::cerr << "Not enough data points for analysis histogram" << std::endl;
+        return;
+    }
+
+    std::vector<std::pair<int, int>> peaks;
+    std::vector<std::pair<int, int>> valleys;
+    auto it = hist.begin();
+
+    // Skip first and last bins for neighbor comparisons
+    ++it;
+    auto end = hist.end();
+    --end;
+
+    for (; it != end; ++it) {
+        auto prev = std::prev(it);
+        auto next = std::next(it);
+
+        // Peak detection (higher than both neighbors)
+        if (it->second > prev->second && it->second > next->second) {
+            peaks.emplace_back(it->first, it->second);
+        }
+        // Valley detection (lower than both neighbors)
+        else if (it->second < prev->second && it->second < next->second) {
+            valleys.emplace_back(it->first, it->second);
+        }
+    }
+
+    // Output results
+    if (!peaks.empty()) {
+        std::cout << "First peak at multiplicity: " << peaks[0].first
+            << " (count: " << peaks[0].second << ")\n";
+
+        error_peak = peaks[0].first;
+
+        std::cout << "Subsequent local minima: ";
+        for (const auto& [valley, count] : valleys) {
+            if (valley > peaks[0].first) {
+                std::cout << valley << " (count: " << count << ")\n";
+                first_minima = valley;
+                break;
+            }
+        }
+    }
+    else {
+        std::cout << "No peaks found in histogram" << std::endl;
+    }
 }
 
 // Read graph from DOT file
@@ -320,6 +371,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
     // load graph
     long cnt_edge = 0;
     std::ifstream dot_file(graph_dot);
+    std::vector<double> edge_multis;
     while (getline(dot_file, line)) {
         // line is neithor a node nor an edge
         if (line.find('[') == std::string::npos)
@@ -361,6 +413,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
 
             this->graph[start_name].outgoing_edges[end_name].push_back(edge);
             this->graph[end_name].incoming_edges[start_name].push_back(edge);
+            edge_multis.push_back(multiplicity);
             cnt_edge += 1;
         }
         // line is an node
@@ -371,6 +424,8 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         }
     }
     dot_file.close();
+    auto histogram = create_histogram(edge_multis);
+    analyze_histogram(histogram);
     std::cout << "Read " << get_num_nodes() << " vertices, " << cnt_edge << " edges (k=" << this->k << ")." << std::endl;
 }
 

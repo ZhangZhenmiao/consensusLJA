@@ -1,8 +1,13 @@
+#!/bin/bash
 reads=$1
-asm=$2
+inprefix=$2
 outprefix=$3
 
-# compress --dimer-compress 32,32,1 --reads $1 > $outprefix.compressed.fasta
-# /Poppy/zmzhang/software/anaconda3/envs/clja/bin/minimap2 -ax map-hifi $asm $outprefix.compressed.fasta -t 100 | samtools sort -@ 100 -o $outprefix.bam
+compress=$4
+analyze_chimeric=$5
 
-python /Poppy/zmzhang/Consensus_Assembly/src/analyze_chimeric.py $outprefix.bam $reads $outprefix.filtered.fastq
+if [ ! -f $outprefix.bam ]; then
+    $compress --dimer-compress 32,32,1 --reads $reads | minimap2 -ax map-hifi $inprefix.fasta - -t 100 | samtools sort -@ 100 -o $outprefix.bam
+fi
+
+$analyze_chimeric $outprefix.bam $inprefix.dot $outprefix.chimeric.txt

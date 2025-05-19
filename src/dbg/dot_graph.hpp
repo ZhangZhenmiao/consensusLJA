@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include "read_aln.hpp"
@@ -92,6 +93,8 @@ namespace dbg {
         std::unordered_map<std::string, std::string> label2rc;
         std::unordered_map<std::string, ReadAln> read2aln;
         std::unordered_map<std::string, ReadAln> pseudo2aln;
+        int error_peak = -1;
+        int first_minima = -1;
         void find_path_from_start_bases(std::string start_node, std::string start_bases, std::string read_name, std::vector<std::string>& nodes_path);
         void reroute_reads_from_edge_to_edge(Edge& edge_des, Edge& edge_ori, std::string node_s, std::string node_e);
         void reroute_reads_from_path_to_edge(Edge& edge_des, std::string node_s, std::string node_m, std::string node_e);
@@ -101,6 +104,8 @@ namespace dbg {
         void add_complementary_virtual_reads(unsigned& added_reads);
         void read_graph(std::string& output, std::string& restart_from, std::string& graph_dot, const std::string& graph_fasta, const std::string& graph_aln);
         void read_from_dot(const std::string& graph_dot, const std::string& graph_fasta);
+        std::map<int, int> create_histogram(const std::vector<double>& edges);
+        void analyze_histogram(const std::map<int, int>& hist);
         void load_read_path(const std::string& graph_aln);
         void write_graph(const std::string& prefix, int thick = 1000000, bool contracted = false, bool colored = false, std::unordered_set<std::string> nodes = std::unordered_set<std::string>());
         void write_graph_contracted(const std::string& prefix, int min_length = 10000);

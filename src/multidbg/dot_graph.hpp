@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <map>
 
 namespace multidbg {
 #define MIN_MULTI 0.1
@@ -94,6 +95,9 @@ namespace multidbg {
         std::unordered_map<std::string, Node> graph;
         std::unordered_map<std::string, std::string> label2rc;
         std::unordered_map<std::string, std::string> nodeid2Rev;
+        int error_peak = -1, first_minima = -1;
+        std::map<int, int> create_histogram(const std::vector<double>& edges);
+        void analyze_histogram(const std::map<int, int>& hist);
         void read_graph(std::string& output, std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta, const std::string& graph_dbg, const std::string& paths_dbg);
         void read_from_dot(const std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta, const std::string& graph_dbg, const std::string& paths_dbg);
         void write_graph(const std::string& prefix, int thick = 1000000, bool contracted = false, bool colored = false, std::unordered_set<std::string> nodes = std::unordered_set<std::string>());
@@ -115,6 +119,7 @@ namespace multidbg {
         void resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, int x, double identity, bool use_length = false, int security_level = 3, bool allow_reverse_comp = false, bool allow_tip = false, bool verbose = false);
         void remove_low_coverage_edges(unsigned& removed_edges, double coverage = 10, bool tips = false);
         void remove_low_cov_on_node(std::string node, unsigned& removed_edges, double coverage, std::vector<std::string>& nodes_to_remove);
+        void remove_chimeric_edge(std::string chimeric_path);
 
         void resolve_edges_in_reverse_complement(int& resolved_edges, bool strict = false);
         template<typename T>
