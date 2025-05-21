@@ -24,6 +24,8 @@ void MDBGRunner::simplifyMDBG() {
     std::cout << "----------Read graph----------" << std::endl;
     Graph graph;
     graph.read_graph(output, graph_dot, graph_fasta, nodes_fasta, graph_dbg, paths_dbg);
+    graph.write_graph(output + "/graph.ori");
+    graph.write_graph_gfa(output + "/graph.ori");
 
     std::cout << "----------Stage 0: clean graph----------" << std::endl;
     removed_edges = 1;
@@ -32,6 +34,7 @@ void MDBGRunner::simplifyMDBG() {
         std::cout << "Removed " << removed_edges << " low-coverage tips" << std::endl;
     }
     graph.write_graph(output + "/graph.cleaned");
+    graph.write_graph_gfa(output + "/graph.cleaned");
     graph.get_annotation(output + "/graph.cleaned");
     // graph.write_graph_contracted(output + "/graph.cleaned.contracted.10k");
     graph.write_graph_contracted(output + "/graph.cleaned.contracted.20k", 20000);
@@ -161,7 +164,7 @@ void MDBGRunner::simplifyMDBG() {
         removed_paths = 1;
         while (removed_paths)
             graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.9, true, 2, true, true);
-        graph.remove_low_coverage_edges(removed_edges, graph.error_peak);
+        graph.remove_low_coverage_edges(removed_edges, graph.first_minima + 1);
         graph.resolve_edges_in_reverse_complement(decoupled);
         graph.merge_tips_into_edges(removed_tips, 0.2);
         graph.merge_tips(removed_tips);
@@ -175,7 +178,8 @@ void MDBGRunner::simplifyMDBG() {
         std::cout << "Removed whirls: " << removed_whirls << std::endl;
     }
     graph.multi_bulge_removal(removed_bulges, false);
+    graph.remove_contained_contigs(0.5);
     graph.write_graph(output + "/graph.final");
+    graph.write_graph_gfa(output + "/graph.final");
     graph.get_annotation(output + "/graph.final");
-
 }

@@ -60,6 +60,7 @@ def read_bam(bam_file_path, dot_file_path):
                     "idt": calculate_identity(read)
                 })
 
+        # detect chimeric at nodes
         tolerant_size = 1000
         for r in alignments:
             node1, node2 = r.split('_')
@@ -86,6 +87,31 @@ def read_bam(bam_file_path, dot_file_path):
             if cnt_f <= 0 or cnt_r <= 0:
                 print("contig name", r, "contig len", contig_len, "len 1", node2len[node1], "len 2", node2len[node2], "supporting reads", cnt_f, cnt_r, cnt_all, flush=True)
                 print(r, "is chimeric", flush=True)
+                chimeric_edges.extend(r.split('_'))
+
+        # detect internal chimeric
+        tolerant_size = 10
+        for r in alignments:
+            coverages = np.zeros(bam_file.get_reference_length(r), dtype=int)
+            for i in alignments[r]:
+                coverages[i["start"]:i["end"]-tolerant_size] += 1
+            
+            potential_pos = []
+            if np.average(coverages) >= 5:
+                for i in range(bam_file.get_reference_length(r)):
+                    if coverages[i] <= 2 and i >= 5001- tolerant_size and i <= bam_file.get_reference_length(r)-5001+tolerant_size:
+                        potential_pos.append(i)
+                        # print("low coverage:", r, i)
+            
+            reads = set()
+            for i in alignments[r]:
+                for j in potential_pos:
+                    if i["start"] <= j-5001+tolerant_size and i["end"] >= j+5001-tolerant_size:
+                        reads.add(i["name"])
+            
+            # print IDs of chimeric reads
+            if len(reads) != 0:
+                print(r, "is chimeric (internal)", flush=True)
                 chimeric_edges.extend(r.split('_'))
     return chimeric_edges
             

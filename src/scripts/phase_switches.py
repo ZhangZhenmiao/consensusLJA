@@ -183,10 +183,10 @@ def get_switches(graphaligner, paths, dot, out):
 
 if __name__ == "__main__":
     # Set up argument parsing
-    parser = argparse.ArgumentParser(description="Validate path of consensus assembly.")
-    parser.add_argument("graphaligner", help="Path to graphaligner results")
-    parser.add_argument("paths", help="Path to the asm output graphaligner results")
-    parser.add_argument("dot", help="Path to original LJA graph")
+    parser = argparse.ArgumentParser(description="Phase switch of consensus assembly.")
+    parser.add_argument("ref_gaf", help="Path to ref paths by graphaligner")
+    parser.add_argument("asm_gaf", help="Path to the asm paths by graphaligner")
+    parser.add_argument("ref_dot", help="Path to ref jumbodbg")
     parser.add_argument("out", help="Path to output")
 
     # Parse the command-line arguments
@@ -194,4 +194,4 @@ if __name__ == "__main__":
 
     # Call the function with the BAM file path provided by the user
     # read_bam(args.bam_file, args.reads_file)
-    get_switches(args.graphaligner, args.paths, args.dot, args.out)
+    get_switches(args.ref_gaf, args.asm_gaf, args.ref_dot, args.out)

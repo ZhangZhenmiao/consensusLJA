@@ -95,6 +95,7 @@ namespace multidbg {
         std::unordered_map<std::string, Node> graph;
         std::unordered_map<std::string, std::string> label2rc;
         std::unordered_map<std::string, std::string> nodeid2Rev;
+        std::unordered_map<std::string, std::vector<std::string>> edge_initial_to_path_in_dbg;
         int error_peak = -1, first_minima = -1;
         std::map<int, int> create_histogram(const std::vector<double>& edges);
         void analyze_histogram(const std::map<int, int>& hist);
@@ -104,7 +105,9 @@ namespace multidbg {
         void write_graph_contracted(const std::string& prefix, int min_length = 10000, bool simplify = false);
         void write_graph_colored(const std::string& prefix, const std::string& genomes);
         void write_graph_colored_from_bam(const std::string& prefix, const std::string& bam_processed);
+        void write_graph_gfa(const std::string& prefix);
         void decoupling(std::string multidbg, std::string output);
+        void remove_contained_contigs(const double sim = 0.8);
         int get_num_nodes();
         std::string get_contracted_name(std::string node);
         std::string get_contracted_label(std::string node);

@@ -604,7 +604,7 @@ void Graph::detect_chimeric_reads() {
 
                         auto inters = get_intersection(e1_all, e2_all);
 
-                        if (inters.size() <= 1 && e1.multiplicity >= 5 && e2.multiplicity >= 5) {
+                        if (inters.size() <= 1 && e1.multiplicity >= 10 && e2.multiplicity >= 10) {
                             erroneous_edges.emplace_back(ErrorEdge(node1.first, node2.first, inters, i, p_reverse.bulge_legs[1]));
 
                             std::cout << "Find erroneuous edge " << node1.first << " -> (" << e1.length << " " << e1.multiplicity << ") -> " << node2.first << " -> (" << e2.length << " " << e2.multiplicity << ") -> " << node3.first << ":" << std::endl;

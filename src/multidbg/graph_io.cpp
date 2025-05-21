@@ -107,6 +107,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
     std::unordered_map<std::string, std::string> edge2sequence, node2sequence, nodenew2sequence;
     std::unordered_map<std::string, double> edgedbg2multi, edge2multi;
     std::unordered_map<std::string, double> edgedbg2len;
+    std::unordered_map<std::string, std::pair<std::string, std::string>> edgedbg2nodes;
 
     // load edge multiplicities from dbg
     std::ifstream graph_dbg_file(graph_dbg);
@@ -129,6 +130,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             double multiplicity = std::atof(label_all.substr(pos1 + 1, label_all.size() - pos1 - 2).c_str());
             edgedbg2multi[edge_label] = multiplicity;
             edgedbg2len[edge_label] = length;
+            edgedbg2nodes[edge_label] = { start_name, end_name };
             // std::cout << "Multi for " << edge_label << " is " << multiplicity << ", len " << length << std::endl;
         }
     }
@@ -212,6 +214,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             // std::cout << edge_name << ": Start";
             std::vector<double> multis;
             std::vector<double> multis_long;
+            std::cout << "Path for " << edge_name << ": ";
             while (line.find(' ') != std::string::npos) {
                 std::string edge_id = line.substr(0, line.find(' '));
                 assert(edgedbg2multi.find(edge_id) != edgedbg2multi.end());
@@ -219,8 +222,17 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
                 if (edgedbg2len[edge_id] >= 100000)
                     multis_long.push_back(edgedbg2multi[edge_id]);
                 line = line.substr(line.find(' ') + 1);
-                // std::cout << " -> " << edge_id << " " << edgedbg2len[edge_id] << " (" << edgedbg2multi[edge_id] << ")";
+
+                assert(edgedbg2nodes.find(edge_id) != edgedbg2nodes.end());
+                if (edge_initial_to_path_in_dbg[edge_name].empty()) {
+                    edge_initial_to_path_in_dbg[edge_name].push_back(edgedbg2nodes[edge_id].first);
+                    std::cout << edgedbg2nodes[edge_id].first;
+                }
+                assert(edgedbg2nodes[edge_id].first == edge_initial_to_path_in_dbg[edge_name].at(edge_initial_to_path_in_dbg[edge_name].size() - 1));
+                edge_initial_to_path_in_dbg[edge_name].push_back(edgedbg2nodes[edge_id].second);
+                std::cout << " " << edgedbg2nodes[edge_id].second;
             }
+            std::cout << std::endl;
 
             if (multis_long.size()) {
                 double min_multi = 0;
@@ -277,7 +289,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             pos1 = line.find("size");
             std::string edge_label = line.substr(pos2 + 14, pos1 - pos2 - 16);
 
-            std::cout << "Read edge " << start_name << " -> " << end_name << " from " << graph_dot << std::endl;
+            // std::cout << "Read edge " << start_name << " -> " << end_name << " from " << graph_dot << std::endl;
 
             assert(edge2sequence.find(edge_label) != edge2sequence.end());
             assert(edge2multi.find(edge_label) != edge2multi.end());
@@ -1251,4 +1263,54 @@ void Graph::write_graph_colored_from_bam(const std::string& prefix, const std::s
     }
     // std::cout << "Processed " << cnt << " nodes, " << cnt_aligned << " edges aligned, " << cnt_unaligned << " edges unaligned." << std::endl;
     write_graph(prefix, 1000000, false, true);
+}
+
+void Graph::write_graph_gfa(const std::string& prefix) {
+    std::string graph_gfa = prefix + ".gfa";
+    std::cout << "Write graph " << graph_gfa << std::endl;
+    std::ofstream file_gfa(graph_gfa);
+
+    std::unordered_map<std::string, std::pair<std::string, char>> edgeid2gfa_node;
+    file_gfa << "H\tVN:Z:1.0" << std::endl;
+    int cnt = 10000;
+    std::unordered_set<std::string> traversed_labels;
+    for (auto&& n1 : graph) {
+        for (auto&& n2 : n1.second.outgoing_edges) {
+            for (auto&& e : n2.second) {
+                if (traversed_labels.find(e.label) == traversed_labels.end()) {
+                    traversed_labels.insert(e.label);
+                    traversed_labels.insert(e.rc_label);
+                    // edgeid2gfa_node[e.label] = std::make_pair(e.label + "_" + e.rc_label, '+');
+                    // edgeid2gfa_node[e.rc_label] = std::make_pair(e.label + "_" + e.rc_label, '-');
+                    // file_gfa << "S\t" << e.label + "_" + e.rc_label << "\t" << e.sequence << '\n';
+                    std::string new_label = std::to_string(cnt++);
+                    edgeid2gfa_node[e.label] = std::make_pair(new_label, '+');
+                    edgeid2gfa_node[e.rc_label] = std::make_pair(new_label, '-');
+                    file_gfa << "S\t" << new_label << "\t" << e.sequence << '\n';
+                    assert(e.sequence.size() > 0);
+                }
+            }
+        }
+    }
+
+    std::unordered_set<std::string> traversed_nodes;
+    for (auto&& n : graph) {
+        if (traversed_nodes.find(n.first) != traversed_nodes.end())
+            continue;
+        traversed_nodes.insert(n.first);
+        traversed_nodes.insert(reverse_complementary_node(n.first));
+        for (auto&& n_o : n.second.outgoing_edges) {
+            for (auto&& e_o : n_o.second) {
+                for (auto&& n_i : n.second.incoming_edges) {
+                    for (auto&& e_i : n_i.second) {
+                        assert(edgeid2gfa_node.find(e_i.label) != edgeid2gfa_node.end());
+                        assert(edgeid2gfa_node.find(e_o.label) != edgeid2gfa_node.end());
+                        file_gfa << "L\t" << edgeid2gfa_node[e_i.label].first << "\t" << edgeid2gfa_node[e_i.label].second << "\t" << edgeid2gfa_node[e_o.label].first << "\t" << edgeid2gfa_node[e_o.label].second << "\t" << n.second.sequence.size() << "M\n";
+                    }
+                }
+            }
+        }
+    }
+
+    file_gfa.close();
 }
