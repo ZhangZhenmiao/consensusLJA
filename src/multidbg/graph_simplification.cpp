@@ -591,6 +591,9 @@ void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio) {
                 if (graph[node.first].outgoing_edges[t].at(0).multiplicity * ratio > graph[node.first].outgoing_edges[e].at(0).multiplicity)
                     continue;
 
+                if (1.0 * graph[node.first].outgoing_edges[e].at(0).length / graph[node.first].outgoing_edges[t].at(0).length < 0.8 && graph[node.first].outgoing_edges[t].at(0).length >= 1000000)
+                    continue;
+
                 // calculate similarity
                 std::string prefix_edge = graph[node.first].outgoing_edges[e].at(0).sequence.substr(graph[node.first].sequence.size(), 100000);
                 double sim = 1.0 * matches_by_edlib(prefix_tip, prefix_edge) / std::min(prefix_tip.size(), prefix_edge.size());
