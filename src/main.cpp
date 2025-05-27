@@ -12,6 +12,6 @@ int main(int argc, char* argv[]) {
     argParser.parse_check(argc, argv);
 
     DBGRunner dbgrunner = DBGRunner(argParser.get<std::string>("reads"), argParser.get<std::string>("output"), argParser.get<int>("threads"));
-    MDBGRunner(argParser.get<std::string>("output"), argParser.get<std::string>("reads"), argParser.get<int>("threads"));
+    // MDBGRunner(argParser.get<std::string>("output"), argParser.get<std::string>("reads"), argParser.get<int>("threads"));
     return 0;
 }

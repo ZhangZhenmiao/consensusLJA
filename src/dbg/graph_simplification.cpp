@@ -13,6 +13,30 @@
 #include "utils.hpp"
 
 using namespace dbg;
+namespace fs = std::filesystem;
+
+void Graph::get_annotation(std::string prefix) {
+    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
+    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
+    if (fs::is_regular_file(prefix + ".fasta.fai"))
+        system(("rm " + prefix + ".fasta.fai").c_str());
+    if (system(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str()) != 0) {
+        exit(1);
+    }
+    if (!std::filesystem::exists(ref_seq + ".fai")) {
+        if (system(("samtools faidx " + ref_seq).c_str()) != 0)
+            exit(1);
+    }
+    if (system(("cut -f1,2 " + ref_seq + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + prefix + ".ref.header.sam").c_str()) != 0)
+        exit(1);
+    if (system(("cat " + prefix + ".ref.header.sam " + prefix + ".ref.sam | samtools sort -@ 50 -o " + prefix + ".ref.bam").c_str()) != 0) {
+        exit(1);
+    }
+    std::string exeDir = getExecutablePath();
+    if (system((exeDir + "/../src/scripts/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str()) != 0)
+        exit(1);
+    write_graph_colored_from_bam(prefix + ".color", prefix + ".ref.bam.stats");
+}
 
 int Graph::count_matches(std::string cigar) {
     int matches = 0;

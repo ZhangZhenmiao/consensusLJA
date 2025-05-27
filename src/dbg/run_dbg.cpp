@@ -32,14 +32,23 @@ void DBGRunner::cleanDBG() {
     graph.write_graph(output + "/graph.remove_low");
     graph.write_graph_gfa(output + "/graph.remove_low");
 
-    std::cout << "----------Stage 2: Remove chimeric edges ----------" << std::endl;
-    graph.detect_chimeric_reads();
+    // std::cout << "----------Stage 2: Remove chimeric edges ----------" << std::endl;
+    // graph.detect_chimeric_reads();
+    // removed_edges = 1;
+    // while (removed_edges) {
+    //     graph.remove_low_coverage_edges(removed_edges, 0);
+    //     std::cout << "Removed " << removed_edges << " chimeric edges" << std::endl;
+    // }
+    // graph.write_graph(output + "/graph.cleaned");
+    // graph.write_graph_gfa(output + "/graph.cleaned");
+
     removed_edges = 1;
     while (removed_edges) {
-        graph.remove_low_coverage_edges(removed_edges, 0);
-        std::cout << "Removed " << removed_edges << " chimeric edges" << std::endl;
+        graph.multi_bulge_removal(removed_edges);
+        std::cout << "Removed " << removed_edges << " simple bulges" << std::endl;
     }
-    graph.write_graph(output + "/graph.cleaned");
-    graph.write_graph_gfa(output + "/graph.cleaned");
+    graph.write_graph(output + "/graph.simple_bulge");
+    graph.get_annotation(output + "/graph.simple_bulge");
+    graph.write_graph_contracted(output + "/graph.simple_bulge.20k", 20000);
     std::cout << "----------Clean DBG finished----------" << std::endl;
 }

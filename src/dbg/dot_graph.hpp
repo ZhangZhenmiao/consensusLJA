@@ -115,6 +115,7 @@ namespace dbg {
         void decoupling(std::string multidbg, std::string output);
         int get_num_nodes();
         void detect_chimeric_reads();
+        void get_annotation(std::string prefix);
         std::unordered_set<std::string> get_intersection(std::unordered_set<std::string>& set1, std::unordered_set<std::string>& set2);
 
         void multi_bulge_removal(unsigned& removed_bulges, bool skip_rc_bulges = true);
