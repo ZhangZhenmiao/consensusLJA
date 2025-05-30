@@ -1,6 +1,8 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import argparse
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="Plot stacked bar chart of edge count by coverage.")
@@ -10,33 +12,48 @@ args = parser.parse_args()
 
 # Load data
 data = np.loadtxt(args.input_file)
-lengths = data[:, 0]
-coverages = data[:, 1]
+df = pd.DataFrame(data, columns=['length', 'coverage'])
+df['group'] = np.where(df['length'] <= 10000, 'Length ≤ 10,000', 'Length > 10,000')
 
-# Define coverage bins (customize if needed)
-bins = np.arange(0, max(coverages) + 1, 1)
+# Bin coverage
+bins = np.arange(0, 101, 1)
+df['coverage_bin'] = pd.cut(df['coverage'], bins=bins, right=False, labels=bins[:-1])
 
-# Split data into two groups
-short_mask = lengths <= 10000
-long_mask = lengths > 10000
+# Count edges in each bin by group
+coverage_counts = df.groupby(['coverage_bin', 'group']).size().unstack(fill_value=0)
 
-# Histogram counts for each group
-hist_short, _ = np.histogram(coverages[short_mask], bins=bins)
-hist_long, _ = np.histogram(coverages[long_mask], bins=bins)
+# Plot settings
+plt.figure(figsize=(9, 6))
 
-# X positions for each bar group
-x = bins[:-1]
+# Prepare stacked bar chart
+x = coverage_counts.index.astype(int)
+bottom = np.zeros(len(x))
+colors = ["#3A6AB8", "#D56F34"]  # Professional blue and orange
 
-# Plotting
-plt.figure(figsize=(12, 6))
-plt.bar(x, hist_short, width=np.diff(bins), align='edge', color='#4C72B0', label='Length ≤ 10,000')  # Professional blue
-plt.bar(x, hist_long, width=np.diff(bins), align='edge', bottom=hist_short, color='#DD8452', label='Length > 10,000')  # Professional orange
+for idx, group in enumerate(coverage_counts.columns):
+    plt.bar(
+        x,
+        coverage_counts[group],
+        bottom=bottom,
+        label=group,
+        color=colors[idx],
+        width=0.8,
+        edgecolor='black',  # Border color
+        linewidth=0.3        # Thin border
+    )
+    bottom += coverage_counts[group].values
+
+# Axis formatting
 plt.xlim(0, 100)
 plt.xticks(np.arange(0, 101, 10))
-
 plt.xlabel('Coverage')
 plt.ylabel('Number of Edges')
 plt.title('Stacked Coverage Distribution of Edges by Length Group')
-plt.legend()
+plt.legend(frameon=False, title=None)
+plt.xticks(np.arange(0, 101, 10))
+plt.yticks(fontsize=10)  # Optional: control font size
+
+# Layout and save
 plt.tight_layout()
+plt.grid(False)
 plt.savefig(args.output_file)

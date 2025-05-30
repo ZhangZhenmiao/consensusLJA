@@ -172,13 +172,15 @@ def get_switches(graphaligner, paths, dot, out):
                                     is_special += 1
                                 previous = edge2ref[e]
                         else:
+                            ecov = edge2cov[e.split('_')[0]]
+                            elen = edge2len[e.split('_')[0]]
                             w.write('\t'.join([str(pathid), c, e, elen, ecov,  "NO LABEL", majority, "NOT SWITCH"]) + '\n')
     
     print(f"Evaluated switches\n\
             IS SWITCH {is_switch}\n\
             NOT SWITCH {not_switch}\n\
             SPECIAL SWITCH {is_special}\n\
-            SWITCH RATE {(is_switch + is_special)/(is_switch + is_special + not_switch)}\
+            SWITCH RATE {0 if is_switch + is_special + not_switch ==0 else (is_switch + is_special)/(is_switch + is_special + not_switch)} ({is_switch + is_special}/{is_switch + is_special + not_switch})\
            ")
 
 if __name__ == "__main__":
