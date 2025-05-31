@@ -48,7 +48,6 @@ plt.xlim(0, 100)
 plt.xticks(np.arange(0, 101, 10))
 plt.xlabel('Coverage')
 plt.ylabel('Number of Edges')
-plt.title('Stacked Coverage Distribution of Edges by Length Group')
 plt.legend(frameon=False, title=None)
 plt.xticks(np.arange(0, 101, 10))
 plt.yticks(fontsize=10)  # Optional: control font size
