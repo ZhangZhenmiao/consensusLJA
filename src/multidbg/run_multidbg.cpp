@@ -138,7 +138,7 @@ void MDBGRunner::simplifyMDBG() {
         total_removed += removed_tips;
         removed_paths = 1;
         while (removed_paths) {
-            graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 6, 0.6, true, 2);
+            graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 8, 0.6, true, 2);
             std::cout << "Removed complex bulges: " << removed_paths << std::endl;
         }
     }

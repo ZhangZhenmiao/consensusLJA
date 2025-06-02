@@ -2350,16 +2350,16 @@ void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, 
         scanned_nodes.insert(reverse_complementary_node(node.first));
         remove_low_cov_on_node(node.first, removed_edges, coverage, nodes_to_remove);
         remove_low_cov_on_node(reverse_complementary_node(node.first), removed_edges, coverage, nodes_to_remove);
-        if (node.second.outgoing_edges.size() == 1 && node.second.incoming_edges.size() == 1 && node.second.outgoing_edges.find(node.first) != node.second.outgoing_edges.end()) {
-            nodes_to_remove.push_back(node.first);
-            nodes_to_remove.push_back(reverse_complementary_node(node.first));
-            std::cout << "Remove self loop " << node.first << " and " << reverse_complementary_node(node.first) << std::endl;
-        }
-        if (graph[node.first].number_of_contracted_edge == 0 && graph[node.first].incoming_edges.empty() && graph[node.first].outgoing_edges.empty()) {
-            nodes_to_remove.push_back(node.first);
-            nodes_to_remove.push_back(reverse_complementary_node(node.first));
-            std::cout << "Remove single node " << node.first << " and " << reverse_complementary_node(node.first) << std::endl;
-        }
+        // if (node.second.outgoing_edges.size() == 1 && node.second.incoming_edges.size() == 1 && node.second.outgoing_edges.find(node.first) != node.second.outgoing_edges.end()) {
+        //     nodes_to_remove.push_back(node.first);
+        //     nodes_to_remove.push_back(reverse_complementary_node(node.first));
+        //     std::cout << "Remove self loop " << node.first << " and " << reverse_complementary_node(node.first) << std::endl;
+        // }
+        // if (graph[node.first].number_of_contracted_edge == 0 && graph[node.first].incoming_edges.empty() && graph[node.first].outgoing_edges.empty()) {
+        //     nodes_to_remove.push_back(node.first);
+        //     nodes_to_remove.push_back(reverse_complementary_node(node.first));
+        //     std::cout << "Remove single node " << node.first << " and " << reverse_complementary_node(node.first) << std::endl;
+        // }
     }
     for (auto&& n : nodes_to_remove)
         graph.erase(n);

@@ -637,6 +637,32 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
     std::unordered_map<std::string, std::unordered_set<std::string>> node1_to_node2_scanned;
     std::vector<Nodes_To_Contract> nodes_to_contract;
     for (auto&& node : graph_vis) {
+        std::unordered_set<std::string> connected_nodes;
+        for (auto&& n : node.second.incoming_edges) {
+            if (n.first != node.first)
+                connected_nodes.insert(n.first);
+        }
+        for (auto&& n : node.second.outgoing_edges) {
+            if (n.first != node.first)
+                connected_nodes.insert(n.first);
+        }
+        // skip simple components
+        if (connected_nodes.size() == 1) {
+            bool flag = true;
+            for (auto&& c : connected_nodes) {
+                for (auto&& n : graph_vis[c].outgoing_edges) {
+                    if (n.first != node.first)
+                        flag = false;
+                }
+                for (auto&& n : graph_vis[c].incoming_edges) {
+                    if (n.first != node.first)
+                        flag = false;
+                }
+            }
+            if (flag)
+                continue;
+        }
+
         for (auto&& edge : node.second.outgoing_edges) {
             // do not deal with palindromic bulges
             if (node.first == reverse_complementary_node(edge.first) || node.first == edge.first)
@@ -851,28 +877,48 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
     // remove self-loops, add statistics to the contracted node
     for (auto&& node : graph_vis) {
         if (graph_vis[node.first].outgoing_edges.find(node.first) != graph_vis[node.first].outgoing_edges.end() && graph_vis[node.first].outgoing_edges[node.first].size() >= 1 && graph_vis[node.first].number_of_contracted_edge >= 1) {
-            graph_vis[node.first].circles = graph_vis[node.first].outgoing_edges[node.first].size();
             long total_len = 0;
             std::vector<int> lens;
 
-            for (auto&& e : graph_vis[node.first].outgoing_edges[node.first]) {
+            std::vector<int> vector_to_remove;
+            for (size_t i = 0; i < graph_vis[node.first].outgoing_edges[node.first].size();++i) {
+                if (graph_vis[node.first].outgoing_edges[node.first][i].sequence.size() >= 1000000)
+                    continue;
+                vector_to_remove.push_back(int(i));
+                auto& e = graph_vis[node.first].outgoing_edges[node.first][i];
                 graph_vis[node.first].sequence += ("NNNNNNNNNNNNNNNNNNNN" + e.sequence);
                 total_len += e.length;
                 lens.push_back(e.length);
+                graph_vis[node.first].circles += 1;
             }
-            graph_vis[node.first].sequence += "NNNNNNNNNNNNNNNNNNNN";
+            if (!vector_to_remove.empty()) {
+                graph_vis[node.first].sequence += "NNNNNNNNNNNNNNNNNNNN";
 
-            std::sort(lens.begin(), lens.end());
-            size_t size = lens.size();
-            if (size % 2 == 0) {
-                graph_vis[node.first].median_length = (lens[size / 2 - 1] + lens[size / 2]) / 2.0;
+                std::sort(lens.begin(), lens.end());
+                size_t size = lens.size();
+                if (size % 2 == 0) {
+                    graph_vis[node.first].median_length = (lens[size / 2 - 1] + lens[size / 2]) / 2.0;
+                }
+                else {
+                    graph_vis[node.first].median_length = lens[size / 2];
+                }
+
+                graph_vis[node.first].total_length = total_len;
+                remove_items_from_vector(graph_vis[node.first].outgoing_edges[node.first], vector_to_remove);
+
+                vector_to_remove.clear();
+                for (size_t i = 0; i < graph_vis[node.first].incoming_edges[node.first].size();++i) {
+                    if (graph_vis[node.first].incoming_edges[node.first][i].sequence.size() >= 1000000)
+                        continue;
+                    vector_to_remove.push_back(int(i));
+                }
+                remove_items_from_vector(graph_vis[node.first].incoming_edges[node.first], vector_to_remove);
+
+                if (graph_vis[node.first].outgoing_edges[node.first].empty()) {
+                    graph_vis[node.first].outgoing_edges.erase(node.first);
+                    graph_vis[node.first].incoming_edges.erase(node.first);
+                }
             }
-            else {
-                graph_vis[node.first].median_length = lens[size / 2];
-            }
-            graph_vis[node.first].total_length = total_len;
-            graph_vis[node.first].outgoing_edges.erase(node.first);
-            graph_vis[node.first].incoming_edges.erase(node.first);
         }
     }
     // contract edges of similar length to contracted nodes
@@ -1291,26 +1337,34 @@ void Graph::write_graph_gfa(const std::string& prefix) {
                 }
             }
         }
-    }
-
-    std::unordered_set<std::string> traversed_nodes;
-    for (auto&& n : graph) {
-        if (traversed_nodes.find(n.first) != traversed_nodes.end())
-            continue;
-        traversed_nodes.insert(n.first);
-        traversed_nodes.insert(reverse_complementary_node(n.first));
-        for (auto&& n_o : n.second.outgoing_edges) {
-            for (auto&& e_o : n_o.second) {
-                for (auto&& n_i : n.second.incoming_edges) {
-                    for (auto&& e_i : n_i.second) {
-                        assert(edgeid2gfa_node.find(e_i.label) != edgeid2gfa_node.end());
-                        assert(edgeid2gfa_node.find(e_o.label) != edgeid2gfa_node.end());
-                        file_gfa << "L\t" << edgeid2gfa_node[e_i.label].first << "\t" << edgeid2gfa_node[e_i.label].second << "\t" << edgeid2gfa_node[e_o.label].first << "\t" << edgeid2gfa_node[e_o.label].second << "\t" << n.second.sequence.size() << "M\n";
-                    }
-                }
+        if (n1.second.outgoing_edges.empty() && n1.second.incoming_edges.empty()) {
+            if (traversed_labels.find(n1.first) == traversed_labels.end()) {
+                traversed_labels.insert(n1.first);
+                traversed_labels.insert(reverse_complementary_node(n1.first));
+                std::string new_label = std::to_string(cnt++);
+                file_gfa << "S\t" << new_label << "\t" << n1.second.sequence << '\n';
             }
         }
     }
+
+    // std::unordered_set<std::string> traversed_nodes;
+    // for (auto&& n : graph) {
+    //     if (traversed_nodes.find(n.first) != traversed_nodes.end())
+    //         continue;
+    //     traversed_nodes.insert(n.first);
+    //     traversed_nodes.insert(reverse_complementary_node(n.first));
+    //     for (auto&& n_o : n.second.outgoing_edges) {
+    //         for (auto&& e_o : n_o.second) {
+    //             for (auto&& n_i : n.second.incoming_edges) {
+    //                 for (auto&& e_i : n_i.second) {
+    //                     assert(edgeid2gfa_node.find(e_i.label) != edgeid2gfa_node.end());
+    //                     assert(edgeid2gfa_node.find(e_o.label) != edgeid2gfa_node.end());
+    //                     file_gfa << "L\t" << edgeid2gfa_node[e_i.label].first << "\t" << edgeid2gfa_node[e_i.label].second << "\t" << edgeid2gfa_node[e_o.label].first << "\t" << edgeid2gfa_node[e_o.label].second << "\t" << n.second.sequence.size() << "M\n";
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
     file_gfa.close();
 }
