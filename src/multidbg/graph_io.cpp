@@ -886,13 +886,15 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
                     continue;
                 vector_to_remove.push_back(int(i));
                 auto& e = graph_vis[node.first].outgoing_edges[node.first][i];
-                graph_vis[node.first].sequence += ("NNNNNNNNNNNNNNNNNNNN" + e.sequence);
+                if (graph_vis[node.first].sequence.empty())
+                    graph_vis[node.first].sequence += ("NNNNNNNNNNNNNNNNNNNN" + e.sequence + "NNNNNNNNNNNNNNNNNNNN");
+                else
+                    graph_vis[node.first].sequence += (e.sequence + "NNNNNNNNNNNNNNNNNNNN");
                 total_len += e.length;
                 lens.push_back(e.length);
                 graph_vis[node.first].circles += 1;
             }
             if (!vector_to_remove.empty()) {
-                graph_vis[node.first].sequence += "NNNNNNNNNNNNNNNNNNNN";
 
                 std::sort(lens.begin(), lens.end());
                 size_t size = lens.size();
@@ -1069,21 +1071,37 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
         for (auto&& n : nodes_to_remove)
             graph_vis.erase(n);
 
-        // remove self-loops, add statistics to the contracted node
+        // remove self-loops
         for (auto&& node : graph_vis) {
             if (graph_vis[node.first].outgoing_edges.find(node.first) != graph_vis[node.first].outgoing_edges.end() && graph_vis[node.first].outgoing_edges[node.first].size() >= 1 && graph_vis[node.first].number_of_contracted_edge >= 1) {
-                graph_vis[node.first].circles += graph_vis[node.first].outgoing_edges[node.first].size();
-                for (auto&& e : graph_vis[node.first].outgoing_edges[node.first]) {
+                std::vector<int> vector_to_remove;
+                for (size_t i = 0; i < graph_vis[node.first].outgoing_edges[node.first].size();++i) {
+                    if (graph_vis[node.first].outgoing_edges[node.first][i].sequence.size() >= 1000000)
+                        continue;
+                    vector_to_remove.push_back(int(i));
+                    auto& e = graph_vis[node.first].outgoing_edges[node.first][i];
                     if (graph_vis[node.first].sequence.empty())
-                        graph_vis[node.first].sequence += ("NNNNNNNNNNNNNNNNNNNN" + e.sequence);
+                        graph_vis[node.first].sequence += ("NNNNNNNNNNNNNNNNNNNN" + e.sequence + "NNNNNNNNNNNNNNNNNNNN");
                     else
-                        graph_vis[node.first].sequence += e.sequence;
-                    graph_vis[node.first].total_length += e.length;
+                        graph_vis[node.first].sequence += (e.sequence + "NNNNNNNNNNNNNNNNNNNN");
+                    graph_vis[node.first].circles += 1;
                 }
-                graph_vis[node.first].sequence += "NNNNNNNNNNNNNNNNNNNN";
+                if (!vector_to_remove.empty()) {
+                    remove_items_from_vector(graph_vis[node.first].outgoing_edges[node.first], vector_to_remove);
 
-                graph_vis[node.first].outgoing_edges.erase(node.first);
-                graph_vis[node.first].incoming_edges.erase(node.first);
+                    vector_to_remove.clear();
+                    for (size_t i = 0; i < graph_vis[node.first].incoming_edges[node.first].size();++i) {
+                        if (graph_vis[node.first].incoming_edges[node.first][i].sequence.size() >= 1000000)
+                            continue;
+                        vector_to_remove.push_back(int(i));
+                    }
+                    remove_items_from_vector(graph_vis[node.first].incoming_edges[node.first], vector_to_remove);
+
+                    if (graph_vis[node.first].outgoing_edges[node.first].empty()) {
+                        graph_vis[node.first].outgoing_edges.erase(node.first);
+                        graph_vis[node.first].incoming_edges.erase(node.first);
+                    }
+                }
             }
         }
     }
