@@ -2227,7 +2227,9 @@ CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.o: src/multidbg/graph_io.cpp \
   /usr/include/c++/11/bits/shared_ptr_base.h \
   /usr/include/c++/11/bits/allocated_ptr.h \
   /usr/include/c++/11/bits/fs_dir.h \
-  /usr/include/c++/11/bits/fs_ops.h
+  /usr/include/c++/11/bits/fs_ops.h \
+  src/dbg/dot_graph.hpp \
+  src/dbg/read_aln.hpp
 
 CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.o: src/multidbg/graph_simplification.cpp \
   /usr/include/stdc-predef.h \

@@ -177,7 +177,7 @@ void MDBGRunner::simplifyMDBG() {
         removed_paths = 1;
         while (removed_paths)
             graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.9, true, 2, true, true);
-        graph.remove_low_coverage_edges(removed_edges, graph.first_minima + 1);
+        graph.remove_low_coverage_edges(removed_edges, graph.error_peak + 1);
         graph.resolve_edges_in_reverse_complement(decoupled);
         graph.merge_tips_into_edges(removed_tips, 0.2);
         graph.merge_tips(removed_tips);

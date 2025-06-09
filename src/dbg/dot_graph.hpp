@@ -131,6 +131,7 @@ namespace dbg {
         void resolve_edges_in_reverse_complement(int& resolved_edges, bool strict = false);
         template<typename T>
         void merge_vecs(std::vector<T>& e1, std::vector<T>& e2);
+        std::string reverse_complementary_node(std::string node);
 
 
         Graph();
@@ -155,7 +156,6 @@ namespace dbg {
 
         int matches_by_edlib(std::string sequence1, std::string sequence2);
         int count_matches(std::string cigar);
-        std::string reverse_complementary_node(std::string node);
         std::string reverse_complementary(std::string& s);
         std::string doubleToString(double value);
         void remove_items_from_vector(std::vector<int>& vec, const std::vector<int>& discontinued_indices);

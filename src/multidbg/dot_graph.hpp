@@ -92,10 +92,33 @@ namespace multidbg {
 
     class Graph {
     public:
+        struct Read {
+            std::string name;
+            int aln_start = 0;
+            int eln_end = 0;
+        };
+        struct Path_for_MEdge {
+            std::vector<std::string> dbg_nodes;
+            std::vector<std::string> dbg_edges;
+            std::vector<int> dbg_edge_lengths;
+            std::string dbg_start_base_string;
+            int dbg_path_length;
+            std::string dbg_path_sequence;
+            int mdbg_s_start = 0;
+            int mdbg_s_end = 0;
+            int mdbg_e_start = 0;
+            int mdbg_e_end = 0;
+            std::string mdbg_s;
+            std::string mdbg_e;
+            std::string mdbg_seq;
+            double multi = 0;
+            std::vector<Read> aln_reads;
+        };
         std::unordered_map<std::string, Node> graph;
         std::unordered_map<std::string, std::string> label2rc;
         std::unordered_map<std::string, std::string> nodeid2Rev;
         std::unordered_map<std::string, std::vector<std::string>> edge_initial_to_path_in_dbg;
+        std::unordered_map<std::string, Path_for_MEdge> edge_initial_to_DBG_reads;
         int error_peak = -1, first_minima = -1;
         std::map<int, int> create_histogram(const std::vector<double>& edges);
         void analyze_histogram(const std::map<int, int>& hist);

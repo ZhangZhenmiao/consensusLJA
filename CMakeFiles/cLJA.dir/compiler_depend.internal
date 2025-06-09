@@ -2236,6 +2236,8 @@ CMakeFiles/cLJA.dir/src/multidbg/graph_io.cpp.o
  /usr/include/c++/11/bits/allocated_ptr.h
  /usr/include/c++/11/bits/fs_dir.h
  /usr/include/c++/11/bits/fs_ops.h
+ /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/dot_graph.hpp
+ /Poppy/zmzhang/Consensus_Assembly/cLJA/src/dbg/read_aln.hpp
 
 CMakeFiles/cLJA.dir/src/multidbg/graph_simplification.cpp.o
  /Poppy/zmzhang/Consensus_Assembly/cLJA/src/multidbg/graph_simplification.cpp

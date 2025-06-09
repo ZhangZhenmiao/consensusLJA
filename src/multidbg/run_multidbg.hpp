@@ -59,13 +59,12 @@ public:
         graph_dbg = output_all / "1_clean_DBG" / "graph.cleaned.dot";
         paths_dbg = align_dbg / "alignments.txt";
 
-
-        // polishing
         fs::path gfa_path = fs::path(output) / "graph.final.gfa";
         fs::path corrected_reads_path = output_all / "0_condensed_dbg" / "01_TopologyBasedCorrection" / "corrected_reads.paths";
         if (!fs::is_regular_file(gfa_path))
             simplifyMDBG();
 
+        // polishing
         std::ofstream corrected_reads(corrected_reads_path);
         corrected_reads << (output_all / "0_condensed_dbg" / "01_TopologyBasedCorrection" / "final_dbg.gfa").string() << std::endl;
         corrected_reads << (output_all / "0_condensed_dbg" / "01_TopologyBasedCorrection" / "corrected_reads.aln").string() << std::endl;

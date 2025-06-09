@@ -266,7 +266,7 @@ void Graph::read_graph(std::string& output, std::string& restart_from, std::stri
 std::map<int, int> Graph::create_histogram(const std::vector<double>& edges) {
     std::map<int, int> hist;
     for (double val : edges) {
-        int bin = static_cast<int>(std::round(val));
+        int bin = static_cast<int>(val);
         hist[bin]++;
     }
     return hist;
@@ -274,31 +274,46 @@ std::map<int, int> Graph::create_histogram(const std::vector<double>& edges) {
 
 // Find peaks and valleys in histogram
 void Graph::analyze_histogram(const std::map<int, int>& hist) {
-    if (hist.size() < 3) {
-        std::cerr << "Not enough data points for analysis histogram" << std::endl;
+    int window_size = 5;
+    if (window_size < 3 || window_size % 2 == 0) {
+        std::cerr << "Window size must be odd and >= 3" << std::endl;
+        return;
+    }
+
+    int k = window_size / 2;
+
+    if (hist.size() < window_size) {
+        std::cerr << "Not enough data points for the chosen window size" << std::endl;
         return;
     }
 
     std::vector<std::pair<int, int>> peaks;
     std::vector<std::pair<int, int>> valleys;
-    auto it = hist.begin();
 
-    // Skip first and last bins for neighbor comparisons
-    ++it;
-    auto end = hist.end();
-    --end;
+    // Convert map to sorted vector for index-based access
+    std::vector<std::pair<int, int>> vec(hist.begin(), hist.end());
 
-    for (; it != end; ++it) {
-        auto prev = std::prev(it);
-        auto next = std::next(it);
+    for (size_t i = k; i < vec.size() - k; ++i) {
+        int center = vec[i].second;
+        bool is_peak = true;
+        bool is_valley = true;
 
-        // Peak detection (higher than both neighbors)
-        if (it->second > prev->second && it->second > next->second) {
-            peaks.emplace_back(it->first, it->second);
+        for (int j = 1; j <= k; ++j) {
+            if (center <= vec[i - j].second || center <= vec[i + j].second) {
+                is_peak = false;
+            }
+            if (center >= vec[i - j].second || center >= vec[i + j].second) {
+                is_valley = false;
+            }
+            // Early break for performance
+            if (!is_peak && !is_valley) break;
         }
-        // Valley detection (lower than both neighbors)
-        else if (it->second < prev->second && it->second < next->second) {
-            valleys.emplace_back(it->first, it->second);
+
+        if (is_peak) {
+            peaks.emplace_back(vec[i].first, center);
+        }
+        else if (is_valley) {
+            valleys.emplace_back(vec[i].first, center);
         }
     }
 
