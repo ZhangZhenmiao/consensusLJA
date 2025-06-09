@@ -11,7 +11,7 @@ public:
     std::string graph_dot, graph_fasta, graph_aln;
     //output
     std::string dbg_dir, output;
-    int first_peak = 0, first_minima = 0;
+    int first_peak = 0, first_minima = 0, mean_cov = 0;
     //third-party
     std::string lja = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "lja";
 

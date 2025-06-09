@@ -2251,20 +2251,65 @@ void Graph::remove_items_from_vector(std::vector<Edge>& vec, const std::vector<i
     }
 }
 
-void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, double coverage, std::vector<std::string>& nodes_to_remove) {
+void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, double coverage, std::vector<std::string>& nodes_to_remove, bool force) {
     std::vector<std::string> out_to_remove;
+    bool node_is_tip = true;
+    if (graph[node].incoming_edges.size() >= 1 && graph[node].outgoing_edges.size() >= 1)
+        node_is_tip = false;
+    auto is_in_high_multi_bulge = [&](std::vector<Edge>& edges) -> bool {
+        if (edges.size() == 1)
+            return false;
+        for (auto&& e : edges) {
+            if (e.multiplicity >= mean_cov * 10)
+                return true;
+        }
+        return false;
+        };
+    auto is_connected_to_high_muilti_edge = [&](std::string node1, std::string node2) -> bool {
+        if (graph.find(node1) != graph.end()) {
+            for (auto&& n : graph[node1].outgoing_edges) {
+                for (auto&& e : n.second) {
+                    if (e.multiplicity >= mean_cov * 10)
+                        return true;
+                }
+            }
+            for (auto&& n : graph[node1].incoming_edges) {
+                for (auto&& e : n.second) {
+                    if (e.multiplicity >= mean_cov * 10)
+                        return true;
+                }
+            }
+        }
+        if (graph.find(node2) != graph.end()) {
+            for (auto&& n : graph[node2].outgoing_edges) {
+                for (auto&& e : n.second) {
+                    if (e.multiplicity >= mean_cov * 10)
+                        return true;
+                }
+            }
+            for (auto&& n : graph[node2].incoming_edges) {
+                for (auto&& e : n.second) {
+                    if (e.multiplicity >= mean_cov * 10)
+                        return true;
+                }
+            }
+        }
+        return false;
+        };
     for (auto&& n2 : graph[node].outgoing_edges) {
         std::vector<int> indices;
         for (int i = 0; i < n2.second.size(); ++i) {
             if (n2.second.at(i).multiplicity <= coverage || n2.second.at(i).multiplicity == 0) {
-                indices.push_back(i);
-                removed_edges += 1;
-                for (auto&& r : n2.second.at(i).reads) {
-                    ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
-                    aln.prefix = 0;
-                    aln.suffix = 0;
-                    aln.start_base_path = "";
-                    aln.nodes_path.clear();
+                if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || n2.second.at(i).multiplicity == 0) {
+                    indices.push_back(i);
+                    removed_edges += 1;
+                    for (auto&& r : n2.second.at(i).reads) {
+                        ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
+                        aln.prefix = 0;
+                        aln.suffix = 0;
+                        aln.start_base_path = "";
+                        aln.nodes_path.clear();
+                    }
                 }
             }
         }
@@ -2275,12 +2320,17 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
         indices.clear();
         for (int i = 0; i < graph[n2.first].incoming_edges[node].size(); ++i) {
             if (graph[n2.first].incoming_edges[node].at(i).multiplicity <= coverage || graph[n2.first].incoming_edges[node].at(i).multiplicity == 0) {
-                indices.push_back(i);
+                if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || graph[n2.first].incoming_edges[node].at(i).multiplicity == 0) {
+                    indices.push_back(i);
+                }
             }
         }
         remove_items_from_vector(graph[n2.first].incoming_edges[node], indices);
-        if (graph[n2.first].incoming_edges[node].empty())
+        if (graph[n2.first].incoming_edges[node].empty()) {
             graph[n2.first].incoming_edges.erase(node);
+            if (graph[n2.first].incoming_edges.empty() && graph[n2.first].outgoing_edges.empty())
+                nodes_to_remove.push_back(n2.first);
+        }
     }
 
     std::vector<std::string> in_to_remove;
@@ -2288,7 +2338,9 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
         std::vector<int> indices;
         for (int i = 0; i < n2.second.size(); ++i) {
             if (n2.second.at(i).multiplicity <= coverage || n2.second.at(i).multiplicity == 0) {
-                indices.push_back(i);
+                if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || n2.second.at(i).multiplicity == 0) {
+                    indices.push_back(i);
+                }
             }
         }
         remove_items_from_vector(n2.second, indices);
@@ -2298,20 +2350,25 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
         indices.clear();
         for (int i = 0; i < graph[n2.first].outgoing_edges[node].size(); ++i) {
             if (graph[n2.first].outgoing_edges[node].at(i).multiplicity <= coverage || graph[n2.first].outgoing_edges[node].at(i).multiplicity == 0) {
-                indices.push_back(i);
-                removed_edges += 1;
-                for (auto&& r : graph[n2.first].outgoing_edges[node].at(i).reads) {
-                    ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
-                    aln.prefix = 0;
-                    aln.suffix = 0;
-                    aln.start_base_path = "";
-                    aln.nodes_path.clear();
+                if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || graph[n2.first].outgoing_edges[node].at(i).multiplicity == 0) {
+                    indices.push_back(i);
+                    removed_edges += 1;
+                    for (auto&& r : graph[n2.first].outgoing_edges[node].at(i).reads) {
+                        ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
+                        aln.prefix = 0;
+                        aln.suffix = 0;
+                        aln.start_base_path = "";
+                        aln.nodes_path.clear();
+                    }
                 }
             }
         }
         remove_items_from_vector(graph[n2.first].outgoing_edges[node], indices);
-        if (graph[n2.first].outgoing_edges[node].empty())
+        if (graph[n2.first].outgoing_edges[node].empty()) {
             graph[n2.first].outgoing_edges.erase(node);
+            if (graph[n2.first].incoming_edges.empty() && graph[n2.first].outgoing_edges.empty())
+                nodes_to_remove.push_back(n2.first);
+        }
     }
 
     for (auto&& e : out_to_remove) {
@@ -2320,12 +2377,11 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
     for (auto&& e : in_to_remove) {
         graph[node].incoming_edges.erase(e);
     }
-    if (graph[node].incoming_edges.empty() && graph[node].outgoing_edges.empty())
+    if ((out_to_remove.size() || in_to_remove.size()) && graph[node].incoming_edges.empty() && graph[node].outgoing_edges.empty())
         nodes_to_remove.push_back(node);
-
 }
 
-void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, bool tips) {
+void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, bool tips, bool force) {
     if (coverage < 0)
         coverage = 0;
     removed_edges = 0;
@@ -2334,12 +2390,45 @@ void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, 
     for (auto&& node : graph) {
         if (scanned_nodes.find(node.first) != scanned_nodes.end())
             continue;
+
+        if (coverage != 0) {
+            // skip simple components of 2 nodes
+            std::unordered_set<std::string> connected_nodes;
+            for (auto&& n : node.second.incoming_edges) {
+                if (n.first != node.first)
+                    connected_nodes.insert(n.first);
+            }
+            for (auto&& n : node.second.outgoing_edges) {
+                if (n.first != node.first)
+                    connected_nodes.insert(n.first);
+            }
+            if (connected_nodes.size() <= 1) {
+                bool flag = true;
+                for (auto&& c : connected_nodes) {
+                    for (auto&& n : graph[c].outgoing_edges) {
+                        if (n.first != node.first)
+                            flag = false;
+                    }
+                    for (auto&& n : graph[c].incoming_edges) {
+                        if (n.first != node.first)
+                            flag = false;
+                    }
+                }
+                if (flag)
+                    continue;
+            }
+        }
+
+        // skip non-tip nodes for tips = true
         if (tips == true && node.second.incoming_edges.size() >= 1 && node.second.outgoing_edges.size() >= 1)
             continue;
+
+        // for all edges and tips
         scanned_nodes.insert(node.first);
         scanned_nodes.insert(reverse_complementary_node(node.first));
-        remove_low_cov_on_node(node.first, removed_edges, coverage, nodes_to_remove);
-        remove_low_cov_on_node(reverse_complementary_node(node.first), removed_edges, coverage, nodes_to_remove);
+
+        remove_low_cov_on_node(node.first, removed_edges, coverage, nodes_to_remove, force);
+        remove_low_cov_on_node(reverse_complementary_node(node.first), removed_edges, coverage, nodes_to_remove, force);
     }
     for (auto&& n : nodes_to_remove)
         graph.erase(n);

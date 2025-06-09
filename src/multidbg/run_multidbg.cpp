@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <unistd.h>
 #include "run_multidbg.hpp"
+#include "dbg/dot_graph.hpp"
 
 using namespace multidbg;
 
@@ -22,16 +23,35 @@ void MDBGRunner::simplifyMDBG() {
 
     // Step 1 Read graph
     std::cout << "----------Read graph----------" << std::endl;
+    dbg::Graph g;
+    std::string initial_fasta = initial_dbg.substr(0, initial_dbg.rfind(".")) + ".fasta";
+    g.read_from_dot(initial_dbg, initial_fasta);
+
+    this->mean_cov = g.mean_cov;
+    this->first_minima = g.first_minima;
+    this->first_peak = g.error_peak;
+
     Graph graph;
     graph.read_graph(output, graph_dot, graph_fasta, nodes_fasta, graph_dbg, paths_dbg);
     graph.write_graph(output + "/graph.ori");
     graph.write_graph_gfa(output + "/graph.ori");
 
+    // std::cout << "First minima: " << first_minima << "; average coverage: " << mean_cov << std::endl;
+
+    graph.mean_cov = mean_cov;
+    graph.first_minima = first_minima;
+    graph.error_peak = first_peak;
+
     std::cout << "----------Stage 0: clean graph----------" << std::endl;
     removed_edges = 1;
     while (removed_edges) {
-        graph.remove_low_coverage_edges(removed_edges, graph.first_minima, true);
+        graph.remove_low_coverage_edges(removed_edges, this->first_minima, true);
         std::cout << "Removed " << removed_edges << " low-coverage tips" << std::endl;
+    }
+    removed_edges = 1;
+    while (removed_edges) {
+        graph.remove_low_coverage_edges(removed_edges, this->first_minima, false);
+        std::cout << "Removed " << removed_edges << " low-coverage edges" << std::endl;
     }
     graph.write_graph(output + "/graph.cleaned");
     graph.write_graph_gfa(output + "/graph.cleaned");
@@ -177,7 +197,7 @@ void MDBGRunner::simplifyMDBG() {
         removed_paths = 1;
         while (removed_paths)
             graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.9, true, 2, true, true);
-        graph.remove_low_coverage_edges(removed_edges, graph.error_peak + 1);
+        graph.remove_low_coverage_edges(removed_edges, this->first_minima, false, true);
         graph.resolve_edges_in_reverse_complement(decoupled);
         graph.merge_tips_into_edges(removed_tips, 0.2);
         graph.merge_tips(removed_tips);

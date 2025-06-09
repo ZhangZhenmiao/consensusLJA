@@ -95,6 +95,7 @@ namespace dbg {
         std::unordered_map<std::string, ReadAln> pseudo2aln;
         int error_peak = -1;
         int first_minima = -1;
+        int mean_cov = -1;
         void find_path_from_start_bases(std::string start_node, std::string start_bases, std::string read_name, std::vector<std::string>& nodes_path);
         void reroute_reads_from_edge_to_edge(Edge& edge_des, Edge& edge_ori, std::string node_s, std::string node_e);
         void reroute_reads_from_path_to_edge(Edge& edge_des, std::string node_s, std::string node_m, std::string node_e);
@@ -125,8 +126,8 @@ namespace dbg {
 
         void general_whirl_removal(unsigned& removed_whirls, bool simple_whirl = false, bool force = false);
         void resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, int x, double identity, bool use_length = false, int security_level = 3, bool allow_reverse_comp = false, bool verbose = false);
-        void remove_low_coverage_edges(unsigned& removed_edges, double coverage = 10, bool tips = false);
-        void remove_low_cov_on_node(std::string node, unsigned& removed_edges, double coverage, std::vector<std::string>& nodes_to_remove);
+        void remove_low_coverage_edges(unsigned& removed_edges, double coverage = 10, bool tips = false, bool force = false);
+        void remove_low_cov_on_node(std::string node, unsigned& removed_edges, double coverage, std::vector<std::string>& nodes_to_remove, bool force = false);
 
         void resolve_edges_in_reverse_complement(int& resolved_edges, bool strict = false);
         template<typename T>

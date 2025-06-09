@@ -293,10 +293,16 @@ void Graph::analyze_histogram(const std::map<int, int>& hist) {
     // Convert map to sorted vector for index-based access
     std::vector<std::pair<int, int>> vec(hist.begin(), hist.end());
 
+    int max_center = 0;
     for (size_t i = k; i < vec.size() - k; ++i) {
         int center = vec[i].second;
         bool is_peak = true;
         bool is_valley = true;
+
+        if (center > max_center) {
+            mean_cov = vec[i].first;
+            max_center = center;
+        }
 
         for (int j = 1; j <= k; ++j) {
             if (center <= vec[i - j].second || center <= vec[i + j].second) {
@@ -332,6 +338,7 @@ void Graph::analyze_histogram(const std::map<int, int>& hist) {
                 break;
             }
         }
+        std::cout << "Average coverage: " << mean_cov << std::endl;
     }
     else {
         std::cout << "No peaks found in histogram" << std::endl;

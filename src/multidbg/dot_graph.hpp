@@ -120,6 +120,7 @@ namespace multidbg {
         std::unordered_map<std::string, std::vector<std::string>> edge_initial_to_path_in_dbg;
         std::unordered_map<std::string, Path_for_MEdge> edge_initial_to_DBG_reads;
         int error_peak = -1, first_minima = -1;
+        int mean_cov = -1;
         std::map<int, int> create_histogram(const std::vector<double>& edges);
         void analyze_histogram(const std::map<int, int>& hist);
         void read_graph(std::string& output, std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta, const std::string& graph_dbg, const std::string& paths_dbg);
@@ -143,8 +144,8 @@ namespace multidbg {
 
         void general_whirl_removal(unsigned& removed_whirls, bool simple_whirl = false, bool force = false);
         void resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, int x, double identity, bool use_length = false, int security_level = 3, bool allow_reverse_comp = false, bool allow_tip = false, bool verbose = false);
-        void remove_low_coverage_edges(unsigned& removed_edges, double coverage = 10, bool tips = false);
-        void remove_low_cov_on_node(std::string node, unsigned& removed_edges, double coverage, std::vector<std::string>& nodes_to_remove);
+        void remove_low_coverage_edges(unsigned& removed_edges, double coverage = 10, bool tips = false, bool force = false);
+        void remove_low_cov_on_node(std::string node, unsigned& removed_edges, double coverage, std::vector<std::string>& nodes_to_remove, bool force = false);
         void remove_chimeric_edge(std::string chimeric_path);
 
         void resolve_edges_in_reverse_complement(int& resolved_edges, bool strict = false);

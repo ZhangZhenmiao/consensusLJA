@@ -71,10 +71,16 @@ void Graph::analyze_histogram(const std::map<int, int>& hist) {
     // Convert map to sorted vector for index-based access
     std::vector<std::pair<int, int>> vec(hist.begin(), hist.end());
 
+    int max_center = 0;
     for (size_t i = k; i < vec.size() - k; ++i) {
         int center = vec[i].second;
         bool is_peak = true;
         bool is_valley = true;
+
+        if (center > max_center) {
+            mean_cov = vec[i].first;
+            max_center = center;
+        }
 
         for (int j = 1; j <= k; ++j) {
             if (center <= vec[i - j].second || center <= vec[i + j].second) {
@@ -97,12 +103,12 @@ void Graph::analyze_histogram(const std::map<int, int>& hist) {
 
     // Output results
     if (!peaks.empty()) {
-        std::cout << "First peak at multiplicity: " << peaks[0].first
-            << " (count: " << peaks[0].second << ")\n";
+        // std::cout << "First peak at multiplicity: " << peaks[0].first
+        //     << " (count: " << peaks[0].second << ")\n";
 
         error_peak = peaks[0].first;
 
-        std::cout << "Subsequent local minima: ";
+        // std::cout << "Subsequent local minima: ";
         for (const auto& [valley, count] : valleys) {
             if (valley > peaks[0].first) {
                 std::cout << valley << " (count: " << count << ")\n";
@@ -110,9 +116,10 @@ void Graph::analyze_histogram(const std::map<int, int>& hist) {
                 break;
             }
         }
+        // std::cout << "Average coverage: " << mean_cov << std::endl;
     }
     else {
-        std::cout << "No peaks found in histogram" << std::endl;
+        // std::cout << "No peaks found in histogram" << std::endl;
     }
 }
 
@@ -786,7 +793,7 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
             if (n.first != node.first)
                 connected_nodes.insert(n.first);
         }
-        if (connected_nodes.size() == 1) {
+        if (connected_nodes.size() <= 1) {
             bool flag = true;
             for (auto&& c : connected_nodes) {
                 for (auto&& n : graph_vis[c].outgoing_edges) {

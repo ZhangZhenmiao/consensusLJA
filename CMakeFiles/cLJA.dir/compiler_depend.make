@@ -2845,7 +2845,9 @@ CMakeFiles/cLJA.dir/src/multidbg/run_multidbg.cpp.o: src/multidbg/run_multidbg.c
   /usr/include/c++/11/numeric \
   /usr/include/c++/11/bits/stl_numeric.h \
   /usr/include/c++/11/bit \
-  /usr/include/c++/11/pstl/glue_numeric_defs.h
+  /usr/include/c++/11/pstl/glue_numeric_defs.h \
+  src/dbg/dot_graph.hpp \
+  src/dbg/read_aln.hpp
 
 CMakeFiles/cLJA.dir/src/utils.cpp.o: src/utils.cpp \
   /usr/include/stdc-predef.h \

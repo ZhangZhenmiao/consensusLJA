@@ -11,9 +11,11 @@ public:
     int threads = 0;
     //input for multidbg
     std::string graph_gfa, graph_aln;
+    int first_peak = 0, first_minima = 0, mean_cov = 0;
     //input for simplification
     std::string graph_dot, graph_fasta, nodes_fasta, graph_dbg, paths_dbg;
     std::string reads;
+    std::string initial_dbg;
 
     //output
     std::string mdbg_dir, output;
@@ -25,7 +27,11 @@ public:
     std::string analyze_chimeric = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "analyze_chimeric.py";
     std::string polisher = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "run_polishing";
 
-    MDBGRunner(fs::path output_all, std::string reads, int threads) {
+    MDBGRunner(fs::path output_all, std::string reads, int threads, int first_peak, int first_minima, int mean_cov, std::string initial_dbg) {
+        this->first_peak = first_peak;
+        this->first_minima = first_minima;
+        this->mean_cov = mean_cov;
+        this->initial_dbg = initial_dbg;
         srand(2025);
         this->threads = threads;
         this->reads = reads;
@@ -36,7 +42,7 @@ public:
             while (flag) {
                 if (execute_command(mdbg + " -g " + (output_all / "1_clean_DBG" / "graph.cleaned.gfa").string() + " -a " + (output_all / "1_clean_DBG" / "graph.cleaned.aln").string() + " -t " + std::to_string(threads) + " -k 5001 -o " + mdbg_dir.string() + " --diploid") == 0)
                     flag = false;
-                if (++cnt == 10)
+                if (++cnt == 20)
                     throw std::runtime_error("Failed to execute multidbg");
             }
         }
