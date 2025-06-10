@@ -48,11 +48,11 @@ void MDBGRunner::simplifyMDBG() {
         graph.remove_low_coverage_edges(removed_edges, this->first_minima, true);
         std::cout << "Removed " << removed_edges << " low-coverage tips" << std::endl;
     }
-    removed_edges = 1;
-    while (removed_edges) {
-        graph.remove_low_coverage_edges(removed_edges, this->first_minima, false);
-        std::cout << "Removed " << removed_edges << " low-coverage edges" << std::endl;
-    }
+    // removed_edges = 1;
+    // while (removed_edges) {
+    //     graph.remove_low_coverage_edges(removed_edges, this->first_minima, false);
+    //     std::cout << "Removed " << removed_edges << " low-coverage edges" << std::endl;
+    // }
     graph.write_graph(output + "/graph.cleaned");
     graph.write_graph_gfa(output + "/graph.cleaned");
     graph.get_annotation(output + "/graph.cleaned");
