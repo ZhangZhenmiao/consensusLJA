@@ -60,8 +60,8 @@ int Graph::count_matches(std::string cigar) {
 }
 
 void Graph::get_annotation(std::string prefix) {
-    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
-    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
+    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
+    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
     if (fs::is_regular_file(prefix + ".fasta.fai"))
         system(("rm " + prefix + ".fasta.fai").c_str());
@@ -2387,9 +2387,70 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
 
 }
 
-void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, bool tips, bool force) {
+void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, bool tips, bool force, bool avoid_chromosome) {
     if (coverage < 0)
         coverage = 0;
+
+    if (avoid_chromosome) {
+        std::cout << "Avoid chromosome is triggered, will only remove edges of coverage <= " << coverage << " in components of mean coverage >= " << mean_cov * 10 << " and long edge length <= 1 Mbp" << std::endl;
+    }
+    // if (avoid_chromosome) {
+    std::unordered_map<std::string, int> node_to_comp;
+    int next_comp_id = 0;
+
+    // Merge two components (update all nodes with comp_b to comp_a)
+    auto merge_components = [&](int comp_a, int comp_b) {
+        for (auto& [node, comp] : node_to_comp) {
+            if (comp == comp_b)
+                comp = comp_a;
+        }
+        };
+
+    // Step 1: assign and merge components
+    for (auto&& u : graph) {
+        for (auto&& v : u.second.outgoing_edges) {
+            bool u_has = node_to_comp.count(u.first);
+            bool v_has = node_to_comp.count(v.first);
+
+            if (!u_has && !v_has) {
+                node_to_comp[u.first] = node_to_comp[v.first] = next_comp_id++;
+            }
+            else if (u_has && !v_has) {
+                node_to_comp[v.first] = node_to_comp[u.first];
+            }
+            else if (!u_has && v_has) {
+                node_to_comp[u.first] = node_to_comp[v.first];
+            }
+            else if (node_to_comp[u.first] != node_to_comp[v.first]) {
+                // Merge components
+                merge_components(node_to_comp[u.first], node_to_comp[v.first]);
+            }
+        }
+    }
+
+    std::unordered_map<int, double> comp_to_cov;
+    std::unordered_map<int, int> comp_to_cnt;
+    std::unordered_map<int, long> comp_to_len;
+    std::unordered_map<int, int> comp_to_high_cov_edges;
+    for (auto&& n : graph) {
+        for (auto&& n_o : n.second.outgoing_edges) {
+            for (auto&& e : n_o.second) {
+                comp_to_cov[node_to_comp[n.first]] += e.multiplicity;
+                comp_to_cnt[node_to_comp[n.first]] += 1;
+                if (e.length >= 20000)
+                    comp_to_len[node_to_comp[n.first]] += e.length;
+                if (e.multiplicity >= mean_cov * 100)
+                    comp_to_high_cov_edges[node_to_comp[n.first]] += 1;
+            }
+        }
+    }
+    std::unordered_map<int, double> comp_to_avgcov;
+    for (auto&& c : comp_to_cov) {
+        comp_to_avgcov[c.first] = comp_to_cnt[c.first] != 0 ? comp_to_cov[c.first] / comp_to_cnt[c.first] : 0;
+        if (avoid_chromosome)
+            std::cout << "Comp " << c.first << " has average coverage " << comp_to_avgcov[c.first] << ", long edge length " << comp_to_len[c.first] << ", high-cov edges " << comp_to_high_cov_edges[c.first] << std::endl;
+    }
+    // }
     // std::cout << "Remove low-coverage threshold: " << coverage << std::endl;
     removed_edges = 0;
     std::vector<std::string> nodes_to_remove;
@@ -2424,6 +2485,11 @@ void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, 
                 if (flag)
                     continue;
             }
+        }
+
+        if (avoid_chromosome) {
+            if (comp_to_avgcov[node_to_comp[node.first]] < 10 * mean_cov || comp_to_high_cov_edges[node_to_comp[node.first]] < 100)
+                continue;
         }
 
         if (tips == true && node.second.incoming_edges.size() >= 1 && node.second.outgoing_edges.size() >= 1)

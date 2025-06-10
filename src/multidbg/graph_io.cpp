@@ -111,7 +111,7 @@ void Graph::analyze_histogram(const std::map<int, int>& hist) {
         // std::cout << "Subsequent local minima: ";
         for (const auto& [valley, count] : valleys) {
             if (valley > peaks[0].first) {
-                std::cout << valley << " (count: " << count << ")\n";
+                // std::cout << valley << " (count: " << count << ")\n";
                 first_minima = valley;
                 break;
             }

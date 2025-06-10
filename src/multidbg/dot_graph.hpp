@@ -144,7 +144,7 @@ namespace multidbg {
 
         void general_whirl_removal(unsigned& removed_whirls, bool simple_whirl = false, bool force = false);
         void resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, int x, double identity, bool use_length = false, int security_level = 3, bool allow_reverse_comp = false, bool allow_tip = false, bool verbose = false);
-        void remove_low_coverage_edges(unsigned& removed_edges, double coverage = 10, bool tips = false, bool force = false);
+        void remove_low_coverage_edges(unsigned& removed_edges, double coverage = 10, bool tips = false, bool force = false, bool avoid_chromosome = false);
         void remove_low_cov_on_node(std::string node, unsigned& removed_edges, double coverage, std::vector<std::string>& nodes_to_remove, bool force = false);
         void remove_chimeric_edge(std::string chimeric_path);
 
