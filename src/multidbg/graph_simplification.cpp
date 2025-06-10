@@ -395,7 +395,7 @@ void Graph::merge_tips(unsigned& num_tips) {
                 }
                 if (graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length > max_length_all) {
                     max_length_all = graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length;
-                    max_length_all = i;
+                    max_index_all = i;
                 }
             }
             int max_index = -1;
