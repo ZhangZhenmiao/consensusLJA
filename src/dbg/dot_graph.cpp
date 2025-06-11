@@ -338,6 +338,11 @@ void Graph::analyze_histogram(const std::map<int, int>& hist) {
                 break;
             }
         }
+        if (first_minima >= mean_cov) {
+            std::cout << "No error peak detected" << std::endl;
+            error_peak = 0;
+            first_minima = 0;
+        }
         std::cout << "Average coverage: " << mean_cov << std::endl;
     }
     else {
