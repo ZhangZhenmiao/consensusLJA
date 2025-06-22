@@ -273,8 +273,7 @@ std::map<int, int> Graph::create_histogram(const std::vector<double>& edges) {
 }
 
 // Find peaks and valleys in histogram
-void Graph::analyze_histogram(const std::map<int, int>& hist) {
-    int window_size = 5;
+void Graph::analyze_histogram(const std::map<int, int>& hist, int window_size) {
     if (window_size < 3 || window_size % 2 == 0) {
         std::cerr << "Window size must be odd and >= 3" << std::endl;
         return;
@@ -613,7 +612,8 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
         {"23M", "#952395"},
         {"23P", "#952395"},
         {"X", "#969696"},
-        {"Y", "#969696"}
+        {"Y", "#969696"},
+        {"mtDNA", "#FF0000"}
     };
 
     std::unordered_set <std::string> traversed_labels;
@@ -623,7 +623,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
             start_node = node.first.substr(0, node.first.find_first_of('_')) + "_" + node.first.substr(node.first.find_last_of('_') + 1) + "_N" + std::to_string(node.second.number_of_contracted_edge) + "_L" + std::to_string(node.second.length_of_contracted_edge);
         for (auto&& edges : node.second.outgoing_edges) {
             std::string end_node = edges.first;
-            if (!nodes_retain.empty() && nodes_retain.find(node.first) == nodes_retain.end() && nodes_retain.find(end_node) == nodes_retain.end())
+            if (!nodes_retain.empty() && (nodes_retain.find(node.first) == nodes_retain.end() && nodes_retain.find(end_node) == nodes_retain.end()))
                 continue;
             if (contracted && graph[edges.first].number_of_contracted_edge > 0)
                 end_node = edges.first.substr(0, edges.first.find_first_of('_')) + '_' + edges.first.substr(edges.first.find_last_of('_') + 1) + "_N" + std::to_string(graph[edges.first].number_of_contracted_edge) + "_L" + std::to_string(graph[edges.first].length_of_contracted_edge);
@@ -679,7 +679,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                     }
                     flag = false;
                     for (auto&& edge_r : graph[reverse_complementary_node(end_node)].outgoing_edges[reverse_complementary_node(start_node)]) {
-                        if (edge_r.sequence == reverse_complementary(edge.sequence)) {
+                        if (edge_r.sequence == reverse_complementary(edge.sequence) || graph[reverse_complementary_node(end_node)].outgoing_edges[reverse_complementary_node(start_node)].size() == 1) {
                             assert(flag == false);
                             flag = true;
                             edge_r.rc_label = label_forward;
@@ -688,7 +688,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                     }
                     flag = false;
                     for (auto&& edge_r_i : graph[reverse_complementary_node(start_node)].incoming_edges[reverse_complementary_node(end_node)]) {
-                        if (edge_r_i.sequence == reverse_complementary(edge.sequence)) {
+                        if (edge_r_i.sequence == reverse_complementary(edge.sequence) || graph[reverse_complementary_node(start_node)].incoming_edges[reverse_complementary_node(end_node)].size() == 1) {
                             assert(flag == false);
                             flag = true;
                             edge_r_i.rc_label = label_forward;
@@ -738,6 +738,34 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
     file_path.close();
     std::cout << "Total number of nodes: " << this->get_num_nodes() << std::endl;
     std::cout << "Total number of edges: " << num_edges << std::endl;
+}
+
+void Graph::append_linear_to_circular_genome(const std::string& prefix, int len_read) {
+    std::string graph_fasta = prefix + ".fasta";
+
+    std::cout << "Write linear segment to fasta " << graph_fasta << std::endl;
+    std::ofstream file_fasta(graph_fasta, std::ios_base::app);
+
+    std::unordered_set<std::string> traversed_labels;
+
+    for (auto&& node : graph) {
+        if (node.second.outgoing_edges.find(node.first) != node.second.outgoing_edges.end()) {
+            for (auto&& e : node.second.outgoing_edges[node.first]) {
+                if (traversed_labels.find(e.label) != traversed_labels.end())
+                    continue;
+                traversed_labels.insert(e.rc_label);
+
+                // write a contig centered at 0, with length 2*(len_read + 1000)
+                std::string seq_centered = e.sequence.substr(0, len_read + 1000);
+                int start = std::max(0, int(e.sequence.size()) - k - len_read - 1000);
+                seq_centered = e.sequence.substr(start, e.sequence.size() - k - start) + seq_centered;
+                file_fasta << ">" << e.label << "_" << e.rc_label << "_linear\n";
+                file_fasta << seq_centered << "\n";
+            }
+        }
+    }
+
+    file_fasta.close();
 }
 
 void Graph::write_graph_gfa(const std::string& prefix) {

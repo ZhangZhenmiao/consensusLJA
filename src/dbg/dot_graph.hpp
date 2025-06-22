@@ -96,7 +96,7 @@ namespace dbg {
         int error_peak = -1;
         int first_minima = -1;
         int mean_cov = -1;
-        void find_path_from_start_bases(std::string start_node, std::string start_bases, std::string read_name, std::vector<std::string>& nodes_path);
+        std::string find_path_from_start_bases(std::string start_node, std::string start_bases, std::string read_name, std::vector<std::string>& nodes_path, int prefix, int suffix);
         void reroute_reads_from_edge_to_edge(Edge& edge_des, Edge& edge_ori, std::string node_s, std::string node_e);
         void reroute_reads_from_path_to_edge(Edge& edge_des, std::string node_s, std::string node_m, std::string node_e);
         void reroute_reads_from_outtip_to_edge(Edge& edge_des, std::string node_s, std::string node_e, std::string node_t);
@@ -106,16 +106,19 @@ namespace dbg {
         void read_graph(std::string& output, std::string& restart_from, std::string& graph_dot, const std::string& graph_fasta, const std::string& graph_aln);
         void read_from_dot(const std::string& graph_dot, const std::string& graph_fasta);
         std::map<int, int> create_histogram(const std::vector<double>& edges);
-        void analyze_histogram(const std::map<int, int>& hist);
+        void analyze_histogram(const std::map<int, int>& hist, int window_size = 5);
         void load_read_path(const std::string& graph_aln);
         void write_graph(const std::string& prefix, int thick = 1000000, bool contracted = false, bool colored = false, std::unordered_set<std::string> nodes = std::unordered_set<std::string>());
         void write_graph_contracted(const std::string& prefix, int min_length = 10000);
         void write_graph_gfa(const std::string& prefix);
         void write_graph_colored(const std::string& prefix, const std::string& genomes);
         void write_graph_colored_from_bam(const std::string& prefix, const std::string& bam_processed);
+        int write_reads(const std::string& prefix);
+        void append_linear_to_circular_genome(const std::string& prefix, int len_read);
         void decoupling(std::string multidbg, std::string output);
         int get_num_nodes();
         void detect_chimeric_reads();
+        void get_annotation(std::string prefix);
         std::unordered_set<std::string> get_intersection(std::unordered_set<std::string>& set1, std::unordered_set<std::string>& set2);
 
         void multi_bulge_removal(unsigned& removed_bulges, bool skip_rc_bulges = true);

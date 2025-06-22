@@ -26,7 +26,7 @@ int execute_command(const std::string& command) {
 
     std::string status;
 
-    status += "Command " + std::string(result.success ? "succeeded" : "failed");
+    status += "Command " + command + " " + std::string(result.success ? "succeeded" : "failed");
     status += " with exit code " + std::to_string(result.exit_code) + "\n";
     std::cout << status << std::endl;
 

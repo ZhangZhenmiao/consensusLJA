@@ -8,10 +8,31 @@
 #include <cassert>
 #include <set>
 #include <queue>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 using namespace dbg;
 
+int Graph::write_reads(const std::string& prefix) {
+    int max_length = 0;
+    std::ofstream fout(prefix + ".fasta");
+    for (auto&& r : read2aln) {
+        if (r.second.nodes_path.size() < 2)
+            continue;
+        std::vector<std::string> nodes;
+        std::string sequence = find_path_from_start_bases(r.second.nodes_path[0], r.second.start_base_path, r.first, nodes, r.second.prefix, r.second.suffix);
+        // std::cout << "Length for " << r.first << ": " << sequence.size() << std::endl;
+        fout << ">" << r.first << "\n" << sequence << "\n";
+        if (sequence.size() > max_length)
+            max_length = sequence.size();
+    }
+    fout.close();
+    return max_length;
+}
+
 void Graph::load_read_path(const std::string& graph_aln) {
+    if (!fs::is_regular_file(graph_aln))
+        return;
     std::ifstream aln_file(graph_aln);
     std::string line;
     getline(aln_file, line);
@@ -34,7 +55,7 @@ void Graph::load_read_path(const std::string& graph_aln) {
         read2aln[items[0]].prefix = std::atoi(items[3].c_str());
         read2aln[items[0]].suffix = std::atoi(items[4].c_str());
         read2aln[items[0]].start_base_path = items[2].substr(2);
-        find_path_from_start_bases(items[1], read2aln[items[0]].start_base_path, items[0], read2aln[items[0]].nodes_path);
+        find_path_from_start_bases(items[1], read2aln[items[0]].start_base_path, items[0], read2aln[items[0]].nodes_path, read2aln[items[0]].prefix, read2aln[items[0]].suffix);
         if (items[1] != "0")
             assert(read2aln[items[0]].start_base_path.size() + 1 == read2aln[items[0]].nodes_path.size());
     }
@@ -55,17 +76,18 @@ void Graph::load_read_path(const std::string& graph_aln) {
         pseudo2aln[items[0]].prefix = std::atoi(items[3].c_str());
         pseudo2aln[items[0]].suffix = std::atoi(items[4].c_str());
         pseudo2aln[items[0]].start_base_path = items[2].substr(2);
-        find_path_from_start_bases(items[1], pseudo2aln[items[0]].start_base_path, items[0], pseudo2aln[items[0]].nodes_path);
+        find_path_from_start_bases(items[1], pseudo2aln[items[0]].start_base_path, items[0], pseudo2aln[items[0]].nodes_path, pseudo2aln[items[0]].prefix, pseudo2aln[items[0]].suffix);
         if (items[1] != "0")
             assert(pseudo2aln[items[0]].start_base_path.size() + 1 == pseudo2aln[items[0]].nodes_path.size());
     }
     std::cout << "Load " << cnt_corrected << " corrected reads, " << cnt_pseudo << " pseudo reads." << std::endl;
 }
 
-void Graph::find_path_from_start_bases(std::string start_node, std::string start_bases, std::string read_name, std::vector<std::string>& nodes_path) {
+std::string Graph::find_path_from_start_bases(std::string start_node, std::string start_bases, std::string read_name, std::vector<std::string>& nodes_path, int prefix, int suffix) {
     if (start_node == "0")
-        return;
+        return "";
 
+    std::string seq = "";
     if (graph.find(start_node) == graph.end()) {
         std::cout << "No start node found on graph for " << start_node << ", P:" << start_bases << std::endl;
     }
@@ -87,6 +109,22 @@ void Graph::find_path_from_start_bases(std::string start_node, std::string start
                     nodes_path.push_back(node_next.first);
                     selected_next = node_next.first;
                     flag = true;
+
+                    if (index == 0 && index != start_bases.size() - 1) {
+                        assert(prefix < e.sequence.size());
+                        seq += e.sequence.substr(prefix);
+                    }
+                    else if (index == 0 && index == start_bases.size() - 1) {
+                        assert(e.sequence.size() > prefix + suffix);
+                        seq += e.sequence.substr(prefix, e.sequence.size() - prefix - suffix);
+                    }
+                    else if (index != 0 && index != start_bases.size() - 1) {
+                        seq += e.sequence.substr(k);
+                    }
+                    else {
+                        assert(e.sequence.size() - suffix - k > 0);
+                        seq += e.sequence.substr(k, e.sequence.size() - suffix - k);
+                    }
                 }
             }
         }
@@ -97,6 +135,7 @@ void Graph::find_path_from_start_bases(std::string start_node, std::string start
         index += 1;
         start_node = selected_next;
     }
+    return seq;
 }
 
 void Graph::reroute_reads_from_edge_to_edge(Edge& edge_des, Edge& edge_ori, std::string node_s, std::string node_e) {
@@ -165,7 +204,7 @@ void Graph::reroute_reads_from_outtip_to_edge(Edge& edge_des, std::string node_s
     edge_des.reads.insert(tip.reads.begin(), tip.reads.end());
 
     for (auto&& r : tip.reads) {
-        std::cout << "Process for outtip " << node_s << " to " << node_t << " read " << r << std::endl;
+        // std::cout << "Process for outtip " << node_s << " to " << node_t << " read " << r << std::endl;
         ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
         if (aln.nodes_path.size() >= 2) {
             assert(aln.nodes_path[aln.nodes_path.size() - 1] == node_t &&
@@ -179,16 +218,16 @@ void Graph::reroute_reads_from_outtip_to_edge(Edge& edge_des, std::string node_s
                 aln.prefix = 0;
                 aln.suffix = 0;
                 aln.start_base_path = "";
-                std::cout << "Prefix too long, the alignment is removed." << std::endl;
+                // std::cout << "Prefix too long, the alignment is removed." << std::endl;
             }
             else if (edge_des.length > (tip.length - aln.suffix)) {
-                std::cout << "Suffix updated from " << aln.suffix;
+                // std::cout << "Suffix updated from " << aln.suffix;
                 aln.suffix = edge_des.length - (tip.length - aln.suffix);
-                std::cout << " to " << aln.suffix << ", tip " << tip.length << " edge " << edge_des.length << std::endl;
+                // std::cout << " to " << aln.suffix << ", tip " << tip.length << " edge " << edge_des.length << std::endl;
             }
             else {
                 aln.suffix = 0;
-                std::cout << "Suffix updated to 0, tip " << tip.length << " edge " << edge_des.length << " previous suffix " << aln.suffix << std::endl;
+                // std::cout << "Suffix updated to 0, tip " << tip.length << " edge " << edge_des.length << " previous suffix " << aln.suffix << std::endl;
             }
         }
     }
@@ -199,7 +238,7 @@ void Graph::reroute_reads_from_intip_to_edge(Edge& edge_des, std::string node_s,
     edge_des.reads.insert(tip.reads.begin(), tip.reads.end());
 
     for (auto&& r : tip.reads) {
-        std::cout << "Process for intip " << node_t << " to " << node_e << " read " << r << std::endl;
+        // std::cout << "Process for intip " << node_t << " to " << node_e << " read " << r << std::endl;
         ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
         if (aln.nodes_path.size() >= 2) {
             assert(aln.nodes_path[0] == node_t &&
@@ -212,16 +251,16 @@ void Graph::reroute_reads_from_intip_to_edge(Edge& edge_des, std::string node_s,
                 aln.prefix = 0;
                 aln.suffix = 0;
                 aln.start_base_path = "";
-                std::cout << "Suffix too long, the alignment is removed." << std::endl;
+                // std::cout << "Suffix too long, the alignment is removed." << std::endl;
             }
             else if (edge_des.length > (tip.length - aln.prefix)) {
-                std::cout << "Prefix updated from " << aln.prefix;
+                // std::cout << "Prefix updated from " << aln.prefix;
                 aln.prefix = edge_des.length - (tip.length - aln.prefix);
-                std::cout << " to " << aln.prefix << ", tip " << tip.length << " edge " << edge_des.length << std::endl;
+                // std::cout << " to " << aln.prefix << ", tip " << tip.length << " edge " << edge_des.length << std::endl;
             }
             else {
                 aln.prefix = 0;
-                std::cout << "Prefix updated to 0, tip " << tip.length << " edge " << edge_des.length << " previous prefix " << aln.prefix << std::endl;
+                // std::cout << "Prefix updated to 0, tip " << tip.length << " edge " << edge_des.length << " previous prefix " << aln.prefix << std::endl;
             }
         }
     }
@@ -581,7 +620,7 @@ void Graph::detect_chimeric_reads() {
                     if (node3.second.size() > 1)
                         continue;
                     for (int j = 0;j < node3.second.size(); ++j) {
-                        if (node1.first == node2.first || node2.first == node3.first)
+                        if (node1.first == node2.first && node2.first == node3.first)
                             continue;
                         auto& e2 = node3.second[j];
                         Path p;
@@ -604,10 +643,14 @@ void Graph::detect_chimeric_reads() {
 
                         auto inters = get_intersection(e1_all, e2_all);
 
-                        if (inters.size() <= 1 && e1.multiplicity >= 10 && e2.multiplicity >= 10) {
+                        if (node1.first == "-33853")
+                            std::cout << node1.first << " -> (" << e1.length << " " << e1.multiplicity << ") -> " << node2.first << " -> (" << e2.length << " " << e2.multiplicity << ") -> " << node3.first << " reads1 " << e1_all.size() << " reads2 " << e2_all.size() << " shared " << inters.size() << ":" << std::endl;
+
+                        // if (inters.size() <= 1 && (e1_all.size() >= 10 || e2_all.size() >= 10)) {
+                        if (inters.size() <= 1) {
                             erroneous_edges.emplace_back(ErrorEdge(node1.first, node2.first, inters, i, p_reverse.bulge_legs[1]));
 
-                            std::cout << "Find erroneuous edge " << node1.first << " -> (" << e1.length << " " << e1.multiplicity << ") -> " << node2.first << " -> (" << e2.length << " " << e2.multiplicity << ") -> " << node3.first << ":" << std::endl;
+                            std::cout << "Find erroneuous edge " << node1.first << " -> (" << e1.length << " " << e1.multiplicity << ") -> " << node2.first << " -> (" << e2.length << " " << e2.multiplicity << ") -> " << node3.first << " reads1 " << e1_all.size() << " reads2 " << e2_all.size() << " shared " << inters.size() << ":" << std::endl;
                             for (auto r : inters) {
                                 if (chimeric_reads.find(r) == chimeric_reads.end())
                                     std::cout << "    Find chimeric read " << r << ", " << node1.first << " (" << e1.length << " " << e1.multiplicity << ") " << node2.first << " (" << e2.length << " " << e2.multiplicity << ") " << node3.first << std::endl;
@@ -677,18 +720,22 @@ void Graph::detect_chimeric_reads() {
 
             for (auto&& r : out_forward.reads) {
                 ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
-                assert(aln.nodes_path.at(aln.nodes_path.size() - 1) == error_edge.node2);
-                aln.nodes_path[aln.nodes_path.size() - 1] = new_node;
-                assert(aln.start_base_path[aln.start_base_path.size() - 1] == out_forward.start_base);
-                aln.suffix = aln.suffix < k ? 0 : aln.suffix - k;
+                if (aln.nodes_path.size() != 0) {
+                    assert(aln.nodes_path.at(aln.nodes_path.size() - 1) == error_edge.node2);
+                    aln.nodes_path[aln.nodes_path.size() - 1] = new_node;
+                    assert(aln.start_base_path[aln.start_base_path.size() - 1] == out_forward.start_base);
+                    aln.suffix = aln.suffix < k ? 0 : aln.suffix - k;
+                }
             }
 
             for (auto&& r : out_reverse.reads) {
                 ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
-                assert(aln.nodes_path.at(0) == reverse_complementary_node(error_edge.node2));
-                aln.nodes_path[0] = reverse_complementary_node(new_node);
-                aln.start_base_path[0] = out_reverse.start_base;
-                aln.prefix = aln.prefix < k ? 0 : aln.prefix - k;
+                if (aln.nodes_path.size() != 0) {
+                    assert(aln.nodes_path.at(0) == reverse_complementary_node(error_edge.node2));
+                    aln.nodes_path[0] = reverse_complementary_node(new_node);
+                    aln.start_base_path[0] = out_reverse.start_base;
+                    aln.prefix = aln.prefix < k ? 0 : aln.prefix - k;
+                }
             }
 
             graph[error_edge.node1].outgoing_edges[new_node].push_back(out_forward);

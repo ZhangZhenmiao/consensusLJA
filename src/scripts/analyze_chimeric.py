@@ -1,28 +1,40 @@
 #!/usr/bin/env python
 from Bio import SeqIO
-import gzip
 import pysam
 import argparse
 import numpy as np
+import sys
 
 def calculate_identity(alignment):
-    try:
-        if alignment.has_tag('NM'):
-            nm = alignment.get_tag('NM')  # Number of mismatches
-        else:
-            nm = sum([count for (operation, count) in alignment.cigartuples if operation == 8])
-    except:
-        nm = 0
-    
-    alignment_length = alignment.query_alignment_length
-    if alignment_length == 0:
+    cigar = alignment.cigartuples
+    if not cigar:
         return 0
-    
-    identity = (alignment_length - nm) / alignment_length
-    return identity
+
+    matches = sum(length for op, length in cigar if op == 7)  # '='
+    mismatches = sum(length for op, length in cigar if op == 8)  # 'X'
+    insertions = sum(length for op, length in cigar if op == 1)
+    deletions = sum(length for op, length in cigar if op == 2)
+
+    aligned_len = matches + mismatches # query_alignment_length is aligned_len + insertions
+    total_bases = aligned_len + insertions + deletions
+    pid = matches / total_bases if total_bases > 0 else 0.0
+    return pid
 
 # def read_bam(bam_file_path, reads_file_path):
 def read_bam(bam_file_path, dot_file_path):
+    # if (reads != ""):
+    #     print(reads, flush=True)
+    #     if reads == "-":
+    #         handle = sys.stdin
+    #     else:
+    #         handle = open(reads, "r")
+
+    #     read_lengths = {}
+    #     for record in SeqIO.parse(handle, "fasta"):
+    #         read_lengths[record.id] = len(record.seq)
+
+    #     print("read", len(read_lengths), "read lengths", flush=True)
+
     node2len = {}
     with open(dot_file_path) as dot_file:
         line = dot_file.readline()
@@ -48,7 +60,7 @@ def read_bam(bam_file_path, dot_file_path):
         for read in bam_file:
             if read.is_unmapped:
                 continue
-            if calculate_identity(read) > 0.95:
+            if calculate_identity(read) > 0.99:
                 if read.reference_name not in alignments:
                     alignments[read.reference_name] = []
                 alignments[read.reference_name].append({
@@ -57,16 +69,24 @@ def read_bam(bam_file_path, dot_file_path):
                     "end": read.reference_end,
                     "ref_length": bam_file.get_reference_length(read.reference_name),
                     "aligned": read.query_alignment_length,
-                    "idt": calculate_identity(read)
+                    "idt": calculate_identity(read),
+                    # "aligned_fraction": read.query_alignment_length/read_lengths[read.query_name]
                 })
 
         # detect chimeric at nodes
         tolerant_size = 1000
+        # print("Contig", "Contig_len", "Node_start", "Node_end", "Read", "Aln_start", "Aln_end", "Aligned_len", "PI", "AF", sep="\t", flush=True)
         for r in alignments:
+            sorted(alignments[r], key=lambda x: x["start"])
+
             node1, node2 = r.split('_')
             node1 = node1[:node1.find('.')]
             node2 = node2[:node2.find('.')]
             contig_len = bam_file.get_reference_length(r)
+
+            # for aln in alignments[r]:
+            #     print(r, contig_len, node2len[node1], node2len[node2], aln["name"], aln["start"], aln["end"], aln["aligned"], aln["idt"], aln["aligned_fraction"], sep="\t", flush=True)
+
             split_coordinate1 = min(node2len[node1], contig_len - node2len[node2])
             split_coordinate2 = max(node2len[node1], contig_len - node2len[node2])
             if split_coordinate1 <= 2*tolerant_size or split_coordinate2 >= contig_len-2*tolerant_size:
@@ -99,7 +119,7 @@ def read_bam(bam_file_path, dot_file_path):
             potential_pos = []
             if np.average(coverages) >= 5:
                 for i in range(bam_file.get_reference_length(r)):
-                    if coverages[i] <= 2 and i >= 5001- tolerant_size and i <= bam_file.get_reference_length(r)-5001+tolerant_size:
+                    if coverages[i] <= 1 and i >= 5001- tolerant_size and i <= bam_file.get_reference_length(r)-5001+tolerant_size:
                         potential_pos.append(i)
                         # print("low coverage:", r, i)
             
@@ -121,12 +141,14 @@ if __name__ == "__main__":
     parser.add_argument("bam_file", help="Path to the input BAM file")
     parser.add_argument("dot_file", help="Path to the input dot file (for node sizes)")
     parser.add_argument("output", help="Path to the output file")
+    # parser.add_argument("reads", help="Path to reads", default="", required=False)
     
     # Parse the command-line arguments
     args = parser.parse_args()
 
     # Call the function with the BAM file path provided by the user
     # read_bam(args.bam_file, args.reads_file)
+    # chimeric_edges = read_bam(args.bam_file, args.dot_file, args.reads)
     chimeric_edges = read_bam(args.bam_file, args.dot_file)
     with open(args.output, "w") as fout:
         for e in chimeric_edges:

@@ -164,10 +164,10 @@ void MDBGRunner::simplifyMDBG() {
     removed_tips = 1;
     total_removed = 0;
     while (removed_tips) {
-        removed_edges = 1;
-        while (removed_edges) {
-            graph.remove_low_coverage_edges(removed_edges, this->first_minima, false, true, true);
-        }
+        // removed_edges = 1;
+        // while (removed_edges) {
+        //     graph.remove_low_coverage_edges(removed_edges, this->first_minima, false, true, true);
+        // }
         graph.resolve_edges_in_reverse_complement(decoupled);
         graph.merge_tips_into_edges(removed_tips, 0.2);
         total_removed += removed_tips;
@@ -198,6 +198,9 @@ void MDBGRunner::simplifyMDBG() {
 
     removed_tips = 1;
     while (removed_tips) {
+        removed_paths = 1;
+        while (removed_paths)
+            graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0, true, 2);
         removed_paths = 1;
         while (removed_paths)
             graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.9, true, 2, true, true);

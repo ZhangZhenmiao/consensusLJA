@@ -13,6 +13,31 @@
 #include "utils.hpp"
 
 using namespace dbg;
+namespace fs = std::filesystem;
+
+void Graph::get_annotation(std::string prefix) {
+    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
+    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
+    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
+    if (fs::is_regular_file(prefix + ".fasta.fai"))
+        system(("rm " + prefix + ".fasta.fai").c_str());
+    if (system(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str()) != 0) {
+        exit(1);
+    }
+    if (!std::filesystem::exists(ref_seq + ".fai")) {
+        if (system(("samtools faidx " + ref_seq).c_str()) != 0)
+            exit(1);
+    }
+    if (system(("cut -f1,2 " + ref_seq + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + prefix + ".ref.header.sam").c_str()) != 0)
+        exit(1);
+    if (system(("cat " + prefix + ".ref.header.sam " + prefix + ".ref.sam | samtools sort -@ 50 -o " + prefix + ".ref.bam").c_str()) != 0) {
+        exit(1);
+    }
+    std::string exeDir = getExecutablePath();
+    if (system((exeDir + "/../src/scripts/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str()) != 0)
+        exit(1);
+    write_graph_colored_from_bam(prefix + ".color", prefix + ".ref.bam.stats");
+}
 
 int Graph::count_matches(std::string cigar) {
     int matches = 0;
@@ -496,7 +521,7 @@ void Graph::gluing_broken_bulges(unsigned& removed_bulges) {
             std::string incoming_tip;
             Edge incoming_edge;
             for (auto&& in_node : graph[node2.first].incoming_edges) {
-                if (in_node.second.size() == 1 && graph[in_node.first].incoming_edges.empty()) {
+                if (in_node.second.size() == 1 && graph[in_node.first].incoming_edges.empty() && graph[in_node.first].outgoing_edges.size() == 1) {
                     incoming_tip = in_node.first;
                     incoming_edge = in_node.second.at(0);
                 }
@@ -505,7 +530,7 @@ void Graph::gluing_broken_bulges(unsigned& removed_bulges) {
             std::string outgoing_tip;
             Edge outgoing_edge;
             for (auto&& out_node : graph[node.first].outgoing_edges) {
-                if (out_node.second.size() == 1 && graph[out_node.first].outgoing_edges.empty()) {
+                if (out_node.second.size() == 1 && graph[out_node.first].outgoing_edges.empty() && graph[out_node.first].incoming_edges.size() == 1) {
                     outgoing_tip = out_node.first;
                     outgoing_edge = out_node.second.at(0);
                 }
@@ -515,50 +540,30 @@ void Graph::gluing_broken_bulges(unsigned& removed_bulges) {
                 std::string seq_broken = outgoing_edge.sequence + incoming_edge.sequence.substr(k);
                 // double similarity = 1.0 * matches_by_edlib(seq_broken, node2.second.at(0).sequence) / std::max(seq_broken.size(), node2.second.at(0).sequence.size());
                 double similarity = 1.0 * std::min(outgoing_edge.length + incoming_edge.length, node2.second.at(0).length) / std::max(outgoing_edge.length + incoming_edge.length, node2.second.at(0).length);
-                if (similarity < 0.9)
-                    continue;
-                std::cout << "Broken bulge (and reverse complementary): " << node.first << "->" << node2.first << ", " << node.first << "->" << outgoing_tip << " " << incoming_tip << "->" << node2.first << ", sim " << similarity << std::endl;
-                std::vector<std::string> nodes;
-                std::string out_tip_seq = outgoing_edge.sequence.substr(outgoing_edge.sequence.size() - k);
-                for (auto&& n : graph[incoming_tip].outgoing_edges) {
-                    nodes.push_back(n.first);
-                    for (auto&& e : n.second) {
-                        e.sequence = out_tip_seq + e.sequence.substr(k);
-                    }
-                    for (auto&& e : graph[n.first].incoming_edges[incoming_tip]) {
-                        e.sequence = out_tip_seq + e.sequence.substr(k);
-                    }
-                }
-                for (auto&& n : graph[reverse_complementary_node(incoming_tip)].incoming_edges) {
-                    for (auto&& e : n.second) {
-                        e.sequence = e.sequence.substr(0, e.sequence.size() - k) + reverse_complementary(out_tip_seq);
-                    }
-                    for (auto&& e : graph[n.first].outgoing_edges[reverse_complementary_node(incoming_tip)]) {
-                        e.sequence = e.sequence.substr(0, e.sequence.size() - k) + reverse_complementary(out_tip_seq);
-                    }
-                }
-                for (auto&& n : nodes) {
-                    merge_vecs(graph[n].incoming_edges[outgoing_tip], graph[n].incoming_edges[incoming_tip]);
-                    merge_vecs(graph[outgoing_tip].outgoing_edges[n], graph[incoming_tip].outgoing_edges[n]);
-                    graph[n].incoming_edges.erase(incoming_tip);
-                    graph[incoming_tip].outgoing_edges.erase(n);
+                std::cout << "Broken bulge (and reverse complementary): " << node.first << "->" << node2.first << ", " << node.first << "->" << outgoing_tip << "(" << outgoing_edge.reads.size() << ")" << " " << incoming_tip << "->" << node2.first << "(" << incoming_edge.reads.size() << ")" << ", sim " << similarity << std::endl;
 
-                    merge_vecs(graph[reverse_complementary_node(n)].outgoing_edges[reverse_complementary_node(outgoing_tip)], graph[reverse_complementary_node(n)].outgoing_edges[reverse_complementary_node(incoming_tip)]);
-                    merge_vecs(graph[reverse_complementary_node(outgoing_tip)].incoming_edges[reverse_complementary_node(n)], graph[reverse_complementary_node(incoming_tip)].incoming_edges[reverse_complementary_node(n)]);
-                    graph[reverse_complementary_node(n)].outgoing_edges.erase(reverse_complementary_node(incoming_tip));
-                    graph[reverse_complementary_node(incoming_tip)].incoming_edges.erase(reverse_complementary_node(n));
-                }
-                assert(graph[incoming_tip].incoming_edges.empty() && graph[incoming_tip].outgoing_edges.empty());
-                assert(graph[reverse_complementary_node(incoming_tip)].incoming_edges.empty() && graph[reverse_complementary_node(incoming_tip)].outgoing_edges.empty());
-                nodes_to_remove.push_back(incoming_tip);
-                nodes_to_remove.push_back(reverse_complementary_node(incoming_tip));
+                std::string seq = outgoing_edge.sequence.substr(outgoing_edge.sequence.size() - k) + incoming_edge.sequence.substr(0, k);
+                Edge new_edge(seq.at(k), 5001, seq, 0);
+                new_edge.path_edges_in_original_graph.push_back("null");
+                new_edge.path_nodes_in_original_graph.push_back(outgoing_tip);
+                new_edge.path_nodes_in_original_graph.push_back(incoming_tip);
+                graph[outgoing_tip].outgoing_edges[incoming_tip].push_back(new_edge);
+                graph[incoming_tip].incoming_edges[outgoing_tip].push_back(new_edge);
+
+                std::string seq_r = reverse_complementary(seq);
+                Edge new_edge_r(seq_r.at(k), 5001, seq_r, 0);
+                new_edge_r.path_edges_in_original_graph.push_back("null");
+                new_edge_r.path_nodes_in_original_graph.push_back(reverse_complementary_node(incoming_tip));
+                new_edge_r.path_nodes_in_original_graph.push_back(reverse_complementary_node(outgoing_tip));
+                graph[reverse_complementary_node(incoming_tip)].outgoing_edges[reverse_complementary_node(outgoing_tip)].push_back(new_edge_r);
+                graph[reverse_complementary_node(outgoing_tip)].incoming_edges[reverse_complementary_node(incoming_tip)].push_back(new_edge_r);
             }
         }
     }
     for (auto&& n : nodes_to_remove)
         this->graph.erase(n);
     this->merge_non_branching_paths();
-    this->multi_bulge_removal(removed_bulges);
+    // this->multi_bulge_removal(removed_bulges);
 }
 
 void Graph::merge_tips_into_edges(unsigned& num_tips) {
@@ -590,11 +595,32 @@ void Graph::merge_tips_into_edges(unsigned& num_tips) {
             for (auto&& e : non_tips) {
                 // the tip should be short: at least shorter than the edge
                 // if (graph[node.first].outgoing_edges[t].at(0).length > graph[node.first].outgoing_edges[e].at(0).length)
-                if (graph[node.first].outgoing_edges[t].at(0).length > graph[node.first].outgoing_edges[e].at(0).length)
+                if (graph[node.first].outgoing_edges[t].at(0).length * 0.8 > graph[node.first].outgoing_edges[e].at(0).length)
                     continue;
 
-                // if (graph[node.first].outgoing_edges[t].at(0).multiplicity > graph[node.first].outgoing_edges[e].at(0).multiplicity * 0.8)
-                //     continue;
+                if (graph[node.first].outgoing_edges[t].at(0).multiplicity * 0.8 > graph[node.first].outgoing_edges[e].at(0).multiplicity)
+                    continue;
+
+                // skip if node.first is in a palindromic bulge - dangerous
+                bool flag = false;
+                std::string curr_n = node.first;
+                while (true) {
+                    if (graph[curr_n].incoming_edges.size() != 1) {
+                        if (curr_n == node.first)
+                            break;
+                        if (curr_n != reverse_complementary_node(node.first))
+                            break;
+                        else {
+                            flag = true;
+                            break;
+                        }
+                    }
+                    for (auto&& n : graph[curr_n].incoming_edges) {
+                        curr_n = n.first;
+                    }
+                }
+                if (flag)
+                    continue;
 
                 // calculate similarity
                 std::string prefix_edge = graph[node.first].outgoing_edges[e].at(0).sequence.substr(k, 100000);
@@ -2260,49 +2286,66 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
         if (edges.size() == 1)
             return false;
         for (auto&& e : edges) {
-            if (e.multiplicity >= mean_cov * 10)
+            if (e.multiplicity > coverage)
                 return true;
         }
         return false;
         };
     auto is_connected_to_high_muilti_edge = [&](std::string node1, std::string node2) -> bool {
+        bool checked = false;
         if (graph.find(node1) != graph.end()) {
             for (auto&& n : graph[node1].outgoing_edges) {
+                if (n.first == node1 || n.first == node2)
+                    continue;
+                checked = true;
                 for (auto&& e : n.second) {
-                    if (e.multiplicity >= mean_cov * 10)
-                        return true;
+                    if (e.multiplicity < mean_cov * 10)
+                        return false;
                 }
             }
             for (auto&& n : graph[node1].incoming_edges) {
+                if (n.first == node1 || n.first == node2)
+                    continue;
+                checked = true;
                 for (auto&& e : n.second) {
-                    if (e.multiplicity >= mean_cov * 10)
-                        return true;
+                    if (e.multiplicity < mean_cov * 10)
+                        return false;
                 }
             }
         }
         if (graph.find(node2) != graph.end()) {
             for (auto&& n : graph[node2].outgoing_edges) {
+                if (n.first == node1 || n.first == node2)
+                    continue;
+                checked = true;
                 for (auto&& e : n.second) {
-                    if (e.multiplicity >= mean_cov * 10)
-                        return true;
+                    if (e.multiplicity < mean_cov * 10)
+                        return false;
                 }
             }
             for (auto&& n : graph[node2].incoming_edges) {
+                if (n.first == node1 || n.first == node2)
+                    continue;
+                checked = true;
                 for (auto&& e : n.second) {
-                    if (e.multiplicity >= mean_cov * 10)
-                        return true;
+                    if (e.multiplicity < mean_cov * 10)
+                        return false;
                 }
             }
         }
-        return false;
+        return checked;
         };
     for (auto&& n2 : graph[node].outgoing_edges) {
-        std::vector<int> indices;
+        std::vector<int> indices1;
         for (int i = 0; i < n2.second.size(); ++i) {
             if (n2.second.at(i).multiplicity <= coverage || n2.second.at(i).multiplicity == 0) {
                 if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || n2.second.at(i).multiplicity == 0) {
-                    indices.push_back(i);
+                    indices1.push_back(i);
                     removed_edges += 1;
+                    // if (is_in_high_multi_bulge(n2.second))
+                    //     std::cout << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is in bulge" << std::endl;
+                    // else if (is_connected_to_high_muilti_edge(node, n2.first))
+                    //     std::cout << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is low-high connector" << std::endl;
                     for (auto&& r : n2.second.at(i).reads) {
                         ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
                         aln.prefix = 0;
@@ -2313,19 +2356,20 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
                 }
             }
         }
-        remove_items_from_vector(n2.second, indices);
-        if (n2.second.empty())
-            out_to_remove.push_back(n2.first);
 
-        indices.clear();
+        std::vector<int> indices2;
         for (int i = 0; i < graph[n2.first].incoming_edges[node].size(); ++i) {
             if (graph[n2.first].incoming_edges[node].at(i).multiplicity <= coverage || graph[n2.first].incoming_edges[node].at(i).multiplicity == 0) {
                 if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || graph[n2.first].incoming_edges[node].at(i).multiplicity == 0) {
-                    indices.push_back(i);
+                    indices2.push_back(i);
                 }
             }
         }
-        remove_items_from_vector(graph[n2.first].incoming_edges[node], indices);
+        remove_items_from_vector(n2.second, indices1);
+        if (n2.second.empty())
+            out_to_remove.push_back(n2.first);
+
+        remove_items_from_vector(graph[n2.first].incoming_edges[node], indices2);
         if (graph[n2.first].incoming_edges[node].empty()) {
             graph[n2.first].incoming_edges.erase(node);
             if (graph[n2.first].incoming_edges.empty() && graph[n2.first].outgoing_edges.empty())
@@ -2335,24 +2379,25 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
 
     std::vector<std::string> in_to_remove;
     for (auto&& n2 : graph[node].incoming_edges) {
-        std::vector<int> indices;
+        std::vector<int> indices1;
         for (int i = 0; i < n2.second.size(); ++i) {
             if (n2.second.at(i).multiplicity <= coverage || n2.second.at(i).multiplicity == 0) {
                 if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || n2.second.at(i).multiplicity == 0) {
-                    indices.push_back(i);
+                    indices1.push_back(i);
                 }
             }
         }
-        remove_items_from_vector(n2.second, indices);
-        if (n2.second.empty())
-            in_to_remove.push_back(n2.first);
 
-        indices.clear();
+        std::vector<int> indices2;
         for (int i = 0; i < graph[n2.first].outgoing_edges[node].size(); ++i) {
             if (graph[n2.first].outgoing_edges[node].at(i).multiplicity <= coverage || graph[n2.first].outgoing_edges[node].at(i).multiplicity == 0) {
                 if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || graph[n2.first].outgoing_edges[node].at(i).multiplicity == 0) {
-                    indices.push_back(i);
+                    indices2.push_back(i);
                     removed_edges += 1;
+                    // if (is_in_high_multi_bulge(n2.second))
+                    //     std::cout << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is in bulge" << std::endl;
+                    // else if (is_connected_to_high_muilti_edge(node, n2.first))
+                    //     std::cout << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is low-high connector" << std::endl;
                     for (auto&& r : graph[n2.first].outgoing_edges[node].at(i).reads) {
                         ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
                         aln.prefix = 0;
@@ -2363,7 +2408,11 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
                 }
             }
         }
-        remove_items_from_vector(graph[n2.first].outgoing_edges[node], indices);
+        remove_items_from_vector(n2.second, indices1);
+        if (n2.second.empty())
+            in_to_remove.push_back(n2.first);
+
+        remove_items_from_vector(graph[n2.first].outgoing_edges[node], indices2);
         if (graph[n2.first].outgoing_edges[node].empty()) {
             graph[n2.first].outgoing_edges.erase(node);
             if (graph[n2.first].incoming_edges.empty() && graph[n2.first].outgoing_edges.empty())
@@ -2391,8 +2440,10 @@ void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, 
         if (scanned_nodes.find(node.first) != scanned_nodes.end())
             continue;
 
-        if (coverage != 0) {
-            // skip simple components of 2 nodes
+        // this is only for keeping only very high
+        if (coverage != 0 && !force) {
+            // if (coverage != 0) {
+                // skip simple components of 2 nodes
             std::unordered_set<std::string> connected_nodes;
             for (auto&& n : node.second.incoming_edges) {
                 if (n.first != node.first)

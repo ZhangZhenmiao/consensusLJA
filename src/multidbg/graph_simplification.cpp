@@ -60,8 +60,8 @@ int Graph::count_matches(std::string cigar) {
 }
 
 void Graph::get_annotation(std::string prefix) {
-    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
-    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
+    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
+    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
     if (fs::is_regular_file(prefix + ".fasta.fai"))
         system(("rm " + prefix + ".fasta.fai").c_str());
@@ -606,8 +606,8 @@ void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio) {
             if (max_edge.empty())
                 continue;
 
-            // if (max_sim < 0.8)
-            //     continue;
+            if (max_sim < 0.8)
+                continue;
 
             graph[node.first].outgoing_edges[max_edge].at(0).multiplicity += 1.0 * graph[node.first].outgoing_edges[t].at(0).multiplicity * graph[node.first].outgoing_edges[t].at(0).length / graph[node.first].outgoing_edges[max_edge].at(0).length;
             graph[max_edge].incoming_edges[node.first].at(0).multiplicity = graph[node.first].outgoing_edges[max_edge].at(0).multiplicity;
@@ -2279,65 +2279,84 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
         if (edges.size() == 1)
             return false;
         for (auto&& e : edges) {
-            if (e.multiplicity >= mean_cov * 10)
+            if (e.multiplicity > coverage)
                 return true;
         }
         return false;
         };
     auto is_connected_to_high_muilti_edge = [&](std::string node1, std::string node2) -> bool {
+        bool checked = false;
         if (graph.find(node1) != graph.end()) {
             for (auto&& n : graph[node1].outgoing_edges) {
+                if (n.first == node1 || n.first == node2)
+                    continue;
+                checked = true;
                 for (auto&& e : n.second) {
-                    if (e.multiplicity >= mean_cov * 10)
-                        return true;
+                    if (e.multiplicity < mean_cov * 10)
+                        return false;
                 }
             }
             for (auto&& n : graph[node1].incoming_edges) {
+                if (n.first == node1 || n.first == node2)
+                    continue;
+                checked = true;
                 for (auto&& e : n.second) {
-                    if (e.multiplicity >= mean_cov * 10)
-                        return true;
+                    if (e.multiplicity < mean_cov * 10)
+                        return false;
                 }
             }
         }
         if (graph.find(node2) != graph.end()) {
             for (auto&& n : graph[node2].outgoing_edges) {
+                if (n.first == node1 || n.first == node2)
+                    continue;
+                checked = true;
                 for (auto&& e : n.second) {
-                    if (e.multiplicity >= mean_cov * 10)
-                        return true;
+                    if (e.multiplicity < mean_cov * 10)
+                        return false;
                 }
             }
             for (auto&& n : graph[node2].incoming_edges) {
+                if (n.first == node1 || n.first == node2)
+                    continue;
+                checked = true;
                 for (auto&& e : n.second) {
-                    if (e.multiplicity >= mean_cov * 10)
-                        return true;
+                    if (e.multiplicity < mean_cov * 10)
+                        return false;
                 }
             }
         }
-        return false;
+        return checked;
         };
     for (auto&& n2 : graph[node].outgoing_edges) {
-        std::vector<int> indices;
+        std::vector<int> indices1;
         for (int i = 0; i < n2.second.size(); ++i) {
             if (n2.second.at(i).multiplicity <= coverage || n2.second.at(i).multiplicity == 0) {
                 if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || n2.second.at(i).multiplicity == 0) {
-                    indices.push_back(i);
+                    indices1.push_back(i);
                     removed_edges += 1;
+                    if (is_in_high_multi_bulge(n2.second))
+                        std::cout << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is in bulge" << std::endl;
+                    else if (is_connected_to_high_muilti_edge(node, n2.first))
+                        std::cout << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is low-high connector" << std::endl;
                 }
             }
         }
-        remove_items_from_vector(n2.second, indices);
-        if (n2.second.empty())
-            out_to_remove.push_back(n2.first);
 
-        indices.clear();
+        std::vector<int> indices2;
         for (int i = 0; i < graph[n2.first].incoming_edges[node].size(); ++i) {
             if (graph[n2.first].incoming_edges[node].at(i).multiplicity <= coverage || graph[n2.first].incoming_edges[node].at(i).multiplicity == 0) {
                 if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || graph[n2.first].incoming_edges[node].at(i).multiplicity == 0) {
-                    indices.push_back(i);
+                    indices2.push_back(i);
                 }
             }
         }
-        remove_items_from_vector(graph[n2.first].incoming_edges[node], indices);
+
+        remove_items_from_vector(n2.second, indices1);
+        if (n2.second.empty())
+            out_to_remove.push_back(n2.first);
+
+        remove_items_from_vector(graph[n2.first].incoming_edges[node], indices2);
         if (graph[n2.first].incoming_edges[node].empty()) {
             graph[n2.first].incoming_edges.erase(node);
             if (graph[n2.first].incoming_edges.empty() && graph[n2.first].outgoing_edges.empty())
@@ -2347,28 +2366,33 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
 
     std::vector<std::string> in_to_remove;
     for (auto&& n2 : graph[node].incoming_edges) {
-        std::vector<int> indices;
+        std::vector<int> indices1;
         for (int i = 0; i < n2.second.size(); ++i) {
             if (n2.second.at(i).multiplicity <= coverage || n2.second.at(i).multiplicity == 0) {
                 if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || n2.second.at(i).multiplicity == 0) {
-                    indices.push_back(i);
+                    indices1.push_back(i);
                 }
             }
         }
-        remove_items_from_vector(n2.second, indices);
-        if (n2.second.empty())
-            in_to_remove.push_back(n2.first);
 
-        indices.clear();
+        std::vector<int> indices2;
         for (int i = 0; i < graph[n2.first].outgoing_edges[node].size(); ++i) {
             if (graph[n2.first].outgoing_edges[node].at(i).multiplicity <= coverage || graph[n2.first].outgoing_edges[node].at(i).multiplicity == 0) {
                 if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || graph[n2.first].outgoing_edges[node].at(i).multiplicity == 0) {
-                    indices.push_back(i);
+                    indices2.push_back(i);
                     removed_edges += 1;
+                    if (is_in_high_multi_bulge(n2.second))
+                        std::cout << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is in bulge" << std::endl;
+                    else if (is_connected_to_high_muilti_edge(node, n2.first))
+                        std::cout << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is low-high connector" << std::endl;
                 }
             }
         }
-        remove_items_from_vector(graph[n2.first].outgoing_edges[node], indices);
+        remove_items_from_vector(n2.second, indices1);
+        if (n2.second.empty())
+            in_to_remove.push_back(n2.first);
+
+        remove_items_from_vector(graph[n2.first].outgoing_edges[node], indices2);
         if (graph[n2.first].outgoing_edges[node].empty()) {
             graph[n2.first].outgoing_edges.erase(node);
             if (graph[n2.first].incoming_edges.empty() && graph[n2.first].outgoing_edges.empty())
@@ -2512,7 +2536,7 @@ void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, 
     for (auto&& n : nodes_to_remove)
         graph.erase(n);
 
-    merge_non_branching_paths(true);
+    merge_non_branching_paths();
 }
 
 void Graph::remove_chimeric_edge(std::string chimeric_path) {
