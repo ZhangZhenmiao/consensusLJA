@@ -53,6 +53,7 @@ void MDBGRunner::simplifyMDBG() {
     //     graph.remove_low_coverage_edges(removed_edges, this->first_minima, false);
     //     std::cout << "Removed " << removed_edges << " low-coverage edges" << std::endl;
     // }
+
     graph.write_graph(output + "/graph.cleaned");
     graph.write_graph_gfa(output + "/graph.cleaned");
     graph.get_annotation(output + "/graph.cleaned");
@@ -62,6 +63,15 @@ void MDBGRunner::simplifyMDBG() {
     std::string prefix = output + "/graph.cleaned";
     execute_command(remove_chimeric + " " + reads + " " + prefix + " " + prefix + " " + compress + " " + analyze_chimeric);
     graph.remove_chimeric_edge(prefix + ".chimeric.txt");
+
+    removed_tips = 1;
+    total_removed = 0;
+    while (removed_tips) {
+        graph.merge_tips_into_edges(removed_tips, 0.8, true);
+        graph.merge_non_branching_paths();
+        total_removed += removed_tips;
+    }
+    std::cout << "Removed tips: " << total_removed << std::endl;
     graph.write_graph(output + "/graph.chimeric_removed");
 
     std::cout << "----------Stage 1: simple bulge collapsing----------" << std::endl;

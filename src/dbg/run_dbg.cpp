@@ -18,14 +18,46 @@ bool DBGRunner::correctHigh() {
     int max_read_length = graph.write_reads(output + "/corrected_reads");
     std::cout << "Max compressed read: " << max_read_length << std::endl;
     this->mean_cov = graph.mean_cov;
+    graph.pause_rerouting_reads = true;
 
     graph.write_graph(output + "/graph.ori");
     graph.get_annotation(output + "/graph.ori");
     graph.write_graph_gfa(output + "/graph.ori");
 
     graph.remove_low_coverage_edges(removed_edges, mean_cov * 10, false, true);
+
+    unsigned removed_bulges = 1;
+    unsigned removed_whirls = 1;
+    unsigned removed_tips = 1;
+
+    while (true) {
+        bool flag = true;
+        removed_bulges = 1;
+        while (removed_bulges) {
+            graph.multi_bulge_removal(removed_bulges);
+            if (removed_bulges)
+                flag = false;
+        }
+        removed_tips = 1;
+        while (removed_tips) {
+            graph.merge_tips_into_edges(removed_tips);
+            if (removed_tips)
+                flag = false;
+        }
+        removed_whirls = 1;
+        while (removed_whirls) {
+            graph.merge_tips_into_edges(removed_tips);
+            graph.general_whirl_removal(removed_whirls);
+            if (removed_whirls)
+                flag = false;
+        }
+        if (flag)
+            break;
+    }
+
     graph.write_graph(output + "/graph.ori.only_high", 1000000, false, true);
     graph.append_linear_to_circular_genome(output + "/graph.ori.only_high", max_read_length);
+    graph.get_annotation(output + "/graph.ori.only_high");
 
     if (graph.get_num_nodes() == 0)
         return false;

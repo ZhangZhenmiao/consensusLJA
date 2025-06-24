@@ -251,7 +251,8 @@ std::string Graph::merge_edges(std::string node, bool merge_self_loop) {
     assert(new_edge.path_nodes_in_original_graph.size() == new_edge.path_edges_in_original_graph.size() + 1);
 
     // there must not be self-loops on node
-    reroute_reads_from_path_to_edge(new_edge, node1, node, node2);
+    if (!this->pause_rerouting_reads)
+        reroute_reads_from_path_to_edge(new_edge, node1, node, node2);
 
     this->graph[node1].outgoing_edges.erase(node);
     this->graph[node].outgoing_edges.erase(node2);
@@ -316,7 +317,8 @@ std::string Graph::collapse_bulge(std::string node1, std::string node2, unsigned
         // keep the longer edge; if there is a tie, keep the edge with higher multiplicity
         if ((edges.at(leg2).length > edges.at(leg1).length) || (edges.at(leg2).length == edges.at(leg1).length && edges.at(leg2).multiplicity > edges.at(leg1).multiplicity)) {
             // edges.at(leg1).multiplicity = 1.0 * edges.at(leg1).multiplicity * edges.at(leg1).length / edges.at(leg2).length;
-            reroute_reads_from_edge_to_edge(edges[leg2], edges[leg1], node1, node2);
+            if (!this->pause_rerouting_reads)
+                reroute_reads_from_edge_to_edge(edges[leg2], edges[leg1], node1, node2);
             edges.at(leg2).add_multi_from_edge_or_path(edges.at(leg1));
             edges.erase(edges.begin() + leg1);
 
@@ -326,7 +328,8 @@ std::string Graph::collapse_bulge(std::string node1, std::string node2, unsigned
         }
         else {
             // edges.at(leg2).multiplicity = 1.0 * edges.at(leg2).multiplicity * edges.at(leg2).length / edges.at(leg1).length;
-            reroute_reads_from_edge_to_edge(edges[leg1], edges[leg2], node1, node2);
+            if (!this->pause_rerouting_reads)
+                reroute_reads_from_edge_to_edge(edges[leg1], edges[leg2], node1, node2);
             edges.at(leg1).add_multi_from_edge_or_path(edges.at(leg2));
             edges.erase(edges.begin() + leg2);
 
@@ -601,26 +604,26 @@ void Graph::merge_tips_into_edges(unsigned& num_tips) {
                 if (graph[node.first].outgoing_edges[t].at(0).multiplicity * 0.8 > graph[node.first].outgoing_edges[e].at(0).multiplicity)
                     continue;
 
-                // skip if node.first is in a palindromic bulge - dangerous
-                bool flag = false;
-                std::string curr_n = node.first;
-                while (true) {
-                    if (graph[curr_n].incoming_edges.size() != 1) {
-                        if (curr_n == node.first)
-                            break;
-                        if (curr_n != reverse_complementary_node(node.first))
-                            break;
-                        else {
-                            flag = true;
-                            break;
-                        }
-                    }
-                    for (auto&& n : graph[curr_n].incoming_edges) {
-                        curr_n = n.first;
-                    }
-                }
-                if (flag)
-                    continue;
+                // // skip if node.first is in a palindromic bulge - dangerous
+                // bool flag = false;
+                // std::string curr_n = node.first;
+                // while (true) {
+                //     if (graph[curr_n].incoming_edges.size() != 1) {
+                //         if (curr_n == node.first)
+                //             break;
+                //         if (curr_n != reverse_complementary_node(node.first))
+                //             break;
+                //         else {
+                //             flag = true;
+                //             break;
+                //         }
+                //     }
+                //     for (auto&& n : graph[curr_n].incoming_edges) {
+                //         curr_n = n.first;
+                //     }
+                // }
+                // if (flag)
+                //     continue;
 
                 // calculate similarity
                 std::string prefix_edge = graph[node.first].outgoing_edges[e].at(0).sequence.substr(k, 100000);
@@ -637,7 +640,8 @@ void Graph::merge_tips_into_edges(unsigned& num_tips) {
                 continue;
 
             graph[node.first].outgoing_edges[max_edge].at(0).multiplicity += 1.0 * graph[node.first].outgoing_edges[t].at(0).multiplicity * graph[node.first].outgoing_edges[t].at(0).length / graph[node.first].outgoing_edges[max_edge].at(0).length;
-            reroute_reads_from_outtip_to_edge(graph[node.first].outgoing_edges[max_edge][0], node.first, max_edge, t);
+            if (!this->pause_rerouting_reads)
+                reroute_reads_from_outtip_to_edge(graph[node.first].outgoing_edges[max_edge][0], node.first, max_edge, t);
             graph[max_edge].incoming_edges[node.first].at(0).multiplicity = graph[node.first].outgoing_edges[max_edge].at(0).multiplicity;
 
             graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(max_edge)].at(0).multiplicity +=
@@ -645,7 +649,8 @@ void Graph::merge_tips_into_edges(unsigned& num_tips) {
                 graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(t)].at(0).length /
                 graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(max_edge)].at(0).length;
             graph[reverse_complementary_node(max_edge)].outgoing_edges[reverse_complementary_node(node.first)].at(0).multiplicity = graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(max_edge)].at(0).multiplicity;
-            reroute_reads_from_intip_to_edge(graph[reverse_complementary_node(max_edge)].outgoing_edges[reverse_complementary_node(node.first)][0], reverse_complementary_node(max_edge), reverse_complementary_node(node.first), reverse_complementary_node(t));
+            if (!this->pause_rerouting_reads)
+                reroute_reads_from_intip_to_edge(graph[reverse_complementary_node(max_edge)].outgoing_edges[reverse_complementary_node(node.first)][0], reverse_complementary_node(max_edge), reverse_complementary_node(node.first), reverse_complementary_node(t));
 
             nodes_to_remove.insert(t);
             nodes_to_remove.insert(reverse_complementary_node(t));

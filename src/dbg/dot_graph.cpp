@@ -637,9 +637,9 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                     num_edges += 1;
                     if (contracted || colored) {
                         if (edge.ref_ids.empty())
-                            file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << static_cast<int>(round(edge.multiplicity)) << " " << edge.reads.size() << "reads" << ")\" color=\"black\"]\n";
+                            file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << static_cast<int>(round(edge.multiplicity)) << ")\" color=\"black\"]\n";
                         else {
-                            file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << static_cast<int>(round(edge.multiplicity)) << " " << edge.reads.size() << "reads" << ")";
+                            file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << static_cast<int>(round(edge.multiplicity)) << ")";
                             for (int i = 0; i < edge.ref_ids.size(); ++i) {
                                 file_dot << "\\n" << edge.ref_ids[i];
                             }
@@ -650,7 +650,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                         }
                     }
                     else
-                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << edge.multiplicity << " " << edge.reads.size() << "reads" << ")\" color=\"black\"]\n";
+                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << edge.multiplicity << ")\" color=\"black\"]\n";
                     continue;
                 }
                 if (!edge.label.empty()) {
@@ -704,9 +704,9 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                 num_edges += 1;
                 if (contracted || colored) {
                     if (edge.ref_ids.empty())
-                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << static_cast<int>(round(edge.multiplicity)) << " " << edge.reads.size() << "reads" << ")\" color=\"black\"]\n";
+                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << static_cast<int>(round(edge.multiplicity)) << ")\" color=\"black\"]\n";
                     else {
-                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << static_cast<int>(round(edge.multiplicity)) << " " << edge.reads.size() << "reads" << ")";
+                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << static_cast<int>(round(edge.multiplicity)) << ")";
                         for (int i = 0; i < edge.ref_ids.size(); ++i) {
                             file_dot << "\\n" << edge.ref_ids[i];
                         }
@@ -717,7 +717,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                     }
                 }
                 else
-                    file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << edge.multiplicity << " " << edge.reads.size() << "reads" << ")\" color=\"black\"]\n";
+                    file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << edge.length << "(" << edge.multiplicity << ")\" color=\"black\"]\n";
                 assert(edge.sequence.size() - this->k == edge.length);
                 assert(edge.sequence.at(this->k) == edge.start_base);
                 file_fasta << ">" << edge.label << "_" << edge.rc_label << "\n";

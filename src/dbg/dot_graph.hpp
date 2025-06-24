@@ -96,6 +96,7 @@ namespace dbg {
         int error_peak = -1;
         int first_minima = -1;
         int mean_cov = -1;
+        bool pause_rerouting_reads = false;
         std::string find_path_from_start_bases(std::string start_node, std::string start_bases, std::string read_name, std::vector<std::string>& nodes_path, int prefix, int suffix);
         void reroute_reads_from_edge_to_edge(Edge& edge_des, Edge& edge_ori, std::string node_s, std::string node_e);
         void reroute_reads_from_path_to_edge(Edge& edge_des, std::string node_s, std::string node_m, std::string node_e);

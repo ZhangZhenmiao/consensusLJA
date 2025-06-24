@@ -550,12 +550,14 @@ void Graph::gluing_broken_bulges(unsigned& removed_bulges) {
     this->multi_bulge_removal(removed_bulges);
 }
 
-void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio) {
-    unsigned removed_paths = 1;
-    while (removed_paths) {
-        resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.6, true, 2);
+void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_tips) {
+    if (!only_tips) {
+        unsigned removed_paths = 1;
+        while (removed_paths) {
+            resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.6, true, 2);
+        }
+        merge_non_branching_paths(true);
     }
-    merge_non_branching_paths(true);
 
     num_tips = 0;
     // traverse all nodes
