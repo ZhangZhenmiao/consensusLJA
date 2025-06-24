@@ -48,7 +48,7 @@ def main(input_bam, contigs_fasta, original_fasta, corrected_fasta, output_fasta
         total_reads += 1
         # print(f"{read_id} {original_len} {read.query_alignment_length} {mismatches} {insertions} {deletions} {pid:.4f} {coverage:.3f} {read.reference_name} {read.reference_start} {read.reference_end}", flush=True)
 
-        if pid > 0.99 and coverage > 0.99:
+        if pid > 0.99 and coverage > 0.95:
             if read_id in valid_alignments:
                 if coverage > valid_alignments_cov[read_id]:
                     valid_alignments[read_id] = read
@@ -88,27 +88,27 @@ def main(input_bam, contigs_fasta, original_fasta, corrected_fasta, output_fasta
                 SeqIO.write(record, f_out, "fasta")
                 written += 1
                 written_reads.add(read_id)
-            elif read_id not in low_quality_aligned_reads:
+            else:
                 # print(f"[{read_id}] -> No valid alignment: writing original", flush=True)
                 SeqIO.write(record, f_out, "fasta")
                 written += 1
                 written_reads.add(read_id)
 
-        for read_id in valid_alignments:
-            if read_id not in written_reads:
-                read = valid_alignments[read_id]
-                ref_seq = ref.fetch(read.reference_name, read.reference_start, read.reference_end)
-                # print(f"[{read_id}] -> Corrected from reference", flush=True)
-                f_out.write(f">{read_id}\n{ref_seq}\n")
-                written += 1
-                written_reads.add(read_id)
+        # for read_id in valid_alignments:
+        #     if read_id not in written_reads:
+        #         read = valid_alignments[read_id]
+        #         ref_seq = ref.fetch(read.reference_name, read.reference_start, read.reference_end)
+        #         # print(f"[{read_id}] -> Corrected from reference", flush=True)
+        #         f_out.write(f">{read_id}\n{ref_seq}\n")
+        #         written += 1
+        #         written_reads.add(read_id)
         
-        for record in SeqIO.parse(original_fasta, "fasta"):
-            read_id = record.id
-            if read_id not in written_reads:
-                SeqIO.write(record, f_out, "fasta")
-                written += 1
-                written_reads.add(read_id)
+        # for record in SeqIO.parse(original_fasta, "fasta"):
+        #     read_id = record.id
+        #     if read_id not in written_reads:
+        #         SeqIO.write(record, f_out, "fasta")
+        #         written += 1
+        #         written_reads.add(read_id)
 
     bam.close()
     ref.close()

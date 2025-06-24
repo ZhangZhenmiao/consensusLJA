@@ -48,10 +48,10 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /Poppy/zmzhang/software/anaconda3/bin/cmake
+CMAKE_COMMAND = /usr/bin/cmake
 
 # The command to remove a file.
-RM = /Poppy/zmzhang/software/anaconda3/bin/cmake -E rm -f
+RM = /usr/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
@@ -78,7 +78,7 @@ edit_cache/fast: edit_cache
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/Poppy/zmzhang/software/anaconda3/bin/cmake --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/usr/bin/cmake --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -97,37 +97,37 @@ list_install_components/fast: list_install_components
 # Special rule for the target install
 install: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/Poppy/zmzhang/software/anaconda3/bin/cmake -P cmake_install.cmake
+	/usr/bin/cmake -P cmake_install.cmake
 .PHONY : install
 
 # Special rule for the target install
 install/fast: preinstall/fast
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/Poppy/zmzhang/software/anaconda3/bin/cmake -P cmake_install.cmake
+	/usr/bin/cmake -P cmake_install.cmake
 .PHONY : install/fast
 
 # Special rule for the target install/local
 install/local: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/Poppy/zmzhang/software/anaconda3/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
 .PHONY : install/local
 
 # Special rule for the target install/local
 install/local/fast: preinstall/fast
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/Poppy/zmzhang/software/anaconda3/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
 .PHONY : install/local/fast
 
 # Special rule for the target install/strip
 install/strip: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
-	/Poppy/zmzhang/software/anaconda3/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
 .PHONY : install/strip
 
 # Special rule for the target install/strip
 install/strip/fast: preinstall/fast
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
-	/Poppy/zmzhang/software/anaconda3/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
 .PHONY : install/strip/fast
 
 # The main all target
@@ -174,6 +174,20 @@ lja: src/projects/lja/CMakeFiles/lja.dir/rule
 lja/fast:
 	cd /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA && $(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/lja.dir/build.make src/projects/lja/CMakeFiles/lja.dir/build
 .PHONY : lja/fast
+
+# Convenience name for target.
+src/projects/lja/CMakeFiles/lja_cdb.dir/rule:
+	cd /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/lja/CMakeFiles/lja_cdb.dir/rule
+.PHONY : src/projects/lja/CMakeFiles/lja_cdb.dir/rule
+
+# Convenience name for target.
+lja_cdb: src/projects/lja/CMakeFiles/lja_cdb.dir/rule
+.PHONY : lja_cdb
+
+# fast build rule for target.
+lja_cdb/fast:
+	cd /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA && $(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/lja_cdb.dir/build.make src/projects/lja/CMakeFiles/lja_cdb.dir/build
+.PHONY : lja_cdb/fast
 
 # Convenience name for target.
 src/projects/lja/CMakeFiles/jumboDBG.dir/rule:
@@ -251,6 +265,30 @@ lja.cpp.s:
 	cd /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA && $(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/lja.dir/build.make src/projects/lja/CMakeFiles/lja.dir/lja.cpp.s
 .PHONY : lja.cpp.s
 
+lja_cdb.o: lja_cdb.cpp.o
+.PHONY : lja_cdb.o
+
+# target to build an object file
+lja_cdb.cpp.o:
+	cd /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA && $(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/lja_cdb.dir/build.make src/projects/lja/CMakeFiles/lja_cdb.dir/lja_cdb.cpp.o
+.PHONY : lja_cdb.cpp.o
+
+lja_cdb.i: lja_cdb.cpp.i
+.PHONY : lja_cdb.i
+
+# target to preprocess a source file
+lja_cdb.cpp.i:
+	cd /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA && $(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/lja_cdb.dir/build.make src/projects/lja/CMakeFiles/lja_cdb.dir/lja_cdb.cpp.i
+.PHONY : lja_cdb.cpp.i
+
+lja_cdb.s: lja_cdb.cpp.s
+.PHONY : lja_cdb.s
+
+# target to generate assembly for a file
+lja_cdb.cpp.s:
+	cd /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA && $(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/lja_cdb.dir/build.make src/projects/lja/CMakeFiles/lja_cdb.dir/lja_cdb.cpp.s
+.PHONY : lja_cdb.cpp.s
+
 mdbg.o: mdbg.cpp.o
 .PHONY : mdbg.o
 
@@ -289,6 +327,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... jumboDBG"
 	@echo "... lja"
+	@echo "... lja_cdb"
 	@echo "... multiDBG"
 	@echo "... dbg.o"
 	@echo "... dbg.i"
@@ -296,6 +335,9 @@ help:
 	@echo "... lja.o"
 	@echo "... lja.i"
 	@echo "... lja.s"
+	@echo "... lja_cdb.o"
+	@echo "... lja_cdb.i"
+	@echo "... lja_cdb.s"
 	@echo "... mdbg.o"
 	@echo "... mdbg.i"
 	@echo "... mdbg.s"

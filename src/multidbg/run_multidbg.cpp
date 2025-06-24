@@ -196,33 +196,65 @@ void MDBGRunner::simplifyMDBG() {
     graph.write_graph_contracted(output + "/graph.complex_comp.contracted.20k", 20000);
     graph.write_graph_contracted(output + "/graph.complex_comp_simplify.contracted.20k", 20000, true);
 
-    removed_tips = 1;
-    while (removed_tips) {
+    while (true) {
         removed_paths = 1;
-        while (removed_paths)
+        bool flag = true;
+        while (removed_paths) {
             graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0, true, 2);
+            if (removed_paths)
+                flag = false;
+            std::cout << "Detoured " << removed_paths << " paths" << std::endl;
+        }
         removed_paths = 1;
-        while (removed_paths)
+        while (removed_paths) {
             graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.9, true, 2, true, true);
-        graph.remove_low_coverage_edges(removed_edges, this->first_minima, false, true);
-        graph.resolve_edges_in_reverse_complement(decoupled);
-        graph.merge_tips_into_edges(removed_tips, 0.2);
-        graph.merge_tips(removed_tips);
-    }
+            if (removed_paths)
+                flag = false;
+            std::cout << "Detoured " << removed_paths << " paths" << std::endl;
+        }
+        decoupled = 1;
+        while (decoupled) {
+            graph.resolve_edges_in_reverse_complement(decoupled);
+            if (decoupled)
+                flag = false;
+            std::cout << "Decoupled " << decoupled << " strands" << std::endl;
+        }
+        removed_tips = 1;
+        while (removed_tips) {
+            graph.merge_tips_into_edges(removed_tips, 0.2);
+            if (removed_tips)
+                flag = false;
+            std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
+        }
+        removed_tips = 1;
+        while (removed_tips) {
+            graph.merge_tips(removed_tips);
+            if (removed_tips)
+                flag = false;
+            std::cout << "Merged " << removed_tips << " tips to tips" << std::endl;
+        }
 
-    //ensure the output does not contain simple bulges
-    removed_whirls = 1;
-    while (removed_whirls) {
-        graph.general_whirl_removal(removed_whirls, false, true);
-        graph.merge_non_branching_paths(true);
-        std::cout << "Removed whirls: " << removed_whirls << std::endl;
+        removed_whirls = 1;
+        while (removed_whirls) {
+            graph.general_whirl_removal(removed_whirls, false, true);
+            graph.merge_non_branching_paths(true);
+            if (removed_whirls)
+                flag = false;
+            std::cout << "Removed " << removed_whirls << " whirls" << std::endl;
+        }
+        removed_bulges = 1;
+        while (removed_bulges) {
+            graph.merge_non_branching_paths(true);
+            graph.multi_bulge_removal(removed_bulges);
+            if (removed_bulges)
+                flag = false;
+            std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
+        }
+
+        if (flag)
+            break;
     }
-    removed_bulges = 1;
-    while (removed_bulges) {
-        graph.merge_non_branching_paths(true);
-        graph.multi_bulge_removal(removed_bulges);
-    }
-    graph.remove_contained_contigs(0.5);
+    graph.remove_contained_contigs(0.2);
     graph.write_graph(output + "/graph.final");
     graph.write_graph_gfa(output + "/graph.final");
     graph.get_annotation(output + "/graph.final");

@@ -28,10 +28,10 @@ int execute_command(const std::string& command) {
 
     status += "Command " + command + " " + std::string(result.success ? "succeeded" : "failed");
     status += " with exit code " + std::to_string(result.exit_code) + "\n";
-    std::cout << status << std::endl;
+    // std::cout << status << std::endl;
 
-    // if (!result.success)
-    //     throw std::runtime_error("Failed to execute " + command);
+    if (!result.success)
+        std::cout << "Failed to execute " + command << std::endl;
 
     return result.exit_code;
 }

@@ -14,6 +14,7 @@ public:
     int first_peak = 0, first_minima = 0, mean_cov = 0;
     //third-party
     std::string lja = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "lja";
+    std::string lja_cdb = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "lja_cdb";
     std::string compress = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "compress";
     std::string correct_reads_script = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "correct_reads_high.sh";
     std::string correct_reads_py = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "correct_reads_high.py";
@@ -52,7 +53,7 @@ public:
             }
 
             if (!fs::is_directory(dbg_dir)) {
-                execute_command(lja + " -t " + std::to_string(threads) + " --reads " + correct_reads_high + " --output-dir " + dbg_dir.string() + " --diploid");
+                execute_command(lja_cdb + " -t " + std::to_string(threads) + " --reads " + correct_reads_high + " --output-dir " + dbg_dir.string() + " --diploid");
             }
         }
         else {
@@ -61,8 +62,8 @@ public:
                     execute_command("ln -s `realpath " + (output_all / "0_condensed_dbg").string() + "` " + dbg_dir.string());
                 }
             }
-            else if (!fs::is_directory(dbg_dir / "03_Polishing")) {
-                execute_command(lja + " -t " + std::to_string(threads) + " --reads " + correct_reads_high + " --output-dir " + dbg_dir.string() + " --diploid");
+            else if (!fs::is_directory(dbg_dir / "01_TopologyBasedCorrection")) {
+                execute_command(lja_cdb + " -t " + std::to_string(threads) + " --reads " + correct_reads_high + " --output-dir " + dbg_dir.string() + " --diploid");
             }
         }
 

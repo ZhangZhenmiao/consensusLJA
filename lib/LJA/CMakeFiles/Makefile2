@@ -45,10 +45,10 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /Poppy/zmzhang/software/anaconda3/bin/cmake
+CMAKE_COMMAND = /usr/bin/cmake
 
 # The command to remove a file.
-RM = /Poppy/zmzhang/software/anaconda3/bin/cmake -E rm -f
+RM = /usr/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
@@ -226,6 +226,7 @@ src/projects/error_correction/clean: src/projects/error_correction/CMakeFiles/lj
 
 # Recursive "all" directory target.
 src/projects/lja/all: src/projects/lja/CMakeFiles/lja.dir/all
+src/projects/lja/all: src/projects/lja/CMakeFiles/lja_cdb.dir/all
 src/projects/lja/all: src/projects/lja/CMakeFiles/jumboDBG.dir/all
 src/projects/lja/all: src/projects/lja/CMakeFiles/multiDBG.dir/all
 .PHONY : src/projects/lja/all
@@ -236,6 +237,7 @@ src/projects/lja/preinstall:
 
 # Recursive "clean" directory target.
 src/projects/lja/clean: src/projects/lja/CMakeFiles/lja.dir/clean
+src/projects/lja/clean: src/projects/lja/CMakeFiles/lja_cdb.dir/clean
 src/projects/lja/clean: src/projects/lja/CMakeFiles/jumboDBG.dir/clean
 src/projects/lja/clean: src/projects/lja/CMakeFiles/multiDBG.dir/clean
 .PHONY : src/projects/lja/clean
@@ -543,12 +545,12 @@ src/tests/CMakeFiles/tests.dir/all: src/projects/dbg/CMakeFiles/lja_dbg.dir/all
 src/tests/CMakeFiles/tests.dir/all: src/projects/repeat_resolution/CMakeFiles/repeat_resolution.dir/all
 	$(MAKE) $(MAKESILENT) -f src/tests/CMakeFiles/tests.dir/build.make src/tests/CMakeFiles/tests.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/tests/CMakeFiles/tests.dir/build.make src/tests/CMakeFiles/tests.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=87,88,89 "Built target tests"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=88,89 "Built target tests"
 .PHONY : src/tests/CMakeFiles/tests.dir/all
 
 # Build rule for subdir invocation for target.
 src/tests/CMakeFiles/tests.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 25
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 24
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/tests/CMakeFiles/tests.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/tests/CMakeFiles/tests.dir/rule
@@ -569,12 +571,12 @@ src/tests/CMakeFiles/tests.dir/clean:
 src/tests/googletest/googlemock/CMakeFiles/gmock.dir/all: src/tests/googletest/googletest/CMakeFiles/gtest.dir/all
 	$(MAKE) $(MAKESILENT) -f src/tests/googletest/googlemock/CMakeFiles/gmock.dir/build.make src/tests/googletest/googlemock/CMakeFiles/gmock.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/tests/googletest/googlemock/CMakeFiles/gmock.dir/build.make src/tests/googletest/googlemock/CMakeFiles/gmock.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=12,13 "Built target gmock"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=12 "Built target gmock"
 .PHONY : src/tests/googletest/googlemock/CMakeFiles/gmock.dir/all
 
 # Build rule for subdir invocation for target.
 src/tests/googletest/googlemock/CMakeFiles/gmock.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 3
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 2
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/tests/googletest/googlemock/CMakeFiles/gmock.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/tests/googletest/googlemock/CMakeFiles/gmock.dir/rule
@@ -596,7 +598,7 @@ src/tests/googletest/googlemock/CMakeFiles/gmock_main.dir/all: src/tests/googlet
 src/tests/googletest/googlemock/CMakeFiles/gmock_main.dir/all: src/tests/googletest/googletest/CMakeFiles/gtest.dir/all
 	$(MAKE) $(MAKESILENT) -f src/tests/googletest/googlemock/CMakeFiles/gmock_main.dir/build.make src/tests/googletest/googlemock/CMakeFiles/gmock_main.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/tests/googletest/googlemock/CMakeFiles/gmock_main.dir/build.make src/tests/googletest/googlemock/CMakeFiles/gmock_main.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=14 "Built target gmock_main"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=13,14 "Built target gmock_main"
 .PHONY : src/tests/googletest/googlemock/CMakeFiles/gmock_main.dir/all
 
 # Build rule for subdir invocation for target.
@@ -674,7 +676,7 @@ src/tests/googletest/googletest/CMakeFiles/gtest_main.dir/clean:
 src/tools/common/CMakeFiles/lja_common.dir/all:
 	$(MAKE) $(MAKESILENT) -f src/tools/common/CMakeFiles/lja_common.dir/build.make src/tools/common/CMakeFiles/lja_common.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/tools/common/CMakeFiles/lja_common.dir/build.make src/tools/common/CMakeFiles/lja_common.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=27,28,29 "Built target lja_common"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=28,29,30 "Built target lja_common"
 .PHONY : src/tools/common/CMakeFiles/lja_common.dir/all
 
 # Build rule for subdir invocation for target.
@@ -706,7 +708,7 @@ src/tools/alignment/CMakeFiles/lja_alignment.dir/all: src/lib/ksw2/CMakeFiles/ks
 
 # Build rule for subdir invocation for target.
 src/tools/alignment/CMakeFiles/lja_alignment.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 7
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/tools/alignment/CMakeFiles/lja_alignment.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/tools/alignment/CMakeFiles/lja_alignment.dir/rule
@@ -727,12 +729,12 @@ src/tools/alignment/CMakeFiles/lja_alignment.dir/clean:
 src/tools/sequences/CMakeFiles/lja_sequence.dir/all:
 	$(MAKE) $(MAKESILENT) -f src/tools/sequences/CMakeFiles/lja_sequence.dir/build.make src/tools/sequences/CMakeFiles/lja_sequence.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/tools/sequences/CMakeFiles/lja_sequence.dir/build.make src/tools/sequences/CMakeFiles/lja_sequence.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=48,49,50 "Built target lja_sequence"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=49,50 "Built target lja_sequence"
 .PHONY : src/tools/sequences/CMakeFiles/lja_sequence.dir/all
 
 # Build rule for subdir invocation for target.
 src/tools/sequences/CMakeFiles/lja_sequence.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 3
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 2
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/tools/sequences/CMakeFiles/lja_sequence.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/tools/sequences/CMakeFiles/lja_sequence.dir/rule
@@ -779,12 +781,12 @@ src/lib/spoa/CMakeFiles/spoa.dir/clean:
 src/lib/ksw2/CMakeFiles/ksw2.dir/all:
 	$(MAKE) $(MAKESILENT) -f src/lib/ksw2/CMakeFiles/ksw2.dir/build.make src/lib/ksw2/CMakeFiles/ksw2.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/lib/ksw2/CMakeFiles/ksw2.dir/build.make src/lib/ksw2/CMakeFiles/ksw2.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=21,22 "Built target ksw2"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=21 "Built target ksw2"
 .PHONY : src/lib/ksw2/CMakeFiles/ksw2.dir/all
 
 # Build rule for subdir invocation for target.
 src/lib/ksw2/CMakeFiles/ksw2.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 1
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/lib/ksw2/CMakeFiles/ksw2.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/lib/ksw2/CMakeFiles/ksw2.dir/rule
@@ -837,7 +839,7 @@ src/projects/assembly_graph/CMakeFiles/lja_ag.dir/all: src/tools/sequences/CMake
 
 # Build rule for subdir invocation for target.
 src/projects/assembly_graph/CMakeFiles/lja_ag.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 7
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/assembly_graph/CMakeFiles/lja_ag.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/assembly_graph/CMakeFiles/lja_ag.dir/rule
@@ -860,12 +862,12 @@ src/projects/dbg/CMakeFiles/lja_dbg.dir/all: src/tools/sequences/CMakeFiles/lja_
 src/projects/dbg/CMakeFiles/lja_dbg.dir/all: src/projects/assembly_graph/CMakeFiles/lja_ag.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/dbg/CMakeFiles/lja_dbg.dir/build.make src/projects/dbg/CMakeFiles/lja_dbg.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/dbg/CMakeFiles/lja_dbg.dir/build.make src/projects/dbg/CMakeFiles/lja_dbg.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=30,31,32,33,34,35,36,37 "Built target lja_dbg"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=31,32,33,34,35,36,37,38 "Built target lja_dbg"
 .PHONY : src/projects/dbg/CMakeFiles/lja_dbg.dir/all
 
 # Build rule for subdir invocation for target.
 src/projects/dbg/CMakeFiles/lja_dbg.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 15
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/dbg/CMakeFiles/lja_dbg.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/dbg/CMakeFiles/lja_dbg.dir/rule
@@ -892,7 +894,7 @@ src/projects/supregraph/CMakeFiles/lja_spg.dir/all: src/tools/sequences/CMakeFil
 
 # Build rule for subdir invocation for target.
 src/projects/supregraph/CMakeFiles/lja_spg.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 12
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 11
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/supregraph/CMakeFiles/lja_spg.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/supregraph/CMakeFiles/lja_spg.dir/rule
@@ -923,7 +925,7 @@ src/projects/supregraph/CMakeFiles/spg_test.dir/all: src/projects/error_correcti
 
 # Build rule for subdir invocation for target.
 src/projects/supregraph/CMakeFiles/spg_test.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 30
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 28
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/supregraph/CMakeFiles/spg_test.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/supregraph/CMakeFiles/spg_test.dir/rule
@@ -947,7 +949,7 @@ src/projects/scripts/CMakeFiles/split_gfa.dir/all: src/projects/assembly_graph/C
 src/projects/scripts/CMakeFiles/split_gfa.dir/all: src/projects/dbg/CMakeFiles/lja_dbg.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/split_gfa.dir/build.make src/projects/scripts/CMakeFiles/split_gfa.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/split_gfa.dir/build.make src/projects/scripts/CMakeFiles/split_gfa.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=79 "Built target split_gfa"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=79,80 "Built target split_gfa"
 .PHONY : src/projects/scripts/CMakeFiles/split_gfa.dir/all
 
 # Build rule for subdir invocation for target.
@@ -981,7 +983,7 @@ src/projects/scripts/CMakeFiles/diploidy_remover.dir/all: src/projects/dbg/CMake
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/diploidy_remover.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 16
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 15
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/diploidy_remover.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/diploidy_remover.dir/rule
@@ -1003,12 +1005,12 @@ src/projects/scripts/CMakeFiles/split_uncompressed_gfa.dir/all: src/tools/common
 src/projects/scripts/CMakeFiles/split_uncompressed_gfa.dir/all: src/tools/sequences/CMakeFiles/lja_sequence.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/split_uncompressed_gfa.dir/build.make src/projects/scripts/CMakeFiles/split_uncompressed_gfa.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/split_uncompressed_gfa.dir/build.make src/projects/scripts/CMakeFiles/split_uncompressed_gfa.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=80,81 "Built target split_uncompressed_gfa"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=81 "Built target split_uncompressed_gfa"
 .PHONY : src/projects/scripts/CMakeFiles/split_uncompressed_gfa.dir/all
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/split_uncompressed_gfa.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 8
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/split_uncompressed_gfa.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/split_uncompressed_gfa.dir/rule
@@ -1037,7 +1039,7 @@ src/projects/scripts/CMakeFiles/analyze_gfa_dbg.dir/all: src/projects/dbg/CMakeF
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/analyze_gfa_dbg.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 17
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 16
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/analyze_gfa_dbg.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/analyze_gfa_dbg.dir/rule
@@ -1066,7 +1068,7 @@ src/projects/scripts/CMakeFiles/subdataset_extraction.dir/all: src/projects/dbg/
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/subdataset_extraction.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 16
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 15
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/subdataset_extraction.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/subdataset_extraction.dir/rule
@@ -1090,7 +1092,7 @@ src/projects/scripts/CMakeFiles/sdbg_stats.dir/all: src/projects/assembly_graph/
 src/projects/scripts/CMakeFiles/sdbg_stats.dir/all: src/projects/dbg/CMakeFiles/lja_dbg.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/sdbg_stats.dir/build.make src/projects/scripts/CMakeFiles/sdbg_stats.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/sdbg_stats.dir/build.make src/projects/scripts/CMakeFiles/sdbg_stats.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=75 "Built target sdbg_stats"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=75,76 "Built target sdbg_stats"
 .PHONY : src/projects/scripts/CMakeFiles/sdbg_stats.dir/all
 
 # Build rule for subdir invocation for target.
@@ -1145,7 +1147,7 @@ src/projects/scripts/CMakeFiles/test_mg.dir/all: src/projects/assembly_graph/CMa
 src/projects/scripts/CMakeFiles/test_mg.dir/all: src/projects/dbg/CMakeFiles/lja_dbg.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/test_mg.dir/build.make src/projects/scripts/CMakeFiles/test_mg.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/test_mg.dir/build.make src/projects/scripts/CMakeFiles/test_mg.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=86 "Built target test_mg"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=86,87 "Built target test_mg"
 .PHONY : src/projects/scripts/CMakeFiles/test_mg.dir/all
 
 # Build rule for subdir invocation for target.
@@ -1179,7 +1181,7 @@ src/projects/scripts/CMakeFiles/print_tips.dir/all: src/projects/dbg/CMakeFiles/
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/print_tips.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 16
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 15
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/print_tips.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/print_tips.dir/rule
@@ -1203,12 +1205,12 @@ src/projects/scripts/CMakeFiles/print_breaks.dir/all: src/projects/assembly_grap
 src/projects/scripts/CMakeFiles/print_breaks.dir/all: src/projects/dbg/CMakeFiles/lja_dbg.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/print_breaks.dir/build.make src/projects/scripts/CMakeFiles/print_breaks.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/print_breaks.dir/build.make src/projects/scripts/CMakeFiles/print_breaks.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=65,66 "Built target print_breaks"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=66 "Built target print_breaks"
 .PHONY : src/projects/scripts/CMakeFiles/print_breaks.dir/all
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/print_breaks.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 17
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 15
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/print_breaks.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/print_breaks.dir/rule
@@ -1235,7 +1237,7 @@ src/projects/scripts/CMakeFiles/extract_subsequence.dir/all: src/tools/sequences
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/extract_subsequence.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 7
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/extract_subsequence.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/extract_subsequence.dir/rule
@@ -1264,7 +1266,7 @@ src/projects/scripts/CMakeFiles/parse_readlog.dir/all: src/projects/dbg/CMakeFil
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/parse_readlog.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 16
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 15
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/parse_readlog.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/parse_readlog.dir/rule
@@ -1293,7 +1295,7 @@ src/projects/scripts/CMakeFiles/compress.dir/all: src/projects/dbg/CMakeFiles/lj
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/compress.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 16
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 15
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/compress.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/compress.dir/rule
@@ -1322,7 +1324,7 @@ src/projects/scripts/CMakeFiles/ideal_graph_analysis.dir/all: src/projects/dbg/C
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/ideal_graph_analysis.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 16
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 15
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/ideal_graph_analysis.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/ideal_graph_analysis.dir/rule
@@ -1351,7 +1353,7 @@ src/projects/scripts/CMakeFiles/align_and_print.dir/all: src/projects/dbg/CMakeF
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/align_and_print.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 16
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 15
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/align_and_print.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/align_and_print.dir/rule
@@ -1375,12 +1377,12 @@ src/projects/scripts/CMakeFiles/mass_dbg.dir/all: src/projects/assembly_graph/CM
 src/projects/scripts/CMakeFiles/mass_dbg.dir/all: src/projects/dbg/CMakeFiles/lja_dbg.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/mass_dbg.dir/build.make src/projects/scripts/CMakeFiles/mass_dbg.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/mass_dbg.dir/build.make src/projects/scripts/CMakeFiles/mass_dbg.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=58 "Built target mass_dbg"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=59 "Built target mass_dbg"
 .PHONY : src/projects/scripts/CMakeFiles/mass_dbg.dir/all
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/mass_dbg.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 16
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 15
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/mass_dbg.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/mass_dbg.dir/rule
@@ -1404,12 +1406,12 @@ src/projects/scripts/CMakeFiles/parse_sam.dir/all: src/tools/sequences/CMakeFile
 src/projects/scripts/CMakeFiles/parse_sam.dir/all: src/lib/ksw2/CMakeFiles/ksw2.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/parse_sam.dir/build.make src/projects/scripts/CMakeFiles/parse_sam.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/parse_sam.dir/build.make src/projects/scripts/CMakeFiles/parse_sam.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=64 "Built target parse_sam"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=64,65 "Built target parse_sam"
 .PHONY : src/projects/scripts/CMakeFiles/parse_sam.dir/all
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/parse_sam.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 11
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 10
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/parse_sam.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/parse_sam.dir/rule
@@ -1438,7 +1440,7 @@ src/projects/scripts/CMakeFiles/analyse_alignment.dir/all: src/lib/ksw2/CMakeFil
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/analyse_alignment.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 11
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 9
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/analyse_alignment.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/analyse_alignment.dir/rule
@@ -1470,7 +1472,7 @@ src/projects/scripts/CMakeFiles/divergence_to_bitvector.dir/all: src/projects/er
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/divergence_to_bitvector.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 29
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 26
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/divergence_to_bitvector.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/divergence_to_bitvector.dir/rule
@@ -1494,12 +1496,12 @@ src/projects/scripts/CMakeFiles/seqio_check.dir/all: src/projects/assembly_graph
 src/projects/scripts/CMakeFiles/seqio_check.dir/all: src/projects/dbg/CMakeFiles/lja_dbg.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/seqio_check.dir/build.make src/projects/scripts/CMakeFiles/seqio_check.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/scripts/CMakeFiles/seqio_check.dir/build.make src/projects/scripts/CMakeFiles/seqio_check.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=76,77 "Built target seqio_check"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=77 "Built target seqio_check"
 .PHONY : src/projects/scripts/CMakeFiles/seqio_check.dir/all
 
 # Build rule for subdir invocation for target.
 src/projects/scripts/CMakeFiles/seqio_check.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 17
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 15
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/scripts/CMakeFiles/seqio_check.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/scripts/CMakeFiles/seqio_check.dir/rule
@@ -1532,12 +1534,12 @@ src/projects/lja/CMakeFiles/lja.dir/all: src/projects/trio/CMakeFiles/lja_trio.d
 src/projects/lja/CMakeFiles/lja.dir/all: src/projects/nano/CMakeFiles/nano_alignment.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/lja.dir/build.make src/projects/lja/CMakeFiles/lja.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/lja.dir/build.make src/projects/lja/CMakeFiles/lja.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=23 "Built target lja"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=22,23 "Built target lja"
 .PHONY : src/projects/lja/CMakeFiles/lja.dir/all
 
 # Build rule for subdir invocation for target.
 src/projects/lja/CMakeFiles/lja.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 51
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 52
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/lja/CMakeFiles/lja.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/lja/CMakeFiles/lja.dir/rule
@@ -1550,6 +1552,44 @@ lja: src/projects/lja/CMakeFiles/lja.dir/rule
 src/projects/lja/CMakeFiles/lja.dir/clean:
 	$(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/lja.dir/build.make src/projects/lja/CMakeFiles/lja.dir/clean
 .PHONY : src/projects/lja/CMakeFiles/lja.dir/clean
+
+#=============================================================================
+# Target rules for target src/projects/lja/CMakeFiles/lja_cdb.dir
+
+# All Build rule for target.
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/tools/common/CMakeFiles/lja_common.dir/all
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/tools/alignment/CMakeFiles/lja_alignment.dir/all
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/tools/sequences/CMakeFiles/lja_sequence.dir/all
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/lib/spoa/CMakeFiles/spoa.dir/all
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/lib/ksw2/CMakeFiles/ksw2.dir/all
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/lib/yak/CMakeFiles/yak.dir/all
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/projects/assembly_graph/CMakeFiles/lja_ag.dir/all
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/projects/dbg/CMakeFiles/lja_dbg.dir/all
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/projects/error_correction/CMakeFiles/lja_ec.dir/all
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/projects/polishing/CMakeFiles/lja_homopolish.dir/all
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/projects/repeat_resolution/CMakeFiles/repeat_resolution.dir/all
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/projects/trio/CMakeFiles/lja_trio.dir/all
+src/projects/lja/CMakeFiles/lja_cdb.dir/all: src/projects/nano/CMakeFiles/nano_alignment.dir/all
+	$(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/lja_cdb.dir/build.make src/projects/lja/CMakeFiles/lja_cdb.dir/depend
+	$(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/lja_cdb.dir/build.make src/projects/lja/CMakeFiles/lja_cdb.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=27 "Built target lja_cdb"
+.PHONY : src/projects/lja/CMakeFiles/lja_cdb.dir/all
+
+# Build rule for subdir invocation for target.
+src/projects/lja/CMakeFiles/lja_cdb.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 51
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/lja/CMakeFiles/lja_cdb.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
+.PHONY : src/projects/lja/CMakeFiles/lja_cdb.dir/rule
+
+# Convenience name for target.
+lja_cdb: src/projects/lja/CMakeFiles/lja_cdb.dir/rule
+.PHONY : lja_cdb
+
+# clean rule for target.
+src/projects/lja/CMakeFiles/lja_cdb.dir/clean:
+	$(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/lja_cdb.dir/build.make src/projects/lja/CMakeFiles/lja_cdb.dir/clean
+.PHONY : src/projects/lja/CMakeFiles/lja_cdb.dir/clean
 
 #=============================================================================
 # Target rules for target src/projects/lja/CMakeFiles/jumboDBG.dir
@@ -1567,7 +1607,7 @@ src/projects/lja/CMakeFiles/jumboDBG.dir/all: src/projects/error_correction/CMak
 
 # Build rule for subdir invocation for target.
 src/projects/lja/CMakeFiles/jumboDBG.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 24
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 22
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/lja/CMakeFiles/jumboDBG.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/lja/CMakeFiles/jumboDBG.dir/rule
@@ -1600,12 +1640,12 @@ src/projects/lja/CMakeFiles/multiDBG.dir/all: src/projects/trio/CMakeFiles/lja_t
 src/projects/lja/CMakeFiles/multiDBG.dir/all: src/projects/nano/CMakeFiles/nano_alignment.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/multiDBG.dir/build.make src/projects/lja/CMakeFiles/multiDBG.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/lja/CMakeFiles/multiDBG.dir/build.make src/projects/lja/CMakeFiles/multiDBG.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=59,60 "Built target multiDBG"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=60 "Built target multiDBG"
 .PHONY : src/projects/lja/CMakeFiles/multiDBG.dir/all
 
 # Build rule for subdir invocation for target.
 src/projects/lja/CMakeFiles/multiDBG.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 51
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/lja/CMakeFiles/multiDBG.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/lja/CMakeFiles/multiDBG.dir/rule
@@ -1629,12 +1669,12 @@ src/projects/error_correction/CMakeFiles/lja_ec.dir/all: src/projects/assembly_g
 src/projects/error_correction/CMakeFiles/lja_ec.dir/all: src/projects/dbg/CMakeFiles/lja_dbg.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/error_correction/CMakeFiles/lja_ec.dir/build.make src/projects/error_correction/CMakeFiles/lja_ec.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/error_correction/CMakeFiles/lja_ec.dir/build.make src/projects/error_correction/CMakeFiles/lja_ec.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=38,39,40,41,42,43,44,45 "Built target lja_ec"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=39,40,41,42,43,44,45 "Built target lja_ec"
 .PHONY : src/projects/error_correction/CMakeFiles/lja_ec.dir/all
 
 # Build rule for subdir invocation for target.
 src/projects/error_correction/CMakeFiles/lja_ec.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 23
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 21
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/error_correction/CMakeFiles/lja_ec.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/error_correction/CMakeFiles/lja_ec.dir/rule
@@ -1661,12 +1701,12 @@ src/projects/polishing/CMakeFiles/lja_homopolish.dir/all: src/projects/assembly_
 src/projects/polishing/CMakeFiles/lja_homopolish.dir/all: src/projects/dbg/CMakeFiles/lja_dbg.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/polishing/CMakeFiles/lja_homopolish.dir/build.make src/projects/polishing/CMakeFiles/lja_homopolish.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/polishing/CMakeFiles/lja_homopolish.dir/build.make src/projects/polishing/CMakeFiles/lja_homopolish.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=46,47 "Built target lja_homopolish"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=46,47,48 "Built target lja_homopolish"
 .PHONY : src/projects/polishing/CMakeFiles/lja_homopolish.dir/all
 
 # Build rule for subdir invocation for target.
 src/projects/polishing/CMakeFiles/lja_homopolish.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 24
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 23
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/polishing/CMakeFiles/lja_homopolish.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/polishing/CMakeFiles/lja_homopolish.dir/rule
@@ -1694,12 +1734,12 @@ src/projects/polishing/CMakeFiles/run_polishing.dir/all: src/projects/dbg/CMakeF
 src/projects/polishing/CMakeFiles/run_polishing.dir/all: src/projects/polishing/CMakeFiles/lja_homopolish.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/polishing/CMakeFiles/run_polishing.dir/build.make src/projects/polishing/CMakeFiles/run_polishing.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/polishing/CMakeFiles/run_polishing.dir/build.make src/projects/polishing/CMakeFiles/run_polishing.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=72,73 "Built target run_polishing"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=73 "Built target run_polishing"
 .PHONY : src/projects/polishing/CMakeFiles/run_polishing.dir/all
 
 # Build rule for subdir invocation for target.
 src/projects/polishing/CMakeFiles/run_polishing.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 26
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 24
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/polishing/CMakeFiles/run_polishing.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/polishing/CMakeFiles/run_polishing.dir/rule
@@ -1728,7 +1768,7 @@ src/projects/polishing/CMakeFiles/graph_polishing.dir/all: src/projects/dbg/CMak
 
 # Build rule for subdir invocation for target.
 src/projects/polishing/CMakeFiles/graph_polishing.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 16
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 15
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/polishing/CMakeFiles/graph_polishing.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/polishing/CMakeFiles/graph_polishing.dir/rule
@@ -1752,7 +1792,7 @@ src/projects/repeat_resolution/CMakeFiles/repeat_resolution.dir/all: src/project
 src/projects/repeat_resolution/CMakeFiles/repeat_resolution.dir/all: src/projects/dbg/CMakeFiles/lja_dbg.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/repeat_resolution/CMakeFiles/repeat_resolution.dir/build.make src/projects/repeat_resolution/CMakeFiles/repeat_resolution.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/repeat_resolution/CMakeFiles/repeat_resolution.dir/build.make src/projects/repeat_resolution/CMakeFiles/repeat_resolution.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=68,69,70,71 "Built target repeat_resolution"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=68,69,70,71,72 "Built target repeat_resolution"
 .PHONY : src/projects/repeat_resolution/CMakeFiles/repeat_resolution.dir/all
 
 # Build rule for subdir invocation for target.
@@ -1787,12 +1827,12 @@ src/projects/trio/CMakeFiles/lja_trio.dir/all: src/projects/error_correction/CMa
 src/projects/trio/CMakeFiles/lja_trio.dir/all: src/projects/polishing/CMakeFiles/lja_homopolish.dir/all
 	$(MAKE) $(MAKESILENT) -f src/projects/trio/CMakeFiles/lja_trio.dir/build.make src/projects/trio/CMakeFiles/lja_trio.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/projects/trio/CMakeFiles/lja_trio.dir/build.make src/projects/trio/CMakeFiles/lja_trio.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=57 "Built target lja_trio"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles --progress-num=57,58 "Built target lja_trio"
 .PHONY : src/projects/trio/CMakeFiles/lja_trio.dir/all
 
 # Build rule for subdir invocation for target.
 src/projects/trio/CMakeFiles/lja_trio.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 44
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 43
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/trio/CMakeFiles/lja_trio.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/trio/CMakeFiles/lja_trio.dir/rule
@@ -1828,7 +1868,7 @@ src/projects/trio/CMakeFiles/run_trio.dir/all: src/projects/trio/CMakeFiles/lja_
 
 # Build rule for subdir invocation for target.
 src/projects/trio/CMakeFiles/run_trio.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 45
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 44
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/trio/CMakeFiles/run_trio.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/trio/CMakeFiles/run_trio.dir/rule
@@ -1859,7 +1899,7 @@ src/projects/nano/CMakeFiles/nano_alignment.dir/all: src/projects/dbg/CMakeFiles
 
 # Build rule for subdir invocation for target.
 src/projects/nano/CMakeFiles/nano_alignment.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 21
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 19
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/nano/CMakeFiles/nano_alignment.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/nano/CMakeFiles/nano_alignment.dir/rule
@@ -1891,7 +1931,7 @@ src/projects/nano/CMakeFiles/align.dir/all: src/projects/nano/CMakeFiles/nano_al
 
 # Build rule for subdir invocation for target.
 src/projects/nano/CMakeFiles/align.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 22
+	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 20
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/projects/nano/CMakeFiles/align.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/CMakeFiles 0
 .PHONY : src/projects/nano/CMakeFiles/align.dir/rule

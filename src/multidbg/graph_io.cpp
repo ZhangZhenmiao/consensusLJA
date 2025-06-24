@@ -1353,15 +1353,23 @@ void Graph::write_graph_gfa(const std::string& prefix) {
             for (auto&& e : n2.second) {
                 if (traversed_labels.find(e.label) == traversed_labels.end()) {
                     traversed_labels.insert(e.label);
-                    traversed_labels.insert(e.rc_label);
-                    // edgeid2gfa_node[e.label] = std::make_pair(e.label + "_" + e.rc_label, '+');
-                    // edgeid2gfa_node[e.rc_label] = std::make_pair(e.label + "_" + e.rc_label, '-');
-                    // file_gfa << "S\t" << e.label + "_" + e.rc_label << "\t" << e.sequence << '\n';
-                    std::string new_label = std::to_string(cnt++);
+                    traversed_labels.insert(e.rc_label);std::string new_label = std::to_string(cnt++);
                     edgeid2gfa_node[e.label] = std::make_pair(new_label, '+');
                     edgeid2gfa_node[e.rc_label] = std::make_pair(new_label, '-');
-                    file_gfa << "S\t" << new_label << "\t" << e.sequence << '\n';
-                    assert(e.sequence.size() > 0);
+                    if (n1.first != n2.first) {
+                        // edgeid2gfa_node[e.label] = std::make_pair(e.label + "_" + e.rc_label, '+');
+                        // edgeid2gfa_node[e.rc_label] = std::make_pair(e.label + "_" + e.rc_label, '-');
+                        // file_gfa << "S\t" << e.label + "_" + e.rc_label << "\t" << e.sequence << '\n';
+                        file_gfa << "S\t" << new_label << "\t" << e.sequence << '\n';
+                        assert(e.sequence.size() > 0);
+                    }
+                    else {
+                        if (e.sequence.size() >= n1.second.sequence.size() * 2)
+                            file_gfa << "S\t" << new_label << "\t" << e.sequence.substr(0, e.sequence.size() - n1.second.sequence.size()) << '\n';
+                        else
+                            file_gfa << "S\t" << new_label << "\t" << e.sequence << '\n';
+                        assert(e.sequence.size() > 0);
+                    }
                 }
             }
         }
