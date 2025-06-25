@@ -1,3 +1,0 @@
-/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles/cLJA.dir
-/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles/edit_cache.dir
-/Poppy/zmzhang/Consensus_Assembly/cLJA/CMakeFiles/rebuild_cache.dir

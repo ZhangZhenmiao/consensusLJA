@@ -1,1 +1,0 @@
-/usr/bin/c++  -std=c++17 -lstdc++fs -ggdb3 -fopenmp -O3 -rdynamic CMakeFiles/align_and_print.dir/align_and_print.cpp.o -o ../../../bin/align_and_print  ../../../lib/liblja_common.a ../../../lib/liblja_dbg.a ../../../lib/liblja_sequence.a ../../../lib/liblja_ag.a ../../../lib/liblja_common.a ../../../lib/liblja_sequence.a -lz -lm -fopenmp -lstdc++fs 

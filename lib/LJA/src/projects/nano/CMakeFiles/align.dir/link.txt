@@ -1,1 +1,0 @@
-/usr/bin/c++  -std=c++17 -lstdc++fs -ggdb3 -fopenmp -O3 -rdynamic CMakeFiles/align.dir/run_alignment.cpp.o -o ../../../bin/align  ../../../lib/libnano_alignment.a ../../../lib/libksw2.a ../../../lib/liblja_dbg.a ../../../lib/liblja_ag.a ../../../lib/liblja_sequence.a -lz ../../../lib/liblja_alignment.a ../../../lib/libksw2.a ../../../lib/liblja_common.a -fopenmp -lstdc++fs -lm 

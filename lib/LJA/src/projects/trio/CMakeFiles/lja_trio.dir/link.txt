@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../../lib/liblja_trio.a CMakeFiles/lja_trio.dir/trio.cpp.o
-/usr/bin/ranlib ../../../lib/liblja_trio.a

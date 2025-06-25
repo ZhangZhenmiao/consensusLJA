@@ -1,1 +1,0 @@
-/usr/bin/c++  -std=c++17 -lstdc++fs -ggdb3 -fopenmp -O3 -rdynamic CMakeFiles/graph_polishing.dir/graph_polishing.cpp.o -o ../../../bin/graph_polishing  ../../../lib/liblja_common.a ../../../lib/liblja_sequence.a ../../../lib/liblja_dbg.a ../../../lib/liblja_ag.a ../../../lib/liblja_common.a ../../../lib/liblja_sequence.a -lz -lm -fopenmp -lstdc++fs 

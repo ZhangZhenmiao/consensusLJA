@@ -1,1 +1,0 @@
-/usr/bin/c++  -std=c++17 -lstdc++fs -ggdb3 -fopenmp -O3 -rdynamic CMakeFiles/split_uncompressed_gfa.dir/split_uncompressed_gfa.cpp.o -o ../../../bin/split_uncompressed_gfa  ../../../lib/liblja_common.a ../../../lib/liblja_sequence.a -fopenmp -lstdc++fs -lz -lm 

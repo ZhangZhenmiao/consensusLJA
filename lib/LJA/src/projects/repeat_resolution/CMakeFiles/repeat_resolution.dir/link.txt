@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../../lib/librepeat_resolution.a CMakeFiles/repeat_resolution.dir/paths.cpp.o CMakeFiles/repeat_resolution.dir/mdbg_topology.cpp.o CMakeFiles/repeat_resolution.dir/mdbg_inc.cpp.o CMakeFiles/repeat_resolution.dir/mdbg_vertex_processor.cpp.o CMakeFiles/repeat_resolution.dir/mdbg.cpp.o CMakeFiles/repeat_resolution.dir/mdbg_seq.cpp.o
-/usr/bin/ranlib ../../../lib/librepeat_resolution.a

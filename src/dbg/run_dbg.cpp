@@ -57,7 +57,8 @@ bool DBGRunner::correctHigh() {
 
     graph.write_graph(output + "/graph.ori.only_high", 1000000, false, true);
     graph.append_linear_to_circular_genome(output + "/graph.ori.only_high", max_read_length);
-    graph.get_annotation(output + "/graph.ori.only_high");
+    if (graph.get_num_nodes() != 0)
+        graph.get_annotation(output + "/graph.ori.only_high");
 
     if (graph.get_num_nodes() == 0)
         return false;

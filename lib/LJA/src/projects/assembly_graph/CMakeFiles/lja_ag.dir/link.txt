@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../../lib/liblja_ag.a CMakeFiles/lja_ag.dir/graph_alignment_storage.cpp.o
-/usr/bin/ranlib ../../../lib/liblja_ag.a

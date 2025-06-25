@@ -60,8 +60,8 @@ int Graph::count_matches(std::string cigar) {
 }
 
 void Graph::get_annotation(std::string prefix) {
-    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
-    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
+    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
+    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
     if (fs::is_regular_file(prefix + ".fasta.fai"))
         system(("rm " + prefix + ".fasta.fai").c_str());

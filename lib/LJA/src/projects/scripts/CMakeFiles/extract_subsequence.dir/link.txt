@@ -1,1 +1,0 @@
-/usr/bin/c++  -std=c++17 -lstdc++fs -ggdb3 -fopenmp -O3 -rdynamic CMakeFiles/extract_subsequence.dir/extract_subsequence.cpp.o -o ../../../bin/extract_subsequence  ../../../lib/liblja_common.a ../../../lib/liblja_sequence.a -fopenmp -lstdc++fs -lz -lm 

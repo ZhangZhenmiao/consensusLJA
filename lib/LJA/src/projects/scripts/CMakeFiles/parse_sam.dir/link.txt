@@ -1,1 +1,0 @@
-/usr/bin/c++  -std=c++17 -lstdc++fs -ggdb3 -fopenmp -O3 -rdynamic CMakeFiles/parse_sam.dir/parse_sam.cpp.o -o ../../../bin/parse_sam  ../../../lib/liblja_common.a ../../../lib/liblja_sequence.a ../../../lib/liblja_alignment.a -lz ../../../lib/liblja_common.a -fopenmp -lstdc++fs -lm ../../../lib/libksw2.a 
