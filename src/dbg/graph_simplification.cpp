@@ -17,8 +17,8 @@ namespace fs = std::filesystem;
 
 void Graph::get_annotation(std::string prefix) {
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
-    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
-    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
+    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
+    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
     if (fs::is_regular_file(prefix + ".fasta.fai"))
         system(("rm " + prefix + ".fasta.fai").c_str());
     if (system(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str()) != 0) {
@@ -543,7 +543,8 @@ void Graph::gluing_broken_bulges(unsigned& removed_bulges) {
                 std::string seq_broken = outgoing_edge.sequence + incoming_edge.sequence.substr(k);
                 // double similarity = 1.0 * matches_by_edlib(seq_broken, node2.second.at(0).sequence) / std::max(seq_broken.size(), node2.second.at(0).sequence.size());
                 double similarity = 1.0 * std::min(outgoing_edge.length + incoming_edge.length, node2.second.at(0).length) / std::max(outgoing_edge.length + incoming_edge.length, node2.second.at(0).length);
-                std::cout << "Broken bulge (and reverse complementary): " << node.first << "->" << node2.first << ", " << node.first << "->" << outgoing_tip << "(" << outgoing_edge.reads.size() << ")" << " " << incoming_tip << "->" << node2.first << "(" << incoming_edge.reads.size() << ")" << ", sim " << similarity << std::endl;
+                if (similarity < 0.5)
+                    continue;
 
                 std::string seq = outgoing_edge.sequence.substr(outgoing_edge.sequence.size() - k) + incoming_edge.sequence.substr(0, k);
                 Edge new_edge(seq.at(k), 5001, seq, 0);
@@ -560,6 +561,8 @@ void Graph::gluing_broken_bulges(unsigned& removed_bulges) {
                 new_edge_r.path_nodes_in_original_graph.push_back(reverse_complementary_node(outgoing_tip));
                 graph[reverse_complementary_node(incoming_tip)].outgoing_edges[reverse_complementary_node(outgoing_tip)].push_back(new_edge_r);
                 graph[reverse_complementary_node(outgoing_tip)].incoming_edges[reverse_complementary_node(incoming_tip)].push_back(new_edge_r);
+
+                std::cout << "Broken bulge (and reverse complementary): " << node.first << "->" << node2.first << ", " << node.first << "->" << outgoing_tip << " " << incoming_tip << "->" << node2.first << ", sim " << similarity << " len " << seq.size() << std::endl;
             }
         }
     }

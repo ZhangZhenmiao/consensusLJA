@@ -56,7 +56,7 @@ void MDBGRunner::simplifyMDBG() {
 
     graph.write_graph(output + "/graph.cleaned");
     graph.write_graph_gfa(output + "/graph.cleaned");
-    graph.get_annotation(output + "/graph.cleaned");
+    // graph.get_annotation(output + "/graph.cleaned");
     // graph.write_graph_contracted(output + "/graph.cleaned.contracted.10k");
     graph.write_graph_contracted(output + "/graph.cleaned.contracted.20k", 20000);
 
@@ -83,7 +83,7 @@ void MDBGRunner::simplifyMDBG() {
     }
     std::cout << "Removed " << total_removed << " simple bulges" << std::endl;
     graph.write_graph(output + "/graph.bulge_removel");
-    graph.get_annotation(output + "/graph.bulge_removel");
+    // graph.get_annotation(output + "/graph.bulge_removel");
     // graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.10k");
     graph.write_graph_contracted(output + "/graph.bulge_removel.contracted.20k", 20000);
 
@@ -125,7 +125,7 @@ void MDBGRunner::simplifyMDBG() {
     }
     std::cout << "Removed complex bulges: " << total_removed << std::endl;
     graph.write_graph(output + "/graph.complex_bulge");
-    graph.get_annotation(output + "/graph.complex_bulge");
+    // graph.get_annotation(output + "/graph.complex_bulge");
     // graph.write_graph_contracted(output + "/graph.complex_bulge.contracted.10k");
     graph.write_graph_contracted(output + "/graph.complex_bulge.contracted.20k", 20000);
 
@@ -145,7 +145,7 @@ void MDBGRunner::simplifyMDBG() {
         graph.multi_bulge_removal(removed_bulges);
     }
     graph.write_graph(output + "/graph.decoupling");
-    graph.get_annotation(output + "/graph.decoupling");
+    // graph.get_annotation(output + "/graph.decoupling");
     graph.write_graph_contracted(output + "/graph.decoupling.contracted.20k", 20000);
 
 
@@ -165,7 +165,7 @@ void MDBGRunner::simplifyMDBG() {
         graph.multi_bulge_removal(removed_bulges);
     }
     graph.write_graph(output + "/graph.remove_tips");
-    graph.get_annotation(output + "/graph.remove_tips");
+    // graph.get_annotation(output + "/graph.remove_tips");
     // graph.write_graph_contracted(output + "/graph.remove_tips.contracted.10k");
     graph.write_graph_contracted(output + "/graph.remove_tips.contracted.20k", 20000);
 
@@ -202,7 +202,7 @@ void MDBGRunner::simplifyMDBG() {
     graph.write_graph(output + "/graph.complex_comp");
 
     std::cout << "----------Stage 7: contract graph----------" << std::endl;
-    graph.get_annotation(output + "/graph.complex_comp");
+    // graph.get_annotation(output + "/graph.complex_comp");
     graph.write_graph_contracted(output + "/graph.complex_comp.contracted.20k", 20000);
     graph.write_graph_contracted(output + "/graph.complex_comp_simplify.contracted.20k", 20000, true);
 
@@ -267,5 +267,5 @@ void MDBGRunner::simplifyMDBG() {
     graph.remove_contained_contigs(0.2);
     graph.write_graph(output + "/graph.final");
     graph.write_graph_gfa(output + "/graph.final");
-    graph.get_annotation(output + "/graph.final");
+    // graph.get_annotation(output + "/graph.final");
 }

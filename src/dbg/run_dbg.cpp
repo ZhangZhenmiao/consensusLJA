@@ -21,7 +21,7 @@ bool DBGRunner::correctHigh() {
     graph.pause_rerouting_reads = true;
 
     graph.write_graph(output + "/graph.ori");
-    graph.get_annotation(output + "/graph.ori");
+    // graph.get_annotation(output + "/graph.ori");
     graph.write_graph_gfa(output + "/graph.ori");
 
     graph.remove_low_coverage_edges(removed_edges, mean_cov * 10, false, true);
@@ -57,8 +57,8 @@ bool DBGRunner::correctHigh() {
 
     graph.write_graph(output + "/graph.ori.only_high", 1000000, false, true);
     graph.append_linear_to_circular_genome(output + "/graph.ori.only_high", max_read_length);
-    if (graph.get_num_nodes() != 0)
-        graph.get_annotation(output + "/graph.ori.only_high");
+    // if (graph.get_num_nodes() != 0)
+    //     graph.get_annotation(output + "/graph.ori.only_high");
 
     if (graph.get_num_nodes() == 0)
         return false;
@@ -81,7 +81,7 @@ void DBGRunner::cleanDBG() {
     this->mean_cov = graph.mean_cov;
 
     graph.write_graph(output + "/graph.ori");
-    graph.get_annotation(output + "/graph.ori");
+    // graph.get_annotation(output + "/graph.ori");
 
     std::cout << "----------Stage 1: Remove low-coverage edges ----------" << std::endl;
     removed_edges = 1;
@@ -108,13 +108,13 @@ void DBGRunner::cleanDBG() {
     }
 
     graph.write_graph(output + "/graph.remove_chimeric");
-    graph.get_annotation(output + "/graph.remove_chimeric");
+    // graph.get_annotation(output + "/graph.remove_chimeric");
     graph.write_graph_gfa(output + "/graph.remove_chimeric");
 
     graph.gluing_broken_bulges(removed_bulges);
 
     graph.write_graph(output + "/graph.cleaned");
-    graph.get_annotation(output + "/graph.cleaned");
+    // graph.get_annotation(output + "/graph.cleaned");
     graph.write_graph_gfa(output + "/graph.cleaned");
 
     std::cout << "----------Clean DBG finished----------" << std::endl;
