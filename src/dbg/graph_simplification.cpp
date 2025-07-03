@@ -254,6 +254,53 @@ std::string Graph::merge_edges(std::string node, bool merge_self_loop) {
     if (!this->pause_rerouting_reads)
         reroute_reads_from_path_to_edge(new_edge, node1, node, node2);
 
+    // in this case, we need add a reverse self-loop manually
+    bool flag = true;
+    if (node1 == reverse_complementary_node(node) && node1 == node2 && node1 != node) {
+        Path new_path_r;
+
+        add_node_to_path(new_path_r, node, 0, false);
+        add_node_to_path(new_path_r, node1, 0, false);
+        add_node_to_path(new_path_r, node, 0, false);
+
+        if (merge_self_loop && graph[node1].outgoing_edges.find(node1) != graph[node1].outgoing_edges.end()) {
+            int times = std::round(graph[node1].outgoing_edges[node1].at(0).multiplicity / new_path_r.multiplicity);
+            Path path_with_loop;
+            add_node_to_path(path_with_loop, node, 0, false);
+            add_node_to_path(path_with_loop, node1, 0, false);
+            for (int i = 0; i < times; ++i) {
+                add_node_to_path(path_with_loop, node1, 0, false);
+            }
+            add_node_to_path(path_with_loop, node, 0, false);
+
+            new_path_r.length = path_with_loop.length;
+            new_path_r.sequence = path_with_loop.sequence;
+            new_path_r.path_edges_in_original_graph = path_with_loop.path_edges_in_original_graph;
+            new_path_r.path_nodes_in_original_graph = path_with_loop.path_nodes_in_original_graph;
+        }
+
+        Edge new_edge_r(new_path_r.sequence.at(k), new_path_r.length, new_path_r.sequence, new_path_r.multiplicity);
+        new_edge_r.path_nodes_in_original_graph = new_path_r.path_nodes_in_original_graph;
+        new_edge_r.path_edges_in_original_graph = new_path_r.path_edges_in_original_graph;
+        assert(new_edge_r.path_nodes_in_original_graph.size() == new_edge_r.path_edges_in_original_graph.size() + 1);
+
+        if (graph[node].outgoing_edges.find(node) != graph[node].outgoing_edges.end()) {
+            graph[node].outgoing_edges.erase(node);
+            graph[node].incoming_edges.erase(node);
+        }
+        if (graph[node1].outgoing_edges.find(node1) != graph[node1].outgoing_edges.end()) {
+            graph[node1].outgoing_edges.erase(node1);
+            graph[node1].incoming_edges.erase(node1);
+        }
+
+        // there must not be self-loops on node
+        if (!this->pause_rerouting_reads)
+            reroute_reads_from_path_to_edge(new_edge_r, node, node1, node);
+        graph[node].outgoing_edges[node].push_back(new_edge_r);
+        graph[node].incoming_edges[node].push_back(new_edge_r);
+        flag = false;
+    }
+
     this->graph[node1].outgoing_edges.erase(node);
     this->graph[node].outgoing_edges.erase(node2);
     this->graph[node1].outgoing_edges[node2].push_back(new_edge);
@@ -261,7 +308,7 @@ std::string Graph::merge_edges(std::string node, bool merge_self_loop) {
     this->graph[node2].incoming_edges.erase(node);
     this->graph[node].incoming_edges.erase(node1);
     this->graph[node2].incoming_edges[node1].push_back(new_edge);
-    if (node1 != node && node2 != node)
+    if (node1 != node && node2 != node && flag)
         this->graph.erase(node);
     // std::cout << "Merging non-branching " << node1 << "->" << node << "->" << node2 << " multi " << new_edge.multiplicity << std::endl;
     return new_edge.sequence;

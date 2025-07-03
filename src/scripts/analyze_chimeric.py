@@ -4,6 +4,7 @@ import pysam
 import argparse
 import numpy as np
 import sys
+import os
 
 def calculate_identity(alignment):
     cigar = alignment.cigartuples
@@ -149,8 +150,9 @@ if __name__ == "__main__":
     # Call the function with the BAM file path provided by the user
     # read_bam(args.bam_file, args.reads_file)
     # chimeric_edges = read_bam(args.bam_file, args.dot_file, args.reads)
-    chimeric_edges = read_bam(args.bam_file, args.dot_file)
-    with open(args.output, "w") as fout:
-        for e in chimeric_edges:
-            fout.write(e + '\n')
+    if not os.path.isfile(args.output):
+        chimeric_edges = read_bam(args.bam_file, args.dot_file)
+        with open(args.output, "w") as fout:
+            for e in chimeric_edges:
+                fout.write(e + '\n')
 

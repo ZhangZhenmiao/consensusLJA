@@ -142,7 +142,7 @@ void MDBGRunner::simplifyMDBG() {
     removed_bulges = 1;
     while (removed_bulges) {
         graph.merge_non_branching_paths(true);
-        graph.multi_bulge_removal(removed_bulges);
+        graph.multi_bulge_removal(removed_bulges, false);
     }
     graph.write_graph(output + "/graph.decoupling");
     // graph.get_annotation(output + "/graph.decoupling");
@@ -162,7 +162,7 @@ void MDBGRunner::simplifyMDBG() {
     removed_bulges = 1;
     while (removed_bulges) {
         graph.merge_non_branching_paths(true);
-        graph.multi_bulge_removal(removed_bulges);
+        graph.multi_bulge_removal(removed_bulges, false);
     }
     graph.write_graph(output + "/graph.remove_tips");
     // graph.get_annotation(output + "/graph.remove_tips");
@@ -197,7 +197,7 @@ void MDBGRunner::simplifyMDBG() {
     removed_bulges = 1;
     while (removed_bulges) {
         graph.merge_non_branching_paths(true);
-        graph.multi_bulge_removal(removed_bulges);
+        graph.multi_bulge_removal(removed_bulges, false);
     }
     graph.write_graph(output + "/graph.complex_comp");
 
@@ -255,7 +255,7 @@ void MDBGRunner::simplifyMDBG() {
         removed_bulges = 1;
         while (removed_bulges) {
             graph.merge_non_branching_paths(true);
-            graph.multi_bulge_removal(removed_bulges);
+            graph.multi_bulge_removal(removed_bulges, false);
             if (removed_bulges)
                 flag = false;
             std::cout << "Removed " << removed_bulges << " bulges" << std::endl;

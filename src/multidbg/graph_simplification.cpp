@@ -288,6 +288,49 @@ std::string Graph::merge_edges(std::string node, bool merge_self_loop) {
     new_edge.path_edges_in_original_graph = new_path.path_edges_in_original_graph;
     assert(new_edge.path_nodes_in_original_graph.size() == new_edge.path_edges_in_original_graph.size() + 1);
 
+    // in this case, we need add a reverse self-loop manually
+    bool flag = true;
+    if (node1 == reverse_complementary_node(node) && node1 == node2 && node1 != node) {
+        Path new_path_r;
+
+        add_node_to_path(new_path_r, node, 0, false);
+        add_node_to_path(new_path_r, node1, 0, false);
+        add_node_to_path(new_path_r, node, 0, false);
+
+        if (merge_self_loop && graph[node1].outgoing_edges.find(node1) != graph[node1].outgoing_edges.end()) {
+            int times = std::round(graph[node1].outgoing_edges[node1].at(0).multiplicity / new_path_r.multiplicity);
+            Path path_with_loop;
+            add_node_to_path(path_with_loop, node, 0, false);
+            add_node_to_path(path_with_loop, node1, 0, false);
+            for (int i = 0; i < times; ++i) {
+                add_node_to_path(path_with_loop, node1, 0, false);
+            }
+            add_node_to_path(path_with_loop, node, 0, false);
+
+            new_path_r.length = path_with_loop.length;
+            new_path_r.sequence = path_with_loop.sequence;
+            new_path_r.path_edges_in_original_graph = path_with_loop.path_edges_in_original_graph;
+            new_path_r.path_nodes_in_original_graph = path_with_loop.path_nodes_in_original_graph;
+        }
+
+        Edge new_edge_r(new_path_r.sequence.at(graph[new_path_r.nodes.at(0)].sequence.size()), new_path_r.length, new_path_r.sequence, new_path_r.multiplicity);
+        new_edge_r.path_nodes_in_original_graph = new_path_r.path_nodes_in_original_graph;
+        new_edge_r.path_edges_in_original_graph = new_path_r.path_edges_in_original_graph;
+        assert(new_edge_r.path_nodes_in_original_graph.size() == new_edge_r.path_edges_in_original_graph.size() + 1);
+
+        if (graph[node].outgoing_edges.find(node) != graph[node].outgoing_edges.end()) {
+            graph[node].outgoing_edges.erase(node);
+            graph[node].incoming_edges.erase(node);
+        }
+        if (graph[node1].outgoing_edges.find(node1) != graph[node1].outgoing_edges.end()) {
+            graph[node1].outgoing_edges.erase(node1);
+            graph[node1].incoming_edges.erase(node1);
+        }
+        graph[node].outgoing_edges[node].push_back(new_edge_r);
+        graph[node].incoming_edges[node].push_back(new_edge_r);
+        flag = false;
+    }
+
     this->graph[node1].outgoing_edges.erase(node);
     this->graph[node].outgoing_edges.erase(node2);
     this->graph[node1].outgoing_edges[node2].push_back(new_edge);
@@ -295,7 +338,8 @@ std::string Graph::merge_edges(std::string node, bool merge_self_loop) {
     this->graph[node2].incoming_edges.erase(node);
     this->graph[node].incoming_edges.erase(node1);
     this->graph[node2].incoming_edges[node1].push_back(new_edge);
-    if (node1 != node && node2 != node)
+
+    if (node1 != node && node2 != node && flag)
         this->graph.erase(node);
     // std::cout << "Merging non-branching " << node1 << "->" << node << "->" << node2 << " multi " << new_edge.multiplicity << std::endl;
     return new_edge.sequence;
@@ -2550,6 +2594,47 @@ void Graph::remove_chimeric_edge(std::string chimeric_path) {
         chimeric_edges.insert(line);
     }
 
+    // struct chimeric_tip
+    // {
+    //     std::string start_node, end_node;
+    //     Node start_N, end_N;
+    //     Edge E;
+    //     chimeric_tip(std::string start_n, std::string end_n, Node start_N, Node end_N, Edge e) {
+    //         this->start_node = start_n;
+    //         this->end_node = end_n;
+    //         this->start_N = start_N;
+    //         this->end_N = end_N;
+    //         this->E = e;
+    //     }
+    // };
+
+    // std::vector <chimeric_tip>tips_to_keep;
+    // for (auto&& node : graph) {
+    //     std::vector<std::string> out_to_remove;
+    //     for (auto&& n2 : node.second.outgoing_edges) {
+    //         for (int i = 0; i < n2.second.size(); ++i) {
+    //             if (chimeric_edges.find(n2.second.at(i).label) != chimeric_edges.end()) {
+    //                 // store chimeric out tips in tips_to_keep
+    //                 if (n2.second.size() == 1 && graph[n2.first].incoming_edges.size() == 1 && graph[n2.first].outgoing_edges.size() == 0) {
+    //                     tips_to_keep.push_back(chimeric_tip(node.first, n2.first, graph[node.first], graph[n2.first], n2.second[i]));
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     for (auto&& n2 : node.second.incoming_edges) {
+    //         for (int i = 0; i < n2.second.size(); ++i) {
+    //             if (chimeric_edges.find(n2.second.at(i).label) != chimeric_edges.end()) {
+    //                 // store chimeric in tips in tips_to_keep
+    //                 if (n2.second.size() == 1 && graph[n2.first].incoming_edges.size() == 0 && graph[n2.first].outgoing_edges.size() == 1) {
+    //                     tips_to_keep.push_back(chimeric_tip(n2.first, node.first, graph[n2.first], graph[node.first], n2.second[i]));
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
+
     std::vector<std::string> nodes_to_remove;
     for (auto&& node : graph) {
         std::vector<std::string> out_to_remove;
@@ -2615,6 +2700,39 @@ void Graph::remove_chimeric_edge(std::string chimeric_path) {
     }
     for (auto&& n : nodes_to_remove)
         graph.erase(n);
+
+    // for (auto&& tip : tips_to_keep) {
+    //     std::string s_name = tip.start_node;
+    //     std::string e_name = tip.end_node;
+    //     if (s_name == reverse_complementary_node(e_name))
+    //         continue;
+
+    //     while (graph.find(s_name) != graph.end()) s_name += "1";
+    //     while (graph.find(e_name) != graph.end()) e_name += "1";
+
+    //     if (nodeid2Rev.find(s_name) == nodeid2Rev.end()) {
+    //         std::string rev_name = s_name.at(0) == '-' ? s_name.substr(1) : "-" + s_name;
+    //         nodeid2Rev[s_name] = rev_name;
+    //         nodeid2Rev[rev_name] = s_name;
+    //     }
+
+    //     if (nodeid2Rev.find(e_name) == nodeid2Rev.end()) {
+    //         std::string rev_name = e_name.at(0) == '-' ? e_name.substr(1) : "-" + e_name;
+    //         nodeid2Rev[e_name] = rev_name;
+    //         nodeid2Rev[rev_name] = e_name;
+    //     }
+
+    //     graph[s_name].sequence = tip.start_N.sequence;
+    //     graph[e_name].sequence = tip.end_N.sequence;
+
+    //     tip.E.label.clear();
+    //     tip.E.rc_label.clear();
+
+    //     graph[s_name].outgoing_edges[e_name].push_back(tip.E);
+    //     graph[e_name].incoming_edges[s_name].push_back(tip.E);
+
+    //     std::cout << "Add linear edge " << s_name << " -> " << e_name << std::endl;
+    // }
 }
 
 void Graph::remove_contained_contigs(const double sim) {
