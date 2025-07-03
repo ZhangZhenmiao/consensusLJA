@@ -89,6 +89,8 @@ void DBGRunner::cleanDBG() {
         graph.remove_low_coverage_edges(removed_edges, graph.first_minima, true);
         std::cout << "Removed " << removed_edges << " low-coverage tips" << std::endl;
     }
+    graph.write_graph(output + "/graph.remove_tips");
+    graph.write_graph_gfa(output + "/graph.remove_tips");
     removed_edges = 1;
     while (removed_edges) {
         graph.remove_low_coverage_edges(removed_edges, graph.first_minima, false);

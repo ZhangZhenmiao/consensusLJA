@@ -2301,43 +2301,50 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
         };
     auto is_connected_to_high_muilti_edge = [&](std::string node1, std::string node2) -> bool {
         bool checked = false;
+        const double threshold = mean_cov * 10;
+
         if (graph.find(node1) != graph.end()) {
             for (auto&& n : graph[node1].outgoing_edges) {
                 if (n.first == node1 || n.first == node2)
                     continue;
-                checked = true;
                 for (auto&& e : n.second) {
-                    if (e.multiplicity < mean_cov * 10)
+                    checked = true;
+                    if (e.multiplicity < threshold) {
                         return false;
+                    }
                 }
             }
             for (auto&& n : graph[node1].incoming_edges) {
                 if (n.first == node1 || n.first == node2)
                     continue;
-                checked = true;
                 for (auto&& e : n.second) {
-                    if (e.multiplicity < mean_cov * 10)
+                    checked = true;
+                    if (e.multiplicity < threshold) {
                         return false;
+                    }
                 }
             }
         }
+
         if (graph.find(node2) != graph.end()) {
             for (auto&& n : graph[node2].outgoing_edges) {
                 if (n.first == node1 || n.first == node2)
                     continue;
-                checked = true;
                 for (auto&& e : n.second) {
-                    if (e.multiplicity < mean_cov * 10)
+                    checked = true;
+                    if (e.multiplicity < threshold) {
                         return false;
+                    }
                 }
             }
             for (auto&& n : graph[node2].incoming_edges) {
                 if (n.first == node1 || n.first == node2)
                     continue;
-                checked = true;
                 for (auto&& e : n.second) {
-                    if (e.multiplicity < mean_cov * 10)
+                    checked = true;
+                    if (e.multiplicity < threshold) {
                         return false;
+                    }
                 }
             }
         }
@@ -2350,10 +2357,12 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
                 if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || n2.second.at(i).multiplicity == 0) {
                     indices1.push_back(i);
                     removed_edges += 1;
-                    // if (is_in_high_multi_bulge(n2.second))
-                    //     std::cout << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is in bulge" << std::endl;
-                    // else if (is_connected_to_high_muilti_edge(node, n2.first))
-                    //     std::cout << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is low-high connector" << std::endl;
+                    if (is_in_high_multi_bulge(n2.second))
+                        std::cout << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is in bulge (check out)" << std::endl;
+                    else if (is_connected_to_high_muilti_edge(node, n2.first))
+                        std::cout << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is low-high connector (check out)" << std::endl;
+                    else
+                        std::cout << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is low (check out)" << std::endl;
                     for (auto&& r : n2.second.at(i).reads) {
                         ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
                         aln.prefix = 0;
@@ -2378,11 +2387,13 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
             out_to_remove.push_back(n2.first);
 
         remove_items_from_vector(graph[n2.first].incoming_edges[node], indices2);
-        if (graph[n2.first].incoming_edges[node].empty()) {
-            graph[n2.first].incoming_edges.erase(node);
-            if (graph[n2.first].incoming_edges.empty() && graph[n2.first].outgoing_edges.empty())
-                nodes_to_remove.push_back(n2.first);
-        }
+        if (n2.second.empty())
+            assert(graph[n2.first].incoming_edges[node].empty());
+        // if (graph[n2.first].incoming_edges[node].empty()) {
+    //     graph[n2.first].incoming_edges.erase(node);
+    //     if (graph[n2.first].incoming_edges.empty() && graph[n2.first].outgoing_edges.empty())
+    //         nodes_to_remove.push_back(n2.first);
+    // }
     }
 
     std::vector<std::string> in_to_remove;
@@ -2402,10 +2413,12 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
                 if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || graph[n2.first].outgoing_edges[node].at(i).multiplicity == 0) {
                     indices2.push_back(i);
                     removed_edges += 1;
-                    // if (is_in_high_multi_bulge(n2.second))
-                    //     std::cout << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is in bulge" << std::endl;
-                    // else if (is_connected_to_high_muilti_edge(node, n2.first))
-                    //     std::cout << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is low-high connector" << std::endl;
+                    if (is_in_high_multi_bulge(n2.second))
+                        std::cout << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is in bulge (check in)" << std::endl;
+                    else if (is_connected_to_high_muilti_edge(node, n2.first))
+                        std::cout << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is low-high connector (check in)" << std::endl;
+                    else
+                        std::cout << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is low (check in)" << std::endl;
                     for (auto&& r : graph[n2.first].outgoing_edges[node].at(i).reads) {
                         ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
                         aln.prefix = 0;
@@ -2421,21 +2434,31 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
             in_to_remove.push_back(n2.first);
 
         remove_items_from_vector(graph[n2.first].outgoing_edges[node], indices2);
-        if (graph[n2.first].outgoing_edges[node].empty()) {
-            graph[n2.first].outgoing_edges.erase(node);
-            if (graph[n2.first].incoming_edges.empty() && graph[n2.first].outgoing_edges.empty())
-                nodes_to_remove.push_back(n2.first);
-        }
+        if (n2.second.empty())
+            assert(graph[n2.first].outgoing_edges[node].empty());
+        // if (graph[n2.first].outgoing_edges[node].empty()) {
+    //     graph[n2.first].outgoing_edges.erase(node);
+    //     if (graph[n2.first].incoming_edges.empty() && graph[n2.first].outgoing_edges.empty())
+    //         nodes_to_remove.push_back(n2.first);
+    // }
     }
 
     for (auto&& e : out_to_remove) {
         graph[node].outgoing_edges.erase(e);
+        graph[e].incoming_edges.erase(node);
+        if (graph[node].incoming_edges.empty() && graph[node].outgoing_edges.empty())
+            nodes_to_remove.push_back(node);
+        if (graph[e].incoming_edges.empty() && graph[e].outgoing_edges.empty())
+            nodes_to_remove.push_back(e);
     }
     for (auto&& e : in_to_remove) {
         graph[node].incoming_edges.erase(e);
+        graph[e].outgoing_edges.erase(node);
+        if (graph[node].incoming_edges.empty() && graph[node].outgoing_edges.empty())
+            nodes_to_remove.push_back(node);
+        if (graph[e].incoming_edges.empty() && graph[e].outgoing_edges.empty())
+            nodes_to_remove.push_back(e);
     }
-    if ((out_to_remove.size() || in_to_remove.size()) && graph[node].incoming_edges.empty() && graph[node].outgoing_edges.empty())
-        nodes_to_remove.push_back(node);
 }
 
 void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, bool tips, bool force) {

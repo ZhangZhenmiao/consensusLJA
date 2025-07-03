@@ -42,7 +42,7 @@ public:
             while (flag) {
                 if (execute_command(mdbg + " -g " + (output_all / "2_clean_DBG" / "graph.cleaned.gfa").string() + " -a " + (output_all / "2_clean_DBG" / "graph.cleaned.aln").string() + " -t " + std::to_string(threads) + " -k 5001 -o " + mdbg_dir.string() + " --diploid") == 0)
                     flag = false;
-                if (++cnt == 20)
+                if (++cnt == 10)
                     throw std::runtime_error("Failed to execute multidbg");
             }
         }

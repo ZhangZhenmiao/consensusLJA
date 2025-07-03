@@ -242,10 +242,16 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         }
         else {
             // If no reverse complement is found, keep the ID as is
-            assert(revIt->first == currentId);
-            idMapping[currentId] = currentId;
-            nodeid2Rev[currentId] = currentId;
-            nodenew2sequence[currentId] = sequence;
+            if (revIt == node2sequence.end()) {
+                std::cout << "Node cannot find reverse complement: " << currentId << std::endl;
+                idMapping[currentId] = currentId;
+                nodenew2sequence[currentId] = sequence;
+            }
+            else {
+                idMapping[currentId] = currentId;
+                nodeid2Rev[currentId] = currentId;
+                nodenew2sequence[currentId] = sequence;
+            }
         }
 
         // Remove current ID from map
