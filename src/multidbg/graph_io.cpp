@@ -133,7 +133,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
     std::unordered_map<std::string, double> edgedbg2len;
     std::unordered_map<std::string, std::pair<std::string, std::string>> edgedbg2nodes;
 
-    // load edge multiplicities from dbg
+    // load edge multiplicities of dbg
     std::ifstream graph_dbg_file(graph_dbg);
     while (getline(graph_dbg_file, line)) {
         if (line.find("->") != std::string::npos) {
@@ -160,32 +160,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
     }
     graph_dbg_file.close();
 
-    std::string graph_dbg_fasta = graph_dbg.substr(0, graph_dbg.rfind(".")) + ".fasta";
-    std::ifstream dbg_fasta_file(graph_dbg_fasta);
-    std::unordered_map<std::string, std::string> edgedbg2sequence;
-    std::string e_id1, e_id2;
-    while (getline(dbg_fasta_file, line)) {
-        // line is contig name
-        if (line.at(0) == '>') {
-            size_t pos = line.find_first_of('_');
-            e_id1 = line.substr(1, pos - 1);
-            e_id2 = line.substr(pos + 1);
-        }
-        // line is a contig
-        else {
-            std::string edge_sequence = line;
-            std::string edge_sequence_r = reverse_complementary(edge_sequence);
-
-            // extract edge labels
-            assert(edgedbg2sequence.find(e_id1) == edgedbg2sequence.end());
-            assert(edgedbg2sequence.find(e_id2) == edgedbg2sequence.end());
-            edgedbg2sequence[e_id1] = edge_sequence;
-            edgedbg2sequence[e_id2] = edge_sequence_r;
-            // std::cout << "Read " << edge << " and " << edge_r << " from " << graph_fasta << std::endl;
-        }
-    }
-
-    // read input fasta
+    // read edge sequences of multidbg
     std::ifstream fasta_file(graph_fasta);
     while (getline(fasta_file, line)) {
         // line is contig name
@@ -201,6 +176,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         }
     }
 
+    // read node sequences of multidbg
     std::ifstream nodes_file(nodes_fasta);
     std::string node;
     while (getline(nodes_file, line)) {
@@ -217,7 +193,9 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         }
     }
 
+    // construct new node names of multidbg with reverse complementary information
     std::unordered_map<std::string, std::string> idMapping;
+    std::unordered_set<std::string> nodes_without_rc;
     for (auto it = node2sequence.begin(); it != node2sequence.end(); ) {
         std::string currentId = it->first;
         std::string sequence = it->second;
@@ -237,6 +215,10 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             nodeid2Rev["-" + currentId] = currentId;
             nodenew2sequence[currentId] = sequence;
             nodenew2sequence["-" + currentId] = revComp;
+
+            std::cout << "Node mapping: " << currentId << " to " << currentId << std::endl;
+            std::cout << "Node mapping: " << revIt->first << " to " << "-" + currentId << std::endl;
+
             // Remove reverse complement from map
             node2sequence.erase(revIt);
         }
@@ -245,9 +227,15 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             if (revIt == node2sequence.end()) {
                 std::cout << "Node cannot find reverse complement: " << currentId << std::endl;
                 idMapping[currentId] = currentId;
+                nodeid2Rev[currentId] = "-" + currentId;
+                nodeid2Rev["-" + currentId] = currentId;
                 nodenew2sequence[currentId] = sequence;
+                nodenew2sequence["-" + currentId] = revComp;
+                // this container stores initial node ids for nodes without rc; the new node names should be in idMapping
+                nodes_without_rc.insert(currentId);
             }
             else {
+                std::cout << "Node is self-reverse: " << currentId << std::endl;
                 idMapping[currentId] = currentId;
                 nodeid2Rev[currentId] = currentId;
                 nodenew2sequence[currentId] = sequence;
@@ -258,18 +246,22 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         it = node2sequence.erase(it);
     }
 
-    //load multidbg edge paths
+    //load multidbg edge paths in dbg, and construct coverages for multidbg edges
     std::ifstream paths_dbg_file(paths_dbg);
     std::string edge_name;
+    int max_initial_edge_id = 0;
     while (getline(paths_dbg_file, line)) {
         if (line.at(0) == '>') {
             edge_name = line.substr(1);
+            int edge_id = std::atoi(edge_name.c_str());
+            if (edge_id > max_initial_edge_id)
+                max_initial_edge_id = edge_id;
         }
         else {
             // std::cout << edge_name << ": Start";
             std::vector<double> multis;
             std::vector<double> multis_long;
-            std::cout << "Path for " << edge_name << ": ";
+            // std::cout << "Path for " << edge_name << ": ";
             while (line.find(' ') != std::string::npos) {
                 std::string edge_id = line.substr(0, line.find(' '));
                 assert(edgedbg2multi.find(edge_id) != edgedbg2multi.end());
@@ -281,33 +273,15 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
                 assert(edgedbg2nodes.find(edge_id) != edgedbg2nodes.end());
                 if (edge_initial_to_path_in_dbg[edge_name].empty()) {
                     edge_initial_to_path_in_dbg[edge_name].push_back(edgedbg2nodes[edge_id].first);
-                    edge_initial_to_DBG_reads[edge_name].dbg_nodes.push_back(edgedbg2nodes[edge_id].first);
-                    std::cout << edgedbg2nodes[edge_id].first;
+                    // std::cout << edgedbg2nodes[edge_id].first;
                 }
                 assert(edgedbg2nodes[edge_id].first == edge_initial_to_path_in_dbg[edge_name].at(edge_initial_to_path_in_dbg[edge_name].size() - 1));
                 edge_initial_to_path_in_dbg[edge_name].push_back(edgedbg2nodes[edge_id].second);
-                edge_initial_to_DBG_reads[edge_name].dbg_nodes.push_back(edgedbg2nodes[edge_id].second);
 
-                edge_initial_to_DBG_reads[edge_name].dbg_edges.push_back(edge_id);
-
-                if (edge_initial_to_DBG_reads[edge_name].dbg_path_sequence.empty()) {
-                    assert(edgedbg2sequence.find(edge_id) != edgedbg2sequence.end());
-                    edge_initial_to_DBG_reads[edge_name].dbg_path_sequence += edgedbg2sequence[edge_id];
-                }
-                else
-                    edge_initial_to_DBG_reads[edge_name].dbg_path_sequence += edgedbg2sequence[edge_id].substr(5001);
-
-                edge_initial_to_DBG_reads[edge_name].dbg_path_length += edgedbg2len[edge_id];
-                edge_initial_to_DBG_reads[edge_name].dbg_start_base_string += edgedbg2sequence[edge_id].at(5001);
-                edge_initial_to_DBG_reads[edge_name].dbg_edge_lengths.push_back(edgedbg2sequence[edge_id].size());
-                std::cout << " (" << edge_id << ")";
-                std::cout << " " << edgedbg2nodes[edge_id].second;
+                // std::cout << " (" << edge_id << ")";
+                // std::cout << " " << edgedbg2nodes[edge_id].second;
             }
-            if (!edge_initial_to_DBG_reads[edge_name].dbg_edges.empty())
-                edge_initial_to_DBG_reads[edge_name].dbg_path_length += 5001;
-            assert(edge_initial_to_DBG_reads[edge_name].dbg_path_length == edge_initial_to_DBG_reads[edge_name].dbg_path_sequence.size());
-            std::cout << " path len " << edge_initial_to_DBG_reads[edge_name].dbg_path_sequence.size() << " mdbg edge len " << edge2sequence[edge_name].size() << std::endl;
-            assert(edge_initial_to_DBG_reads[edge_name].dbg_path_sequence.size() >= edge2sequence[edge_name].size());
+            // std::cout << " path len " << edge_initial_to_DBG_reads[edge_name].dbg_path_sequence.size() << " mdbg edge len " << edge2sequence[edge_name].size() << std::endl;
 
             if (multis_long.size()) {
                 double min_multi = 0;
@@ -343,7 +317,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
     }
     paths_dbg_file.close();
 
-    // load graph
+    // load multidbg graph
     long cnt_edge = 0;
     std::vector<double> edge_multis;
     std::ifstream dot_file(graph_dot);
@@ -375,99 +349,64 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             edge.path_nodes_in_original_graph.push_back(start_name);
             edge.path_nodes_in_original_graph.push_back(end_name);
             edge.path_edges_in_original_graph.push_back(edge_label);
+            // don't set edge label as initial labels, as we use a different naming rule for edge labels
             // edge.label = edge_label;
-
-            assert(edge_initial_to_DBG_reads[edge_label].dbg_path_sequence.find(graph[start_name].sequence) != std::string::npos);
-            assert(edge_initial_to_DBG_reads[edge_label].dbg_path_sequence.rfind(graph[end_name].sequence) != std::string::npos);
-            edge_initial_to_DBG_reads[edge_label].mdbg_s_start = edge_initial_to_DBG_reads[edge_label].dbg_path_sequence.find(graph[start_name].sequence);
-            edge_initial_to_DBG_reads[edge_label].mdbg_s_end = edge_initial_to_DBG_reads[edge_label].mdbg_s_start + graph[start_name].sequence.size();
-            edge_initial_to_DBG_reads[edge_label].mdbg_e_start = edge_initial_to_DBG_reads[edge_label].dbg_path_sequence.rfind(graph[end_name].sequence);
-            edge_initial_to_DBG_reads[edge_label].mdbg_e_end = edge_initial_to_DBG_reads[edge_label].mdbg_e_start + graph[end_name].sequence.size();
-            edge_initial_to_DBG_reads[edge_label].mdbg_s = start_name;
-            edge_initial_to_DBG_reads[edge_label].mdbg_e = end_name;
-            edge_initial_to_DBG_reads[edge_label].mdbg_seq = edge2sequence[edge_label];
-            edge_initial_to_DBG_reads[edge_label].multi = edge2multi[edge_label];
-            std::cout << start_name << "->" << end_name << "(" << edge_label << ")" << " ss " << edge_initial_to_DBG_reads[edge_label].mdbg_s_start << " se " << edge_initial_to_DBG_reads[edge_label].mdbg_s_end << " es " << edge_initial_to_DBG_reads[edge_label].mdbg_e_start << " ee " << edge_initial_to_DBG_reads[edge_label].mdbg_e_end << std::endl;
-            assert(edge_initial_to_DBG_reads[edge_label].mdbg_e_end - edge_initial_to_DBG_reads[edge_label].mdbg_s_start == length);
 
             this->graph[start_name].outgoing_edges[end_name].push_back(edge);
             this->graph[end_name].incoming_edges[start_name].push_back(edge);
             cnt_edge += 1;
             edge_multis.push_back(edge2multi[edge_label]);
+
+            // normally reverse complements edges are stored as two lines, but for edges on nodes without rc, there is only one line, so we should add a dummy edge to keep the graph symmetric
+            if (nodes_without_rc.find(start_name) != nodes_without_rc.end() || nodes_without_rc.find(end_name) != nodes_without_rc.end()) {
+                std::string start_r = reverse_complementary_node(end_name);
+                std::string end_r = reverse_complementary_node(start_name);
+
+                std::string seq_r = reverse_complementary(edge2sequence[edge_label]);
+                int length = seq_r.size();
+                char start_base = seq_r.at(graph[start_r].sequence.size());
+                Edge edge = Edge(start_base, length, seq_r, edge2multi[edge_label]);
+
+                std::string new_edge_initial_label = std::to_string(++max_initial_edge_id);
+                edge.path_nodes_in_original_graph.push_back(start_r);
+                edge.path_nodes_in_original_graph.push_back(end_r);
+                edge.path_edges_in_original_graph.push_back(new_edge_initial_label);
+
+                // need to construct the dbg path for the newly added edge initial id, this is for fianl containment checking
+                if (edge_initial_to_path_in_dbg[edge_label].size()) {
+                    for (int i = int(edge_initial_to_path_in_dbg[edge_label].size()) - 1; i >= 0; --i) {
+                        std::string node_in_dbg = edge_initial_to_path_in_dbg[edge_label].at(i);
+                        std::string rc_node_in_dbg = node_in_dbg.at(0) != '-' ? "-" + node_in_dbg : node_in_dbg.substr(1);
+                        edge_initial_to_path_in_dbg[new_edge_initial_label].push_back(rc_node_in_dbg);
+                    }
+                }
+
+                this->graph[start_r].outgoing_edges[end_r].push_back(edge);
+                this->graph[end_r].incoming_edges[start_r].push_back(edge);
+
+                std::cout << "Add complementary edge " << start_r << " -> " << end_r << std::endl;
+
+                cnt_edge += 1;
+            }
         }
         // line is an node
         else {
             std::string node_name = line.substr(1, line.find('[') - 1);
             Node node;
             assert(idMapping.find(node_name) != idMapping.end());
-            node.sequence = nodenew2sequence[idMapping.at(node_name)];
-            // std::cout << node.sequence.size() << std::endl;
+            node.sequence = nodenew2sequence.at(idMapping.at(node_name));
             this->graph[idMapping.at(node_name)] = node;
+
+            // normally reverse complements nodes are stored as two lines, but for nodes without rc, we should add a dummy node
+            if (nodes_without_rc.find(node_name) != nodes_without_rc.end()) {
+                Node node;
+                node.sequence = nodenew2sequence.at(reverse_complementary_node(idMapping.at(node_name)));
+                this->graph[reverse_complementary_node(idMapping.at(node_name))] = node;
+                std::cout << "Add complementary node " << reverse_complementary_node(idMapping.at(node_name)) << std::endl;
+            }
         }
     }
     dot_file.close();
-
-    // // extract reads for each multidbg edge
-    // dbg::Graph g;
-    // std::string graph_dbg_aln = graph_dbg.substr(0, graph_dbg.rfind(".")) + ".aln";
-    // std::cout << "Read DBG ..." << std::endl;
-    // g.read_from_dot(graph_dbg, graph_dbg_fasta);
-    // g.load_read_path(graph_dbg_aln);
-    // std::unordered_set<std::string> chimeric_edges;
-    // for (auto&& e_mdbg : edge_initial_to_DBG_reads) {
-    //     // if (e_mdbg.first != "20832" && e_mdbg.first != "20824")
-    //     //     continue;
-    //     int current_start = 0;
-    //     int current_end = 0;
-    //     int internal_start_index = -1; int end_first_window = 0; int start_first_window = 0;
-    //     int internal_end_index = -1; int start_second_window = 0; int end_second_window = 0;
-    //     for (size_t i = 0; i < e_mdbg.second.dbg_edges.size(); ++i) {
-    //         current_start = current_end != 0 ? current_end - 5001 : 0;
-    //         current_end = current_end != 0 ? current_end + e_mdbg.second.dbg_edge_lengths[i] - 5001 : e_mdbg.second.dbg_edge_lengths[i];
-    //         if (current_end <= std::min(e_mdbg.second.mdbg_s_end, e_mdbg.second.mdbg_e_start)) {
-    //             internal_start_index = i;
-    //             start_first_window = current_start;
-    //             end_first_window = current_end;
-    //         }
-    //         if (current_start + 5001 >= e_mdbg.second.mdbg_s_end) {
-    //             internal_end_index = i;
-    //             start_second_window = current_start;
-    //             end_second_window = current_end;
-    //             break;
-    //         }
-    //     }
-    //     if (internal_end_index != -1 && internal_start_index != -1 && internal_end_index > internal_start_index && e_mdbg.second.mdbg_s_end - std::min(e_mdbg.second.mdbg_s_end, e_mdbg.second.mdbg_e_start) <= 10000 && start_second_window + 5001 - end_first_window <= 10000) {
-    //         std::cout << "check dbg edges " << internal_start_index << "(" << start_first_window << "-" << end_first_window << ")" << "-" << internal_end_index << "(" << start_second_window << "-" << end_second_window << ")" << " for " << e_mdbg.first << "(multi=" << e_mdbg.second.multi << "):";
-    //         std::unordered_set<std::string> reads_cover_internal;
-    //         for (size_t i = internal_start_index; i <= internal_end_index; ++i) {
-    //             std::unordered_set<std::string> reads_f, reads_r;
-    //             std::string rc_label;
-    //             for (auto&& e : g.graph[e_mdbg.second.dbg_nodes[i]].outgoing_edges[e_mdbg.second.dbg_nodes[i + 1]]) {
-    //                 if (e.label == e_mdbg.second.dbg_edges[i]) {
-    //                     reads_f.insert(e.reads.begin(), e.reads.end());
-    //                     rc_label = e.rc_label;
-    //                     std::cout << " flabel=" << e.label;
-    //                     std::cout << " rlabel=" << rc_label;
-    //                 }
-    //             }
-    //             for (auto&& e : g.graph[g.reverse_complementary_node(e_mdbg.second.dbg_nodes[i + 1])].outgoing_edges[g.reverse_complementary_node(e_mdbg.second.dbg_nodes[i])]) {
-    //                 if (e.label == rc_label) {
-    //                     reads_r.insert(e.reads.begin(), e.reads.end());
-    //                 }
-    //             }
-    //             std::unordered_set<std::string> reads = reads_f;
-    //             reads.insert(reads_r.begin(), reads_r.end());
-    //             std::cout << " " << reads.size();
-    //             reads_cover_internal = internal_start_index == i ? reads : g.get_intersection(reads_cover_internal, reads);
-    //         }
-    //         if (reads_cover_internal.size() <= 0) {
-    //             std::cout << " is potential chimeric" << std::endl;
-    //             chimeric_edges.insert(e_mdbg.first);
-    //         }
-    //         else
-    //             std::cout << std::endl;
-    //     }
-    // }
 
     auto hist = create_histogram(edge_multis);
     analyze_histogram(hist);

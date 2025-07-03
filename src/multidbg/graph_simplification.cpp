@@ -2292,8 +2292,8 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
             for (auto&& n : graph[node1].outgoing_edges) {
                 if (n.first == node1 || n.first == node2)
                     continue;
-                checked = true;
                 for (auto&& e : n.second) {
+                    checked = true;
                     if (e.multiplicity < mean_cov * 10)
                         return false;
                 }
@@ -2301,8 +2301,8 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
             for (auto&& n : graph[node1].incoming_edges) {
                 if (n.first == node1 || n.first == node2)
                     continue;
-                checked = true;
                 for (auto&& e : n.second) {
+                    checked = true;
                     if (e.multiplicity < mean_cov * 10)
                         return false;
                 }
@@ -2312,8 +2312,8 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
             for (auto&& n : graph[node2].outgoing_edges) {
                 if (n.first == node1 || n.first == node2)
                     continue;
-                checked = true;
                 for (auto&& e : n.second) {
+                    checked = true;
                     if (e.multiplicity < mean_cov * 10)
                         return false;
                 }
@@ -2321,8 +2321,8 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
             for (auto&& n : graph[node2].incoming_edges) {
                 if (n.first == node1 || n.first == node2)
                     continue;
-                checked = true;
                 for (auto&& e : n.second) {
+                    checked = true;
                     if (e.multiplicity < mean_cov * 10)
                         return false;
                 }
@@ -2651,9 +2651,10 @@ void Graph::remove_contained_contigs(const double sim) {
         keys.push_back(key);
     }
 
-    std::unordered_set<std::string> traversed;
     for (size_t i = 0; i < keys.size(); ++i) {
         for (size_t j = i + 1; j < keys.size(); ++j) {
+            if (graph.find(keys[i]) == graph.end() || graph.find(keys[j]) == graph.end())
+                continue;
             const auto& set1 = node2paths.at(keys[i]);
             const auto& set2 = node2paths.at(keys[j]);
 
@@ -2668,14 +2669,21 @@ void Graph::remove_contained_contigs(const double sim) {
             double score = min_size == 0 ? 0.0 : static_cast<double>(intersection_count) / min_size;
 
             if (score >= sim) {
+                if (keys[i] == reverse_complementary_node(node2next[keys[j]]) && node2next[keys[i]] == reverse_complementary_node(keys[j]))
+                    continue;
                 std::cout << "Overlap(" << keys[i] << "->" << node2next[keys[i]] << ", " << keys[j] << "->" << node2next[keys[j]] << ") = " << score << std::endl;
-                if (set1.size() < set2.size()) {
+                std::cout << "Overlap(" << reverse_complementary_node(node2next[keys[i]]) << "->" << reverse_complementary_node(keys[i]) << ", " << reverse_complementary_node(node2next[keys[j]]) << "->" << reverse_complementary_node(keys[j]) << ") = " << score << std::endl;
+                if (graph[keys[i]].outgoing_edges[node2next[keys[i]]].at(0).sequence.size() < graph[keys[j]].outgoing_edges[node2next[keys[j]]].at(0).sequence.size()) {
                     graph.erase(keys[i]);
                     graph.erase(node2next[keys[i]]);
+                    graph.erase(reverse_complementary_node(keys[i]));
+                    graph.erase(reverse_complementary_node(node2next[keys[i]]));
                 }
                 else {
                     graph.erase(keys[j]);
                     graph.erase(node2next[keys[j]]);
+                    graph.erase(reverse_complementary_node(keys[j]));
+                    graph.erase(reverse_complementary_node(node2next[keys[j]]));
                 }
             }
         }
