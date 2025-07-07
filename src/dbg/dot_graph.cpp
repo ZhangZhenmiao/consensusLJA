@@ -613,7 +613,21 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
         {"23P", "#952395"},
         {"X", "#969696"},
         {"Y", "#969696"},
-        {"mtDNA", "#FF0000"}
+        {"mtDNA", "#FF0000"},
+        {"Chr1", "#325527"},
+        {"Chr2", "#628DCF"},
+        {"Chr3", "#41496B"},
+        {"Chr4", "#12CCD6"},
+        {"Chr5", "#3E16F3"},
+        {"Chr6", "#E46C0A"},
+        {"Chr7", "#446768"},
+        {"Chr8", "#FF0000"},
+        {"Chr9", "#3C06A6"},
+        {"Chr10", "#6CB9AB"},
+        {"Chr11", "#988430"},
+        {"Chr12", "#4BAA54"},
+        {"Chr13", "#154E54"},
+        {"Chr14", "#A74C5D"}
     };
 
     std::unordered_set <std::string> traversed_labels;

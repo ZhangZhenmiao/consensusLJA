@@ -202,7 +202,7 @@ void MDBGRunner::simplifyMDBG() {
     graph.write_graph(output + "/graph.complex_comp");
 
     std::cout << "----------Stage 7: contract graph----------" << std::endl;
-    // graph.get_annotation(output + "/graph.complex_comp");
+    graph.get_annotation(output + "/graph.complex_comp");
     graph.write_graph_contracted(output + "/graph.complex_comp.contracted.20k", 20000);
     graph.write_graph_contracted(output + "/graph.complex_comp_simplify.contracted.20k", 20000, true);
 
@@ -267,5 +267,5 @@ void MDBGRunner::simplifyMDBG() {
     graph.remove_contained_contigs(0.2);
     graph.write_graph(output + "/graph.final");
     graph.write_graph_gfa(output + "/graph.final");
-    // graph.get_annotation(output + "/graph.final");
+    graph.get_annotation(output + "/graph.final");
 }

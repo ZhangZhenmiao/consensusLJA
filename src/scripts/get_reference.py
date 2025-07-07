@@ -110,7 +110,21 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     "chr1522_pat_hsa1421_random_utig4-997": "1522P", 
                     "chr1522_pat_hsa1421_random_utig4-1011": "1522P", 
                     "chr1522_pat_hsa1421_random_utig4-2055": "1522P", 
-                    "chrY_pat_hsaY": "Y"
+                    "chrY_pat_hsaY": "Y",
+                    "CM075330.1": "Chr1",
+                    "CM075331.1": "Chr2",
+                    "CM075332.1": "Chr3",
+                    "CM075333.1": "Chr4",
+                    "CM075334.1": "Chr5",
+                    "CM075335.1": "Chr6",
+                    "CM075336.1": "Chr7",
+                    "CM075337.1": "Chr8",
+                    "CM075338.1": "Chr9",
+                    "CM075339.1": "Chr10",
+                    "CM075340.1": "Chr11",
+                    "CM075341.1": "Chr12",
+                    "CM075342.1": "Chr13",
+                    "CM075343.1": "Chr14"   
                 }
                 if alignment.reference_name in id_map:
                     ref_id = id_map[alignment.reference_name]
