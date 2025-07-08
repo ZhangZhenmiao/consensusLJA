@@ -62,8 +62,8 @@ int Graph::count_matches(std::string cigar) {
 void Graph::get_annotation(std::string prefix) {
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
-    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
-    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Mytilus_gallo/genome/GCA_037788925.1_MytGallo_primary_0.1_genomic.compressed.fa";
+    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
+    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Mytilus_gallo/genome/GCA_037788925.1_MytGallo_primary_0.1_genomic.compressed.fa";
     if (fs::is_regular_file(prefix + ".fasta.fai"))
         system(("rm " + prefix + ".fasta.fai").c_str());
     if (system(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str()) != 0) {
@@ -148,12 +148,16 @@ bool Graph::add_node_to_path(Path& path, std::string node, int bulge_leg, bool r
         path.update_min_multi(edge);
         path.multiplicity = (path.multiplicity * path.length + edge.multiplicity * edge.length) / (path.length + edge.length);
     }
-    else {
+    else if (edge.sequence == reverse_complementary(edge.sequence)) {
         if (path.min_multi == 0)
             path.min_multi = edge.multiplicity / 2;
         else
             path.min_multi = std::min(path.min_multi, edge.multiplicity / 2);
         path.multiplicity = (path.multiplicity * path.length + edge.multiplicity * edge.length / 2) / (path.length + edge.length);
+    }
+    else {
+        path.update_min_multi(edge);
+        path.multiplicity = (path.multiplicity * path.length + edge.multiplicity * edge.length) / (path.length + edge.length);
     }
 
     path.safe_to_extract = true;
@@ -495,6 +499,7 @@ void Graph::merge_tips(unsigned& num_tips) {
 
 // remove simple bulges, allow arbitrary multiplicity of legs
 void Graph::multi_bulge_removal(unsigned& removed_bulges, bool skip_rc_bulges) {
+    skip_rc_bulges = true;
     std::vector<std::string> nodes_to_remove;
     removed_bulges = 0;
     for (auto&& node : this->graph) {
@@ -595,7 +600,7 @@ void Graph::gluing_broken_bulges(unsigned& removed_bulges) {
     this->multi_bulge_removal(removed_bulges);
 }
 
-void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_tips) {
+void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_tips, bool merge_long_tips) {
     if (!only_tips) {
         unsigned removed_paths = 1;
         while (removed_paths) {
@@ -639,8 +644,14 @@ void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_ti
                 if (graph[node.first].outgoing_edges[t].at(0).multiplicity * ratio > graph[node.first].outgoing_edges[e].at(0).multiplicity)
                     continue;
 
-                if (1.0 * graph[node.first].outgoing_edges[e].at(0).length / graph[node.first].outgoing_edges[t].at(0).length < 0.8 && graph[node.first].outgoing_edges[t].at(0).length >= 1000000)
-                    continue;
+                if (merge_long_tips) {
+                    if (1.0 * graph[node.first].outgoing_edges[e].at(0).length / graph[node.first].outgoing_edges[t].at(0).length < 0.8 && graph[node.first].outgoing_edges[t].at(0).length >= 1000000)
+                        continue;
+                }
+                else {
+                    if (graph[node.first].outgoing_edges[t].at(0).length >= 1000000)
+                        continue;
+                }
 
                 // calculate similarity
                 std::string prefix_edge = graph[node.first].outgoing_edges[e].at(0).sequence.substr(graph[node.first].sequence.size(), 100000);
@@ -649,6 +660,33 @@ void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_ti
                     max_sim = sim;
                     max_edge = e;
                 }
+
+                // skip if node.first is in a palindromic bulge - dangerous
+                bool flag = false;
+                std::string curr_n = node.first;
+                std::unordered_set<std::string> traversed_nodes;
+                while (true) {
+                    traversed_nodes.insert(curr_n);
+                    if (graph[curr_n].incoming_edges.size() != 1) {
+                        if (curr_n == node.first)
+                            break;
+                        if (curr_n != reverse_complementary_node(node.first))
+                            break;
+                        else {
+                            flag = true;
+                            break;
+                        }
+                    }
+                    std::string n_incoming;
+                    for (auto&& n : graph[curr_n].incoming_edges) {
+                        n_incoming = n.first;
+                    }
+                    if (traversed_nodes.find(n_incoming) != traversed_nodes.end())
+                        break;
+                    curr_n = n_incoming;
+                }
+                if (flag)
+                    continue;
             }
             if (max_edge.empty())
                 continue;
@@ -1731,11 +1769,11 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
         general_whirl_removal(removed_whirls);
     }
 
-    if (allow_reverse_comp) {
-        unsigned removed_bulges = 1;
-        while (removed_bulges)
-            multi_bulge_removal(removed_bulges, false);
-    }
+    // if (allow_reverse_comp) {
+    //     unsigned removed_bulges = 1;
+    //     while (removed_bulges)
+    //         multi_bulge_removal(removed_bulges, false);
+    // }
 
     removed_paths = 0;
     std::vector<std::string> nodes_to_remove;
@@ -1970,83 +2008,106 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
         assert(get_reverse_path(p1, p1_reverse));
         assert(get_reverse_path(p2, p2_reverse));
 
-        // modify multiplicity in case of reverse complementary -1990600->-5726575 in 5726575->1990600->741685->-1990600->-5726575->6492462
-        std::set<std::pair<std::string, std::string>> p_pairs;
-        for (size_t x = 0; x < p1.nodes.size() - 1; ++x) {
-            p_pairs.insert({ p1.nodes[x], p1.nodes[x + 1] });
-        }
-        for (size_t x = 0; x < p1_reverse.nodes.size() - 1; ++x) {
-            if (p_pairs.find({ p1_reverse.nodes[x], p1_reverse.nodes[x + 1] }) != p_pairs.end()) {
-                p1.min_multi = std::min(p1.min_multi, graph[p1_reverse.nodes[x]].outgoing_edges[p1_reverse.nodes[x + 1]].at(p1_reverse.bulge_legs[x]).multiplicity / 2);
-                p1_reverse.min_multi = std::min(p1_reverse.min_multi, graph[p1_reverse.nodes[x]].outgoing_edges[p1_reverse.nodes[x + 1]].at(p1_reverse.bulge_legs[x]).multiplicity / 2);
-
-                bool flag_in = false, flag_out = false;
-                if (std::abs(graph[p1_reverse.nodes[x + 1]].incoming_edges[p1_reverse.nodes[x]].at(p1_reverse.bulge_legs[x]).multiplicity - p1_reverse.min_multi * 2) < MIN_MULTI &&
-                    graph[p1_reverse.nodes[x + 1]].incoming_edges[p1_reverse.nodes[x]].size() <= 1 && graph[p1_reverse.nodes[x + 1]].incoming_edges.size() <= 1) {
-                    flag_in = true;
-                }
-                if (std::abs(graph[p1_reverse.nodes[x]].outgoing_edges[p1_reverse.nodes[x + 1]].at(p1_reverse.bulge_legs[x]).multiplicity - p1_reverse.min_multi * 2) < MIN_MULTI &&
-                    graph[p1_reverse.nodes[x]].outgoing_edges[p1_reverse.nodes[x + 1]].size() <= 1 && graph[p1_reverse.nodes[x]].outgoing_edges.size() <= 1) {
-                    flag_out = true;
-                }
-                if (flag_in || flag_out) {
-                    p1.safe_to_extract = false;
-                    p1_reverse.safe_to_extract = false;
-                }
-            }
-        }
-        assert(std::abs(p1.min_multi - p1_reverse.min_multi) < MIN_MULTI);
-        p_pairs.clear();
-        for (size_t x = 0; x < p2.nodes.size() - 1; ++x) {
-            p_pairs.insert({ p2.nodes[x], p2.nodes[x + 1] });
-        }
-        for (size_t x = 0; x < p2_reverse.nodes.size() - 1; ++x) {
-            if (p_pairs.find({ p2_reverse.nodes[x], p2_reverse.nodes[x + 1] }) != p_pairs.end()) {
-                p2.min_multi = std::min(p2.min_multi, graph[p2_reverse.nodes[x]].outgoing_edges[p2_reverse.nodes[x + 1]].at(p2_reverse.bulge_legs[x]).multiplicity / 2);
-                p2_reverse.min_multi = std::min(p2_reverse.min_multi, graph[p2_reverse.nodes[x]].outgoing_edges[p2_reverse.nodes[x + 1]].at(p2_reverse.bulge_legs[x]).multiplicity / 2);
-
-                bool flag_in = false, flag_out = false;
-                if (std::abs(graph[p2_reverse.nodes[x + 1]].incoming_edges[p2_reverse.nodes[x]].at(p2_reverse.bulge_legs[x]).multiplicity - p2_reverse.min_multi * 2) < MIN_MULTI &&
-                    graph[p2_reverse.nodes[x + 1]].incoming_edges[p2_reverse.nodes[x]].size() <= 1 && graph[p2_reverse.nodes[x + 1]].incoming_edges.size() <= 1) {
-                    flag_in = true;
-                }
-                if (std::abs(graph[p2_reverse.nodes[x]].outgoing_edges[p2_reverse.nodes[x + 1]].at(p2_reverse.bulge_legs[x]).multiplicity - p2_reverse.min_multi * 2) < MIN_MULTI &&
-                    graph[p2_reverse.nodes[x]].outgoing_edges[p2_reverse.nodes[x + 1]].size() <= 1 && graph[p2_reverse.nodes[x]].outgoing_edges.size() <= 1) {
-                    flag_out = true;
-                }
-                if (flag_in || flag_out) {
-                    p2.safe_to_extract = false;
-                    p2_reverse.safe_to_extract = false;
-                }
-            }
-        }
-        assert(std::abs(p2.min_multi - p2_reverse.min_multi) < MIN_MULTI);
-
         if (!allow_tip && !p1.safe_to_extract && !p2.safe_to_extract)
             continue;
-
 
         if (verbose)
             write_graph("debug_" + p1.nodes.at(0) + "_" + p1.nodes.at(p1.nodes.size() - 1) + "_before");
         bool p1_2_in_2_out = check_2_in_2_out(p1);
         bool p2_2_in_2_out = check_2_in_2_out(p2);
+        // palindromic complex/simple bulge, just skip it
+        if (p2_reverse.nodes == p1.nodes)
+            continue;
+        if (p1_reverse.nodes == p1.nodes || p2_reverse.nodes == p2.nodes) {
+            // deal with this complex bulge formed by two self-rc paths
+            if (p1_reverse.nodes == p1.nodes && p2_reverse.nodes == p2.nodes) {
+                bool p1_ambiguous = false;
+                for (int i = 0; i + 1 < p1.nodes.size();++i) {
+                    if (graph[p1.nodes[i]].outgoing_edges.size() > 1)
+                        p1_ambiguous = true;
+                }
+                bool p2_ambiguous = false;
+                for (int i = 0; i + 1 < p2.nodes.size();++i) {
+                    if (graph[p2.nodes[i]].outgoing_edges.size() > 1)
+                        p2_ambiguous = true;
+                }
+                // skip ambiguous paths, since ambiguous paths are more complicated
+                if (p1_ambiguous || p2_ambiguous)
+                    continue;
+
+                for (int i = 0; i + 1 < p1.nodes.size();++i) {
+                    graph[p1.nodes[i]].outgoing_edges.erase(p1.nodes[i + 1]);
+                    graph[p1.nodes[i + 1]].incoming_edges.erase(p1.nodes[i]);
+                    // all nodes except for the start and end should be removed
+                    if (i + 2 != p1.nodes.size())
+                        nodes_to_remove.push_back(p1.nodes[i + 1]);
+                }
+                for (int i = 0; i + 1 < p2.nodes.size();++i) {
+                    graph[p2.nodes[i]].outgoing_edges.erase(p2.nodes[i + 1]);
+                    graph[p2.nodes[i + 1]].incoming_edges.erase(p2.nodes[i]);
+                    // all nodes except for the start and end should be removed
+                    if (i + 2 != p2.nodes.size())
+                        nodes_to_remove.push_back(p2.nodes[i + 1]);
+                }
+
+                Edge new_edge(p1.sequence.at(graph[p1.nodes.at(0)].sequence.size()), p1.sequence.size(), p1.sequence, p1.multiplicity);
+                new_edge.path_edges_in_original_graph = p1.path_edges_in_original_graph;
+                new_edge.path_nodes_in_original_graph = p1.path_nodes_in_original_graph;
+                graph[p1.nodes[0]].outgoing_edges[p1.nodes[p1.nodes.size() - 1]].push_back(new_edge);
+                graph[p1.nodes[p1.nodes.size() - 1]].incoming_edges[p1.nodes[0]].push_back(new_edge);
+
+                Edge new_edge_r(p1_reverse.sequence.at(graph[p1_reverse.nodes.at(0)].sequence.size()), p1_reverse.sequence.size(), p1_reverse.sequence, p1_reverse.multiplicity);
+                new_edge_r.path_edges_in_original_graph = p1_reverse.path_edges_in_original_graph;
+                new_edge_r.path_nodes_in_original_graph = p1_reverse.path_nodes_in_original_graph;
+                graph[p1.nodes[0]].outgoing_edges[p1.nodes[p1.nodes.size() - 1]].push_back(new_edge_r);
+                graph[p1.nodes[p1.nodes.size() - 1]].incoming_edges[p1.nodes[0]].push_back(new_edge_r);
+
+                removed_paths += 2;
+
+                // some cleaning work
+                for (auto&& node : nodes_to_remove) {
+                    this->graph.erase(node);
+                }
+                nodes_to_remove.clear();
+                merge_non_branching_paths();
+            }
+            // this is special case, so always continue
+            continue;
+        }
+        // no other cases should allow reverse comp
+        flag = false;
+        std::unordered_set<std::string> nodes_scanned;
+        for (auto&& n : p1.nodes) {
+            if (nodes_scanned.find(n) != nodes_scanned.end())
+                flag = true;
+            nodes_scanned.insert(n);
+            nodes_scanned.insert(reverse_complementary_node(n));
+        }
+        for (int i = 1; i + 1 < p2.nodes.size(); ++i) {
+            if (nodes_scanned.find(p2.nodes[i]) != nodes_scanned.end())
+                flag = true;
+            nodes_scanned.insert(p2.nodes[i]);
+            nodes_scanned.insert(reverse_complementary_node(p2.nodes[i]));
+        }
+        if (flag)
+            continue;
+
         std::string seq1 = this->collapse_complex_bulge_two_multi_edge_paths(p1, p2, p1_2_in_2_out, p2_2_in_2_out, bulge.max_identity, nodes_to_remove, allow_tip);
 
         // Path p1_reverse, p2_reverse;
         // assert(get_reverse_path(p1, p1_reverse));
         // assert(get_reverse_path(p2, p2_reverse));
-        if (p2_reverse.nodes != p1.nodes) {
-            std::string seq2 = this->collapse_complex_bulge_two_multi_edge_paths(p1_reverse, p2_reverse, p1_2_in_2_out, p2_2_in_2_out, bulge.max_identity, nodes_to_remove, allow_tip);
+        std::string seq2 = this->collapse_complex_bulge_two_multi_edge_paths(p1_reverse, p2_reverse, p1_2_in_2_out, p2_2_in_2_out, bulge.max_identity, nodes_to_remove, allow_tip);
 
-            // if (seq1 != reverse_complementary(seq2))
-            //     std::cout << "The two bulges did not result in reverse complementary sequence" << std::endl;
-            if (seq1 == "" || seq2 == "")
-                continue;
-            removed_paths += 1;
-        }
-        if (seq1 == "")
+        // if (seq1 != reverse_complementary(seq2))
+        //     std::cout << "The two bulges did not result in reverse complementary sequence" << std::endl;
+        if (seq1 == "" || seq2 == "")
             continue;
-        if (graph[p1.nodes.at(0)].outgoing_edges.find(p1.nodes.at(p1.nodes.size() - 1)) != graph[p1.nodes.at(0)].outgoing_edges.end()) {
+
+        removed_paths += 2;
+
+        // if forming a simple bulge, collapse it, except for palindromic bulges
+        if (graph[p1.nodes.at(0)].outgoing_edges.find(p1.nodes.at(p1.nodes.size() - 1)) != graph[p1.nodes.at(0)].outgoing_edges.end() && p1.nodes.at(0) != reverse_complementary_node(p1.nodes.at(p1.nodes.size() - 1))) {
             if (graph[p1.nodes.at(0)].outgoing_edges[p1.nodes.at(p1.nodes.size() - 1)].size() >= 2) {
                 unsigned removed_bulges = 0;
                 this->collapse_bulge(p1.nodes.at(0), p1.nodes.at(p1.nodes.size() - 1), removed_bulges);
@@ -2056,7 +2117,6 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
                 this->collapse_bulge(p1_reverse.nodes.at(0), p1_reverse.nodes.at(p1_reverse.nodes.size() - 1), removed_bulges);
             }
         }
-        removed_paths += 1;
 
         for (auto&& node : nodes_to_remove) {
             this->graph.erase(node);
@@ -2231,20 +2291,20 @@ void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved
 
     }
     // write_graph("debugging_" + path1.nodes.at(0) + "_" + path1.nodes.at(path1.nodes.size() - 1) + "_after1");
-    unsigned bulges = 1;
-    multi_bulge_removal(bulges, false);
+    // unsigned bulges = 1;
+    // multi_bulge_removal(bulges);
     // write_graph("debugging_" + path1.nodes.at(0) + "_" + path1.nodes.at(path1.nodes.size() - 1) + "_after2");
     resolved_edges += 2;
 }
 
 void Graph::resolve_edges_in_reverse_complement(int& resolved_edges, bool strict) {
     unsigned removed_paths = 1;
-    unsigned bulges = 1;
+    // unsigned bulges = 1;
     while (removed_paths) {
         resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.6, true, 2, !strict);
-        bulges = 1;
-        while (bulges)
-            multi_bulge_removal(bulges, false);
+        // bulges = 1;
+        // while (bulges)
+        //     multi_bulge_removal(bulges, false);
     }
 
     resolved_edges = 0;

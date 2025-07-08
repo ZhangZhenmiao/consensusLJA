@@ -139,31 +139,33 @@ void MDBGRunner::simplifyMDBG() {
     }
 
     std::cout << "Removed 2-in-2-out: " << total_removed << std::endl;
-    removed_bulges = 1;
-    while (removed_bulges) {
-        graph.merge_non_branching_paths(true);
-        graph.multi_bulge_removal(removed_bulges, false);
-    }
+    // removed_bulges = 1;
+    // while (removed_bulges) {
+    //     graph.merge_non_branching_paths(true);
+    //     graph.multi_bulge_removal(removed_bulges, false);
+    // }
     graph.write_graph(output + "/graph.decoupling");
     // graph.get_annotation(output + "/graph.decoupling");
     graph.write_graph_contracted(output + "/graph.decoupling.contracted.20k", 20000);
 
 
     std::cout << "----------Stage 5: merge tips into edges----------" << std::endl;
-    removed_tips = 1;
+
     total_removed = 0;
+    removed_tips = 1;
     while (removed_tips) {
-        graph.resolve_edges_in_reverse_complement(decoupled);
         graph.merge_tips_into_edges(removed_tips);
         total_removed += removed_tips;
+        if (removed_tips > 0)
+            std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
     }
 
     std::cout << "Removed tips: " << total_removed << std::endl;
-    removed_bulges = 1;
-    while (removed_bulges) {
-        graph.merge_non_branching_paths(true);
-        graph.multi_bulge_removal(removed_bulges, false);
-    }
+    // removed_bulges = 1;
+    // while (removed_bulges) {
+    //     graph.merge_non_branching_paths(true);
+    //     graph.multi_bulge_removal(removed_bulges, false);
+    // }
     graph.write_graph(output + "/graph.remove_tips");
     // graph.get_annotation(output + "/graph.remove_tips");
     // graph.write_graph_contracted(output + "/graph.remove_tips.contracted.10k");
@@ -171,34 +173,59 @@ void MDBGRunner::simplifyMDBG() {
 
     std::cout << "----------Stage 6: for complex components----------" << std::endl;
 
-    removed_tips = 1;
-    total_removed = 0;
-    while (removed_tips) {
-        // removed_edges = 1;
-        // while (removed_edges) {
-        //     graph.remove_low_coverage_edges(removed_edges, this->first_minima, false, true, true);
-        // }
-        graph.resolve_edges_in_reverse_complement(decoupled);
-        graph.merge_tips_into_edges(removed_tips, 0.2);
-        total_removed += removed_tips;
+    while (true) {
+        bool flag = true;
         removed_paths = 1;
         while (removed_paths) {
-            graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 8, 0.6, true, 2);
-            std::cout << "Removed complex bulges: " << removed_paths << std::endl;
+            graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 8, 0.6, true, 2, true);
+            if (removed_paths)
+                flag = false;
+            if (removed_paths > 0)
+                std::cout << "Detoured " << removed_paths << " paths" << std::endl;
         }
-    }
-    std::cout << "Removed tips: " << total_removed << std::endl;
 
-    decoupled = 1;
-    while (decoupled) {
-        graph.resolve_edges_in_reverse_complement(decoupled);
-        std::cout << "Decoupled strands: " << decoupled << std::endl;
+        decoupled = 1;
+        while (decoupled) {
+            graph.resolve_edges_in_reverse_complement(decoupled);
+            if (decoupled)
+                flag = false;
+            if (decoupled > 0)
+                std::cout << "Decoupled " << decoupled << " strands" << std::endl;
+        }
+
+        removed_tips = 1;
+        while (removed_tips) {
+            graph.merge_tips_into_edges(removed_tips, 0.2);
+            if (removed_tips)
+                flag = false;
+            if (removed_tips > 0)
+                std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
+        }
+
+        removed_whirls = 1;
+        while (removed_whirls) {
+            graph.general_whirl_removal(removed_whirls);
+            graph.merge_non_branching_paths(true);
+            if (removed_whirls)
+                flag = false;
+            if (removed_whirls > 0)
+                std::cout << "Removed " << removed_whirls << " whirls" << std::endl;
+        }
+
+        removed_bulges = 1;
+        while (removed_bulges) {
+            graph.multi_bulge_removal(removed_bulges);
+            graph.merge_non_branching_paths(true);
+            if (removed_bulges)
+                flag = false;
+            if (removed_bulges > 0)
+                std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
+        }
+
+        if (flag)
+            break;
     }
-    removed_bulges = 1;
-    while (removed_bulges) {
-        graph.merge_non_branching_paths(true);
-        graph.multi_bulge_removal(removed_bulges, false);
-    }
+
     graph.write_graph(output + "/graph.complex_comp");
 
     std::cout << "----------Stage 7: contract graph----------" << std::endl;
@@ -210,38 +237,43 @@ void MDBGRunner::simplifyMDBG() {
         removed_paths = 1;
         bool flag = true;
         while (removed_paths) {
-            graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0, true, 2);
+            graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0, true, 2, true);
             if (removed_paths)
                 flag = false;
-            std::cout << "Detoured " << removed_paths << " paths" << std::endl;
+            if (removed_paths > 0)
+                std::cout << "Removed " << removed_paths << " paths" << std::endl;
         }
         removed_paths = 1;
         while (removed_paths) {
             graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.9, true, 2, true, true);
             if (removed_paths)
                 flag = false;
-            std::cout << "Detoured " << removed_paths << " paths" << std::endl;
+            if (removed_paths > 0)
+                std::cout << "Removed " << removed_paths << " paths" << std::endl;
         }
         decoupled = 1;
         while (decoupled) {
             graph.resolve_edges_in_reverse_complement(decoupled);
             if (decoupled)
                 flag = false;
-            std::cout << "Decoupled " << decoupled << " strands" << std::endl;
+            if (decoupled > 0)
+                std::cout << "Decoupled " << decoupled << " strands" << std::endl;
         }
         removed_tips = 1;
         while (removed_tips) {
-            graph.merge_tips_into_edges(removed_tips, 0.2);
+            graph.merge_tips_into_edges(removed_tips, 0.2, false, true);
             if (removed_tips)
                 flag = false;
-            std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
+            if (removed_tips > 0)
+                std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
         }
         removed_tips = 1;
         while (removed_tips) {
             graph.merge_tips(removed_tips);
             if (removed_tips)
                 flag = false;
-            std::cout << "Merged " << removed_tips << " tips to tips" << std::endl;
+            if (removed_tips > 0)
+                std::cout << "Merged " << removed_tips << " tips to tips" << std::endl;
         }
 
         removed_whirls = 1;
@@ -250,15 +282,17 @@ void MDBGRunner::simplifyMDBG() {
             graph.merge_non_branching_paths(true);
             if (removed_whirls)
                 flag = false;
-            std::cout << "Removed " << removed_whirls << " whirls" << std::endl;
+            if (removed_whirls > 0)
+                std::cout << "Removed " << removed_whirls << " whirls" << std::endl;
         }
         removed_bulges = 1;
         while (removed_bulges) {
+            graph.multi_bulge_removal(removed_bulges);
             graph.merge_non_branching_paths(true);
-            graph.multi_bulge_removal(removed_bulges, false);
             if (removed_bulges)
                 flag = false;
-            std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
+            if (removed_bulges > 0)
+                std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
         }
 
         if (flag)
