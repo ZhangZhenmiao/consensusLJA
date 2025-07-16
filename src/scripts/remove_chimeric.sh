@@ -12,8 +12,8 @@ if [ ! -f $outprefix.bam ]; then
     cut -f1,2 $inprefix.fasta.fai | awk '{print "@SQ\tSN:"$1"\tLN:"$2}' >  $outprefix.sam
 
     minimap2 -d $inprefix.mmi --split-prefix refsplit $inprefix.fasta
-    $compress --dimer-compress 32,32,1 --reads $reads | minimap2 -t 100 -ax map-hifi --eqx $inprefix.mmi - | grep -v '^@' >> $outprefix.sam
-    samtools sort -@ 100 $outprefix.sam -o $outprefix.bam; rm $outprefix.sam
+    $compress --dimer-compress 32,32,1 --reads $reads | minimap2 -t 80 -ax map-hifi --eqx $inprefix.mmi - | grep -v '^@' >> $outprefix.sam
+    samtools sort -@ 80 $outprefix.sam -o $outprefix.bam; rm $outprefix.sam
 fi
 
 $analyze_chimeric $outprefix.bam $inprefix.dot $outprefix.chimeric.txt

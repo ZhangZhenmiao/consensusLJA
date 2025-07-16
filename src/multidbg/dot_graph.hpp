@@ -34,6 +34,7 @@ namespace multidbg {
         std::unordered_map<std::string, std::vector<Edge>> incoming_edges;
         std::unordered_map<std::string, std::vector<Edge>> outgoing_edges;
         std::string sequence;
+        int node_length = 0;
         int number_of_contracted_edge = 0;
         int length_of_contracted_edge = 0;
         double max_in_multi = 0;
@@ -102,6 +103,7 @@ namespace multidbg {
         void analyze_histogram(const std::map<int, int>& hist);
         void read_graph(std::string& output, std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta, const std::string& graph_dbg, const std::string& paths_dbg);
         void read_from_dot(const std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta, const std::string& graph_dbg, const std::string& paths_dbg);
+        void restart_from_dot(const std::string& graph_dot, const std::string& graph_fasta);
         void write_graph(const std::string& prefix, int thick = 1000000, bool contracted = false, bool colored = false, std::unordered_set<std::string> nodes = std::unordered_set<std::string>());
         void write_graph_contracted(const std::string& prefix, int min_length = 10000, bool simplify = false);
         void write_graph_colored(const std::string& prefix, const std::string& genomes);
@@ -121,6 +123,7 @@ namespace multidbg {
 
         void general_whirl_removal(unsigned& removed_whirls, bool simple_whirl = false, bool force = false);
         void resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, int x, double identity, bool use_length = false, int security_level = 3, bool allow_reverse_comp = false, bool allow_tip = false, bool verbose = false);
+        void resolving_complex_palindromic_bulges(int& removed_paths, int x);
         void remove_low_coverage_edges(unsigned& removed_edges, double coverage = 10, bool tips = false, bool force = false, bool avoid_chromosome = false);
         void remove_low_cov_on_node(std::string node, unsigned& removed_edges, double coverage, std::vector<std::string>& nodes_to_remove, bool force = false);
         void remove_chimeric_edge(std::string chimeric_path);
@@ -144,7 +147,7 @@ namespace multidbg {
         void remove_whirl(Path& unambiguous_path, std::vector<std::string>& nodes_to_remove);
 
         std::string collapse_complex_bulge_two_multi_edge_paths(Path p1, Path p2, bool p1_2_in_2_out, bool p2_2_in_2_out, double max_identity, std::vector<std::string>& nodes_to_remove, bool allow_tip);
-        bool process_palindromic_bulges(Path& p1, Path& p2, std::vector<std::string>& nodes_to_remove, bool verbose = false, std::string output = "");
+        bool process_palindromic_bulges(Path& p1, Path& p2, std::vector<std::string>& nodes_to_remove);
         void find_2_in_2_out(Bulge& bulge);
         bool check_2_in_2_out(Path& leg1);
 
