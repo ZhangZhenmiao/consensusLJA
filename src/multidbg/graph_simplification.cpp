@@ -601,6 +601,14 @@ void Graph::gluing_broken_bulges(unsigned& removed_bulges) {
 }
 
 void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_tips, bool merge_long_tips) {
+    if (!only_tips) {
+        unsigned removed_paths = 1;
+        while (removed_paths) {
+            resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.6, true, 2);
+        }
+        merge_non_branching_paths(true);
+    }
+
     num_tips = 0;
     // traverse all nodes
     std::set<std::string> nodes_to_remove;
@@ -1475,7 +1483,6 @@ std::string Graph::collapse_complex_bulge_two_multi_edge_paths(Path p1, Path p2,
         }
     }
     else {
-        std::cout << "both p1 and p2 have 2-in-2-out" << std::endl;
         return "";
     }
     std::cout << "Complex bulge: path1 (length " << p1.length << ", min multi " << p1.min_multi << "): " << p1.nodes[0];
@@ -1752,12 +1759,9 @@ bool Graph::get_reverse_path(Path& path, Path& path_reverse) {
 
 // collapse bulges with two paths of multiple edges (at most x)
 void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, int x, double identity, bool use_length, int security_level, bool allow_reverse_comp, bool allow_tip, bool verbose) {
-    std::cout << "[BulgeResolution] Start resolving bulges with two multi-edge paths" << std::endl;
-    std::cout << "Parameters: x=" << x << ", identity=" << identity << ", use_length=" << use_length << ", security_level=" << security_level << ", allow_reverse_comp=" << allow_reverse_comp << ", allow_tip=" << allow_tip << std::endl;
     unsigned removed_whirls = 1;
     while (removed_whirls != 0) {
         general_whirl_removal(removed_whirls);
-        std::cout << "[BulgeResolution] Removed whirls: " << removed_whirls << std::endl;
     }
 
     removed_paths = 0;
@@ -1768,7 +1772,6 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
     for (auto&& node : graph) {
         if (node.second.outgoing_edges.size() <= 1)
             continue;
-        std::cout << "[BulgeResolution] Checking node: " << node.first << " with " << node.second.outgoing_edges.size() << " outgoing edges" << std::endl;
         // store all paths starts from node and and at key
         std::unordered_map<std::string, std::vector<Path>> all_paths_ending_at_key;
         std::queue<Path> paths_bfs;
@@ -1810,7 +1813,6 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
             // check whether there are multiple paths
             if (ending_node.second.size() < 2)
                 continue;
-            std::cout << "[BulgeResolution] Found bulge candidate: " << node.first << " -> " << ending_node.first << " with " << ending_node.second.size() << " paths" << std::endl;
 
             // store all the remaining paths
             std::vector<Path> paths = ending_node.second;
@@ -1877,7 +1879,6 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
                     // calculate identity
                     int lcs_len = use_length ? std::min(sequence1.size(), sequence2.size()) : matches_by_edlib(sequence1, sequence2);
                     double alignment_identity = 1.0 * lcs_len / std::max(sequence1.size(), sequence2.size());
-                    std::cout << "    [BulgeResolution] Path pair: " << i << ", " << j << " identity=" << alignment_identity << " lcs_len=" << lcs_len << " seq1_len=" << sequence1.size() << " seq2_len=" << sequence2.size() << std::endl;
 
                     // record max identity paths to p1 and p2
                     // std::cout << "; identity " << alignment_identity << std::endl;
@@ -1886,14 +1887,12 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
                         p2 = paths[j];
                         max_identity = alignment_identity;
                         max_lcs_len = lcs_len;
-                        std::cout << "    [BulgeResolution] New max identity: " << max_identity << " for paths " << i << " and " << j << std::endl;
                     }
                 }
             }
             // the two paths cannot pass similarity check
             if (p1.nodes.empty() || p2.nodes.empty())
                 continue;
-            std::cout << "    [BulgeResolution] Selected paths for bulge: " << node.first << " -> " << ending_node.first << " identity=" << max_identity << " lcs_len=" << max_lcs_len << std::endl;
 
             // check confict
             Bulge b(p1, p2, max_identity);
@@ -1937,7 +1936,6 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
             return lhs.max_identity > rhs.max_identity;
         }
     );
-    std::cout << "[BulgeResolution] Total bulges detected: " << bulges.size() << std::endl;
 
     // process the paths
     for (auto&& bulge : bulges) {
@@ -1971,7 +1969,6 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
 
         if (!flag)
             continue;
-        std::cout << "[BulgeResolution] Processing bulge between " << p1.nodes.front() << " and " << p1.nodes.back() << ". Path1 length: " << p1.sequence.size() << ", Path2 length: " << p2.sequence.size() << std::endl;
 
         // check reverse paths
         Path p1_reverse, p2_reverse;
@@ -1983,17 +1980,10 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
 
         if (verbose)
             write_graph("debug_" + p1.nodes.at(0) + "_" + p1.nodes.at(p1.nodes.size() - 1) + "_before");
-        std::cout << "    [BulgeResolution] Path1: ";
-        for (const auto& n : p1.nodes) std::cout << n << " ";
-        std::cout << "\n    [BulgeResolution] Path2: ";
-        for (const auto& n : p2.nodes) std::cout << n << " ";
-        std::cout << std::endl;
         bool p1_2_in_2_out = check_2_in_2_out(p1);
         bool p2_2_in_2_out = check_2_in_2_out(p2);
-        std::cout << "    [BulgeResolution] 2-in-2-out check: Path1=" << p1_2_in_2_out << ", Path2=" << p2_2_in_2_out << std::endl;
         // palindromic complex/simple bulge
         if (p2_reverse.nodes == p1.nodes) {
-            std::cout << "    [BulgeResolution] Palindromic bulge detected, skipping special case." << std::endl;
             // if (process_palindromic_bulges(p1, p2, nodes_to_remove)) {
             //     removed_paths += 2;
             //     // some cleaning work
@@ -2008,7 +1998,6 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
         if (p1_reverse.nodes == p1.nodes || p2_reverse.nodes == p2.nodes) {
             // deal with this complex bulge formed by two self-rc paths
             if (p1_reverse.nodes == p1.nodes && p2_reverse.nodes == p2.nodes) {
-                std::cout << "    [BulgeResolution] Self-reverse-complementary bulge detected." << std::endl;
                 bool p1_ambiguous = false;
                 for (int i = 1; i + 1 < p1.nodes.size();++i) {
                     if (graph[p1.nodes[i]].outgoing_edges.size() > 1)
@@ -2045,26 +2034,21 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
                 new_edge.path_nodes_in_original_graph = p1.path_nodes_in_original_graph;
                 graph[p1.nodes[0]].outgoing_edges[p1.nodes[p1.nodes.size() - 1]].push_back(new_edge);
                 graph[p1.nodes[p1.nodes.size() - 1]].incoming_edges[p1.nodes[0]].push_back(new_edge);
-                std::cout << "        [BulgeResolution] Added new edge: " << p1.nodes[0] << " -> " << p1.nodes[p1.nodes.size() - 1] << " length=" << p1.sequence.size() << std::endl;
 
                 Edge new_edge_r(p1_reverse.sequence.at(graph[p1_reverse.nodes.at(0)].sequence.size()), p1_reverse.sequence.size(), p1_reverse.sequence, p1_reverse.multiplicity);
                 new_edge_r.path_edges_in_original_graph = p1_reverse.path_edges_in_original_graph;
                 new_edge_r.path_nodes_in_original_graph = p1_reverse.path_nodes_in_original_graph;
                 graph[p1.nodes[0]].outgoing_edges[p1.nodes[p1.nodes.size() - 1]].push_back(new_edge_r);
                 graph[p1.nodes[p1.nodes.size() - 1]].incoming_edges[p1.nodes[0]].push_back(new_edge_r);
-                std::cout << "        [BulgeResolution] Added new reverse edge: " << p1.nodes[0] << " -> " << p1.nodes[p1.nodes.size() - 1] << " length=" << p1_reverse.sequence.size() << std::endl;
 
                 removed_paths += 2;
-                std::cout << "    [BulgeResolution] Detoured paths count updated: " << removed_paths << std::endl;
 
                 // some cleaning work
                 for (auto&& node : nodes_to_remove) {
                     this->graph.erase(node);
-                    std::cout << "        [BulgeResolution] Node erased: " << node << std::endl;
                 }
                 nodes_to_remove.clear();
                 merge_non_branching_paths();
-                std::cout << "    [BulgeResolution] Merged non-branching paths after bulge resolution." << std::endl;
             }
             // this is special case, so always continue
             continue;
@@ -2085,44 +2069,34 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
             nodes_scanned2.insert(reverse_complementary_node(n));
         }
         if (flag1 && !flag2) {
-            std::cout << "    [BulgeResolution] Path 1 has reverse complementary nodes, Path 2 does not." << std::endl;
             p1_2_in_2_out = true;
             std::string seq1 = this->collapse_complex_bulge_two_multi_edge_paths(p1, p2, p1_2_in_2_out, p2_2_in_2_out, bulge.max_identity, nodes_to_remove, allow_tip);
             std::string seq2 = this->collapse_complex_bulge_two_multi_edge_paths(p1_reverse, p2_reverse, p1_2_in_2_out, p2_2_in_2_out, bulge.max_identity, nodes_to_remove, allow_tip);
             if (seq1 == "" || seq2 == "")
                 continue;
-            std::cout << "    [BulgeResolution] Collapsed bulge sequences: seq_forward_len=" << seq1.size() << ", seq_reverse_len=" << seq2.size() << std::endl;
 
             removed_paths += 2;
-            std::cout << "    [BulgeResolution] Detoured paths count updated: " << removed_paths << std::endl;
             for (auto&& node : nodes_to_remove) {
                 this->graph.erase(node);
-                std::cout << "        [BulgeResolution] Node erased: " << node << std::endl;
             }
             nodes_to_remove.clear();
             merge_non_branching_paths();
-            std::cout << "    [BulgeResolution] Merged non-branching paths after bulge resolution." << std::endl;
             // this is special case, so always continue
             continue;
         }
         else if (!flag1 && flag2) {
-            std::cout << "    [BulgeResolution] Path 2 has reverse complementary nodes, Path 1 does not." << std::endl;
             p2_2_in_2_out = true;
             std::string seq1 = this->collapse_complex_bulge_two_multi_edge_paths(p1, p2, p1_2_in_2_out, p2_2_in_2_out, bulge.max_identity, nodes_to_remove, allow_tip);
             std::string seq2 = this->collapse_complex_bulge_two_multi_edge_paths(p1_reverse, p2_reverse, p1_2_in_2_out, p2_2_in_2_out, bulge.max_identity, nodes_to_remove, allow_tip);
             if (seq1 == "" || seq2 == "")
                 continue;
-            std::cout << "    [BulgeResolution] Collapsed bulge sequences: seq_forward_len=" << seq1.size() << ", seq_reverse_len=" << seq2.size() << std::endl;
 
             removed_paths += 2;
-            std::cout << "    [BulgeResolution] Detoured paths count updated: " << removed_paths << std::endl;
             for (auto&& node : nodes_to_remove) {
                 this->graph.erase(node);
-                std::cout << "        [BulgeResolution] Node erased: " << node << std::endl;
             }
             nodes_to_remove.clear();
             merge_non_branching_paths();
-            std::cout << "    [BulgeResolution] Merged non-branching paths after bulge resolution." << std::endl;
             // this is special case, so always continue
             continue;
         }
@@ -2147,14 +2121,12 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
         }
         if (flag)
             continue;
-        std::cout << "    [BulgeResolution] Path overalp check passed." << std::endl;
 
         // filter out paths with low identity
         std::string sequence1 = p1.sequence, sequence2 = p2.sequence;
         int lcs_len = use_length ? std::min(sequence1.size(), sequence2.size()) : matches_by_edlib(sequence1, sequence2);
         if (1.0 * lcs_len / std::max(sequence1.size(), sequence2.size()) < identity)
             continue;
-        std::cout << "    [BulgeResolution] Path identity check passed: " << (1.0 * lcs_len / std::max(sequence1.size(), sequence2.size())) << std::endl;
 
         std::string seq1 = this->collapse_complex_bulge_two_multi_edge_paths(p1, p2, p1_2_in_2_out, p2_2_in_2_out, bulge.max_identity, nodes_to_remove, allow_tip);
 
@@ -2167,10 +2139,8 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
         //     std::cout << "The two bulges did not result in reverse complementary sequence" << std::endl;
         if (seq1 == "" || seq2 == "")
             continue;
-        std::cout << "    [BulgeResolution] Collapsed bulge sequences: seq_forward_len=" << seq1.size() << ", seq_reverse_len=" << seq2.size() << std::endl;
 
         removed_paths += 2;
-        std::cout << "    [BulgeResolution] Detoured paths count updated: " << removed_paths << std::endl;
 
         // if forming a simple bulge, collapse it, except for palindromic bulges
         if (graph[p1.nodes.at(0)].outgoing_edges.find(p1.nodes.at(p1.nodes.size() - 1)) != graph[p1.nodes.at(0)].outgoing_edges.end() && p1.nodes.at(0) != reverse_complementary_node(p1.nodes.at(p1.nodes.size() - 1))) {
@@ -2186,24 +2156,18 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
 
         for (auto&& node : nodes_to_remove) {
             this->graph.erase(node);
-            std::cout << "        [BulgeResolution] Node erased: " << node << std::endl;
         }
         nodes_to_remove.clear();
         merge_non_branching_paths();
-        std::cout << "    [BulgeResolution] Merged non-branching paths after bulge resolution." << std::endl;
         if (verbose)
             write_graph("debug_" + p1.nodes.at(0) + "_" + p1.nodes.at(p1.nodes.size() - 1) + "_after");
-        std::cout << "[BulgeResolution] Finished processing bulge between " << p1.nodes.front() << " and " << p1.nodes.back() << std::endl;
     }
 }
 
 void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
-    std::cout << "[BulgeResolution] Start resolving complex palindromic bulges" << std::endl;
-    std::cout << "Parameters: x=" << x << std::endl;
     unsigned removed_whirls = 1;
     while (removed_whirls != 0) {
         general_whirl_removal(removed_whirls);
-        std::cout << "[BulgeResolution] Removed whirls: " << removed_whirls << std::endl;
     }
 
     removed_paths = 0;
@@ -2212,7 +2176,6 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
     // store all multi-edge bulges
     std::vector<Bulge> bulges;
     for (auto&& node : graph) {
-        std::cout << "[BulgeResolution] Checking node: " << node.first << " with " << node.second.outgoing_edges.size() << " outgoing edges" << std::endl;
         // store all paths starts from node and and at key
         std::unordered_map<std::string, std::vector<Path>> all_paths_ending_at_key;
         std::queue<Path> paths_bfs;
@@ -2252,7 +2215,6 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
             // check whether there are multiple paths
             if (ending_node.second.size() < 2)
                 continue;
-            std::cout << "[BulgeResolution] Found bulge candidate: " << node.first << " -> " << ending_node.first << " with " << ending_node.second.size() << " paths" << std::endl;
 
             // store all the remaining paths
             std::vector<Path> paths = ending_node.second;
@@ -2291,7 +2253,6 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
                     // calculate identity
                     int lcs_len = std::min(sequence1.size(), sequence2.size());
                     double alignment_identity = 1.0 * lcs_len / std::max(sequence1.size(), sequence2.size());
-                    std::cout << "    [BulgeResolution] Path pair: " << i << ", " << j << " identity=" << alignment_identity << " lcs_len=" << lcs_len << " seq1_len=" << sequence1.size() << " seq2_len=" << sequence2.size() << std::endl;
 
                     // record max identity paths to p1 and p2
                     // std::cout << "; identity " << alignment_identity << std::endl;
@@ -2300,14 +2261,12 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
                         p2 = paths[j];
                         max_identity = alignment_identity;
                         max_lcs_len = lcs_len;
-                        std::cout << "    [BulgeResolution] New max identity: " << max_identity << " for paths " << i << " and " << j << std::endl;
                     }
                 }
             }
             // the two paths cannot pass similarity check
             if (p1.nodes.empty() || p2.nodes.empty())
                 continue;
-            std::cout << "    [BulgeResolution] Selected paths for bulge: " << node.first << " -> " << ending_node.first << " identity=" << max_identity << " lcs_len=" << max_lcs_len << std::endl;
 
             // check confict
             Bulge b(p1, p2, max_identity);
@@ -2336,7 +2295,6 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
             return lhs.max_identity > rhs.max_identity;
         }
     );
-    std::cout << "[BulgeResolution] Total bulges detected: " << bulges.size() << std::endl;
 
     // process the paths
     for (auto&& bulge : bulges) {
@@ -2370,24 +2328,16 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
 
         if (!flag)
             continue;
-        std::cout << "[BulgeResolution] Processing bulge between " << p1.nodes.front() << " and " << p1.nodes.back() << ". Path1 length: " << p1.sequence.size() << ", Path2 length: " << p2.sequence.size() << std::endl;
 
         // check reverse paths
         Path p1_reverse, p2_reverse;
         assert(get_reverse_path(p1, p1_reverse));
         assert(get_reverse_path(p2, p2_reverse));
 
-        std::cout << "    [BulgeResolution] Path1: ";
-        for (const auto& n : p1.nodes) std::cout << n << " ";
-        std::cout << "\n    [BulgeResolution] Path2: ";
-        for (const auto& n : p2.nodes) std::cout << n << " ";
-        std::cout << std::endl;
         bool p1_2_in_2_out = check_2_in_2_out(p1);
         bool p2_2_in_2_out = check_2_in_2_out(p2);
-        std::cout << "    [BulgeResolution] 2-in-2-out check: Path1=" << p1_2_in_2_out << ", Path2=" << p2_2_in_2_out << std::endl;
         // palindromic complex/simple bulge
         if (p2_reverse.nodes == p1.nodes) {
-            std::cout << "    [BulgeResolution] Palindromic bulge detected" << std::endl;
             if (p1.nodes.size() > 2) {
                 int index_to_remove = -1;
                 int min_multi = 100000;
@@ -2417,16 +2367,13 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
                     }
                 }
                 if (index_to_remove == -1) {
-                    std::cout << "    [BulgeResolution] No suitable edge found for removal" << std::endl;
                     continue;
                 }
                 else {
                     graph[p1.nodes[index_to_remove]].outgoing_edges.erase(p1.nodes[index_to_remove + 1]);
                     graph[p1.nodes[index_to_remove + 1]].incoming_edges.erase(p1.nodes[index_to_remove]);
-                    std::cout << "    [BulgeResolution] Removed edge: " << p1.nodes[index_to_remove] << " -> " << p1.nodes[index_to_remove + 1] << std::endl;
                     graph[reverse_complementary_node(p1.nodes[index_to_remove + 1])].outgoing_edges.erase(reverse_complementary_node(p1.nodes[index_to_remove]));
                     graph[reverse_complementary_node(p1.nodes[index_to_remove])].incoming_edges.erase(reverse_complementary_node(p1.nodes[index_to_remove + 1]));
-                    std::cout << "    [BulgeResolution] Removed reverse edge: " << reverse_complementary_node(p1.nodes[index_to_remove + 1]) << " -> " << reverse_complementary_node(p1.nodes[index_to_remove]) << std::endl;
                     removed_paths += 2;
                 }
             }
@@ -2449,15 +2396,12 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
 
                 graph[p1.nodes[0]].outgoing_edges[new_node].push_back(graph[p1.nodes[0]].outgoing_edges[p1.nodes[1]].at(p1.bulge_legs[0]));
                 graph[new_node].incoming_edges[p1.nodes[0]].push_back(graph[p1.nodes[0]].outgoing_edges[p1.nodes[1]].at(p1.bulge_legs[0]));
-                std::cout << "    [BulgeResolution] Added new edge: " << p1.nodes[0] << " -> " << new_node << std::endl;
 
                 graph[new_node_rc].outgoing_edges[p1.nodes[1]].push_back(graph[p1.nodes[0]].outgoing_edges[p1.nodes[1]].at(p2.bulge_legs[0]));
                 graph[p1.nodes[1]].incoming_edges[new_node_rc].push_back(graph[p1.nodes[0]].outgoing_edges[p1.nodes[1]].at(p2.bulge_legs[0]));
-                std::cout << "    [BulgeResolution] Added new edge: " << new_node_rc << " -> " << p1.nodes[1] << std::endl;
 
                 graph[p1.nodes[0]].outgoing_edges.erase(p1.nodes[p1.nodes.size() - 1]);
                 graph[p1.nodes[p1.nodes.size() - 1]].incoming_edges.erase(p1.nodes[0]);
-                std::cout << "    [BulgeResolution] Removed edges: " << p1.nodes[0] << " -> " << p1.nodes[1] << std::endl;
                 removed_paths += 2;
             }
         }
@@ -2634,6 +2578,15 @@ void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved
 }
 
 void Graph::resolve_edges_in_reverse_complement(int& resolved_edges, bool strict) {
+    unsigned removed_paths = 1;
+    // unsigned bulges = 1;
+    while (removed_paths) {
+        resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.6, true, 2);
+        // bulges = 1;
+        // while (bulges)
+        //     multi_bulge_removal(bulges, false);
+    }
+
     resolved_edges = 0;
     std::vector<std::string> nodes_to_remove;
     std::vector<std::string> source_nodes, sink_nodes;
