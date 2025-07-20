@@ -155,7 +155,7 @@ namespace multidbg {
         void resolve_edges_rc(std::string node1, std::string node2, int& resolved_edges, std::vector<std::string>& nodes_to_remove, bool strict = false);
         void resolve_2_in_2_out(std::string node1, std::string node2, std::vector<std::string>& nodes_to_remove);
 
-        int matches_by_edlib(std::string sequence1, std::string sequence2);
+        double matches_by_edlib(std::string sequence1, std::string sequence2, bool lcs = false);
         int count_matches(std::string cigar);
         std::string reverse_complementary_node(std::string node);
         std::string reverse_complementary(std::string& s);

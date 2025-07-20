@@ -891,6 +891,13 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
                 continue;
             if (node1_to_node2_scanned[node.first].find(edge.first) != node1_to_node2_scanned[node.first].end() || node1_to_node2_scanned[reverse_complementary_node(edge.first)].find(reverse_complementary_node(node.first)) != node1_to_node2_scanned[reverse_complementary_node(edge.first)].end())
                 continue;
+
+            // skip tips
+            if (node.second.outgoing_edges.empty() || node.second.incoming_edges.empty())
+                continue;
+            if (graph_vis[edge.first].outgoing_edges.empty() || graph_vis[edge.first].incoming_edges.empty())
+                continue;
+
             for (int i = 0; i < edge.second.size();++i) {
                 // the edge should be collapsed
                 if (edge.second.at(i).length <= min_length) {
@@ -1148,6 +1155,11 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
                     continue;
                 if (node1_to_node2_scanned[n_in.first].find(node.first) != node1_to_node2_scanned[node.first].end() || node1_to_node2_scanned[reverse_complementary_node(node.first)].find(reverse_complementary_node(n_in.first)) != node1_to_node2_scanned[reverse_complementary_node(node.first)].end())
                     continue;
+
+                // skip tips
+                if (graph_vis[n_in.first].outgoing_edges.empty() || graph_vis[n_in.first].incoming_edges.empty())
+                    continue;
+
                 for (auto&& e : n_in.second) {
                     if (e.length * 0.8 < node.second.median_length && e.length < 1000000) {
                         node1_to_node2_scanned[n_in.first].insert(node.first);
@@ -1165,6 +1177,11 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
                     continue;
                 if (node1_to_node2_scanned[node.first].find(n_out.first) != node1_to_node2_scanned[node.first].end() || node1_to_node2_scanned[reverse_complementary_node(n_out.first)].find(reverse_complementary_node(node.first)) != node1_to_node2_scanned[reverse_complementary_node(n_out.first)].end())
                     continue;
+
+                // skip tips
+                if (graph_vis[n_out.first].outgoing_edges.empty() || graph_vis[n_out.first].incoming_edges.empty())
+                    continue;
+
                 for (auto&& e : n_out.second) {
                     if (e.length * 0.8 < node.second.median_length && e.length < 1000000) {
                         node1_to_node2_scanned[node.first].insert(n_out.first);

@@ -183,8 +183,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Extract high-identity alignments from a BAM file.")
     parser.add_argument("bam_file", help="Path to the input BAM file.")
     parser.add_argument("fasta_file", help="Path to graph.fasta file.")
-    parser.add_argument("-t", "--threshold", type=float, default=0.9,
-                        help="Identity threshold (default: 0.9).")
+    parser.add_argument("-t", "--threshold", type=float, default=0.89,
+                        help="Identity threshold (default: 0.89).")
     parser.add_argument("-o", "--output", help="Path to the output file. If not specified, prints to stdout.")
     return parser.parse_args()
 

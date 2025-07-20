@@ -51,7 +51,7 @@ int Graph::count_matches(std::string cigar) {
         if (std::isdigit(c))
             num = num * 10 + (c - '0');
         else {
-            if (c == 'M')
+            if (c == '=')
                 matches += num;
             num = 0;
         }
@@ -458,7 +458,7 @@ void Graph::merge_tips(unsigned& num_tips) {
                     continue;
                 std::string prefix_tip_target = graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).sequence.substr(graph[node.first].sequence.size(), 100000);
                 std::string prefix_tip_to_merge = graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).sequence.substr(graph[node.first].sequence.size(), 100000);
-                double sim = 1.0 * matches_by_edlib(prefix_tip_target, prefix_tip_to_merge) / std::min(prefix_tip_target.size(), prefix_tip_to_merge.size());
+                double sim = matches_by_edlib(prefix_tip_target, prefix_tip_to_merge);
                 std::cout << "Check tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim (prefix) " << sim << std::endl;
                 if (sim < 0.8)
                     continue;
@@ -661,7 +661,7 @@ void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_ti
                 int prefix_len = 1000000;
                 std::string prefix_tip = graph[node.first].outgoing_edges[t].at(0).sequence.substr(graph[node.first].sequence.size(), prefix_len);
                 std::string prefix_edge = graph[node.first].outgoing_edges[e].at(0).sequence.substr(graph[node.first].sequence.size(), prefix_len);
-                double sim = 1.0 * matches_by_edlib(prefix_tip, prefix_edge) / std::min(prefix_tip.size(), prefix_edge.size());
+                double sim = matches_by_edlib(prefix_tip, prefix_edge);
                 if (sim > max_sim) {
                     max_sim = sim;
                     max_edge = e;
@@ -785,11 +785,13 @@ void Graph::merge_tips_into_edges_further(unsigned& num_tips, double ratio) {
             continue;
 
         int prefix_size = std::max(1000000, int(non_tip_edge.sequence.size()) + 100000);
+        if (prefix_size > 2000000)
+            continue;
 
         std::string prefix_tip = tip_edge.sequence.substr(graph[node.first].sequence.size(), prefix_size);
         std::string prefix_edge = path.sequence.substr(graph[node.first].sequence.size(), prefix_size);
 
-        double sim = 1.0 * matches_by_edlib(prefix_tip, prefix_edge) / std::min(prefix_tip.size(), prefix_edge.size());
+        double sim = matches_by_edlib(prefix_tip, prefix_edge);
         std::cout << "Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " and " << node.first << "->" << non_tip << "->" << out_node_non_tip << ": sim (prefix 1Mb) " << sim << std::endl;
         if (sim < ratio)
             continue;
@@ -1528,17 +1530,20 @@ void Graph::general_whirl_removal(unsigned& removed_whirls, bool simple_whirl, b
 }
 
 // deleting elements from the start and end of second sequence is "free"
-int Graph::matches_by_edlib(std::string sequence1, std::string sequence2) {
+double Graph::matches_by_edlib(std::string sequence1, std::string sequence2, bool lcs) {
     EdlibAlignResult result = edlibAlign(sequence1.c_str(), sequence1.size(), sequence2.c_str(), sequence2.size(), edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH, NULL, 0));
     if (result.status == EDLIB_STATUS_OK) {
-        std::string cigar = edlibAlignmentToCigar(result.alignment, result.alignmentLength, EDLIB_CIGAR_STANDARD);
+        std::string cigar = edlibAlignmentToCigar(result.alignment, result.alignmentLength, EDLIB_CIGAR_EXTENDED);
         edlibFreeAlignResult(result);
         int lcs_len = count_matches(cigar);
-        return lcs_len;
+        if (lcs)
+            return lcs_len;
+        else
+            return 1.0 * lcs_len / std::min(sequence1.size(), sequence1.size());
     }
     else {
         std::cout << "edlib failed" << std::endl;
-        return -1;
+        return 0;
     }
 }
 
@@ -1967,7 +1972,7 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
                     assert(get_reverse_path(paths[j], p2_reverse));
 
                     // calculate identity
-                    int lcs_len = use_length ? std::min(sequence1.size(), sequence2.size()) : matches_by_edlib(sequence1, sequence2);
+                    int lcs_len = use_length ? std::min(sequence1.size(), sequence2.size()) : matches_by_edlib(sequence1, sequence2, true);
                     double alignment_identity = 1.0 * lcs_len / std::max(sequence1.size(), sequence2.size());
 
                     // record max identity paths to p1 and p2
@@ -2214,7 +2219,7 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
 
         // filter out paths with low identity
         std::string sequence1 = p1.sequence, sequence2 = p2.sequence;
-        int lcs_len = use_length ? std::min(sequence1.size(), sequence2.size()) : matches_by_edlib(sequence1, sequence2);
+        int lcs_len = use_length ? std::min(sequence1.size(), sequence2.size()) : matches_by_edlib(sequence1, sequence2, true);
         if (1.0 * lcs_len / std::max(sequence1.size(), sequence2.size()) < identity)
             continue;
 

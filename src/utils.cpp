@@ -76,7 +76,7 @@ double parse_cigar_identity(const std::string& cigar, size_t len1, size_t len2) 
     return shorter_len > 0 ? (double)matches / shorter_len : 0.0;
 }
 
-double unialigner_identity(const std::string& seq1, const std::string& seq2, int prefix = 1000000) {
+double unialigner_identity(const std::string& seq1, const std::string& seq2, int prefix) {
     // Preprocess: replace N, keep first 1Mbp, reverse complement second
     std::string s1 = replace_N(seq1.substr(0, prefix));
     std::string s2 = replace_N(seq2.substr(0, prefix));
