@@ -119,6 +119,7 @@ namespace multidbg {
         void merge_non_branching_paths(bool merge_self_loop = false);
         void gluing_broken_bulges(unsigned& removed_bulges);
         void merge_tips_into_edges(unsigned& num_tips, double ratio = 0.8, bool only_tips = false, bool merge_long_tips = false);
+        void merge_tips_into_edges_further(unsigned& num_tips, double ratio = 0.8);
         void merge_tips(unsigned& num_tips);
 
         void general_whirl_removal(unsigned& removed_whirls, bool simple_whirl = false, bool force = false);

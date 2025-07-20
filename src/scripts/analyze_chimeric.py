@@ -61,6 +61,8 @@ def read_bam(bam_file_path, dot_file_path):
         for read in bam_file:
             if read.is_unmapped:
                 continue
+            # if read.reference_name != "84021.66_-85034.68":
+            #     continue
             if calculate_identity(read) > 0.99:
                 if read.reference_name not in alignments:
                     alignments[read.reference_name] = []
@@ -85,8 +87,9 @@ def read_bam(bam_file_path, dot_file_path):
             node2 = node2[:node2.find('.')]
             contig_len = bam_file.get_reference_length(r)
 
-            # for aln in alignments[r]:
-            #     print(r, contig_len, node2len[node1], node2len[node2], aln["name"], aln["start"], aln["end"], aln["aligned"], aln["idt"], aln["aligned_fraction"], sep="\t", flush=True)
+            # if r == "84021.66_-85034.68":
+            #     for aln in alignments[r]:
+            #         print(r, contig_len, node2len[node1], node2len[node2], aln["name"], aln["start"], aln["end"], aln["aligned"], aln["idt"], sep="\t", flush=True)
 
             split_coordinate1 = min(node2len[node1], contig_len - node2len[node2])
             split_coordinate2 = max(node2len[node1], contig_len - node2len[node2])
@@ -111,11 +114,12 @@ def read_bam(bam_file_path, dot_file_path):
                 chimeric_edges.extend(r.split('_'))
 
         # detect internal chimeric
-        tolerant_size = 10
+        tolerant_size = 100
         for r in alignments:
             coverages = np.zeros(bam_file.get_reference_length(r), dtype=int)
             for i in alignments[r]:
-                coverages[i["start"]:i["end"]-tolerant_size] += 1
+                if i["end"]-tolerant_size > i["start"]:
+                    coverages[i["start"]:i["end"]-tolerant_size] += 1
             
             potential_pos = []
             if np.average(coverages) >= 5:

@@ -163,7 +163,8 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                 elif aln["ref_end"] > new_list[-1]["ref_end"]:
                     if aln["ref_start"] < new_list[-1]["ref_end"] + 100000:
                         new_list[-1]["ref_end"] = aln["ref_end"]
-                        new_list[-1]["identity"] = (new_list[-1]["identity"]*new_list[-1]["length"] + aln["identity"]*aln["length"])/(new_list[-1]["length"] + aln["length"])
+                        # new_list[-1]["identity"] = (new_list[-1]["identity"]*new_list[-1]["length"] + aln["identity"]*aln["length"])/(new_list[-1]["length"] + aln["length"])
+                        new_list[-1]["identity"] = min(new_list[-1]["identity"], aln["identity"])
                         new_list[-1]["length"] = new_list[-1]["length"] + aln["length"]
                         # new_list[-1]["length"] = new_list[-1]["length"] - (new_list[-1]["ref_end"] - aln["ref_start"]) if new_list[-1]["ref_end"] > aln["ref_start"] else new_list[-1]["length"]
                     else:
@@ -182,8 +183,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Extract high-identity alignments from a BAM file.")
     parser.add_argument("bam_file", help="Path to the input BAM file.")
     parser.add_argument("fasta_file", help="Path to graph.fasta file.")
-    parser.add_argument("-t", "--threshold", type=float, default=0,
-                        help="Identity threshold (default: 0).")
+    parser.add_argument("-t", "--threshold", type=float, default=0.9,
+                        help="Identity threshold (default: 0.9).")
     parser.add_argument("-o", "--output", help="Path to the output file. If not specified, prints to stdout.")
     return parser.parse_args()
 
