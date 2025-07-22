@@ -165,8 +165,8 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                         new_list[-1]["ref_end"] = aln["ref_end"]
                         # new_list[-1]["identity"] = (new_list[-1]["identity"]*new_list[-1]["length"] + aln["identity"]*aln["length"])/(new_list[-1]["length"] + aln["length"])
                         new_list[-1]["identity"] = min(new_list[-1]["identity"], aln["identity"])
-                        new_list[-1]["length"] = new_list[-1]["length"] + aln["length"]
-                        # new_list[-1]["length"] = new_list[-1]["length"] - (new_list[-1]["ref_end"] - aln["ref_start"]) if new_list[-1]["ref_end"] > aln["ref_start"] else new_list[-1]["length"]
+                        # new_list[-1]["length"] = new_list[-1]["length"] + aln["length"]
+                        new_list[-1]["length"] = aln["ref_end"] - new_list[-1]["ref_start"]
                     else:
                         new_list.append(aln)
                 

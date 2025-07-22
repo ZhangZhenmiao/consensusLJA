@@ -456,11 +456,13 @@ void Graph::merge_tips(unsigned& num_tips) {
             for (int i = 0; i < outgoing_tips.size();++i) {
                 if (i == max_index)
                     continue;
-                std::string prefix_tip_target = graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).sequence.substr(graph[node.first].sequence.size(), 100000);
-                std::string prefix_tip_to_merge = graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).sequence.substr(graph[node.first].sequence.size(), 100000);
+                int prefix_size = 100000;
+                std::string prefix_tip_target = graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).sequence.substr(0, prefix_size);
+                std::string prefix_tip_to_merge = graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).sequence.substr(0, prefix_size);
                 double sim = matches_by_edlib(prefix_tip_target, prefix_tip_to_merge);
-                std::cout << "Check tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim (prefix) " << sim << std::endl;
-                if (sim < 0.8)
+                std::cout << "Check tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
+
+                if (sim < 0.2)
                     continue;
                 // if (sim < 0.9) {
                 //     double sim_len = 1.0 * std::min(graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length, graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length)
@@ -468,7 +470,7 @@ void Graph::merge_tips(unsigned& num_tips) {
                 //     if (sim_len < 0.8)
                 //         continue;
                 // }
-                std::cout << "Merge tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim (prefix) " << sim << std::endl;
+                std::cout << "Merge tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
                 merge_vecs(graph[node.first].outgoing_edges[outgoing_tips[max_index]], graph[node.first].outgoing_edges[outgoing_tips[i]]);
                 merge_vecs(graph[outgoing_tips[max_index]].incoming_edges[node.first], graph[outgoing_tips[i]].incoming_edges[node.first]);
                 merge_vecs(graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(outgoing_tips[max_index])], graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(outgoing_tips[i])]);
@@ -638,9 +640,11 @@ void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_ti
                 // the tip length * ratio should be shorter than the edge length
                 if (graph[node.first].outgoing_edges[t].at(0).length * ratio > graph[node.first].outgoing_edges[e].at(0).length)
                     continue;
-                // the tip multi * ratio should be lower than the edge multi
-                if (graph[node.first].outgoing_edges[t].at(0).multiplicity * ratio > graph[node.first].outgoing_edges[e].at(0).multiplicity)
-                    continue;
+                if (!merge_long_tips) {
+                    // the tip multi * ratio should be lower than the edge multi
+                    if (graph[node.first].outgoing_edges[t].at(0).multiplicity * ratio > graph[node.first].outgoing_edges[e].at(0).multiplicity)
+                        continue;
+                }
 
                 if (merge_long_tips) {
                     // long tips should be merged only if the tip length * 0.8 is shorter than the edge length
@@ -659,8 +663,8 @@ void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_ti
 
                 // calculate similarity
                 int prefix_len = 1000000;
-                std::string prefix_tip = graph[node.first].outgoing_edges[t].at(0).sequence.substr(graph[node.first].sequence.size(), prefix_len);
-                std::string prefix_edge = graph[node.first].outgoing_edges[e].at(0).sequence.substr(graph[node.first].sequence.size(), prefix_len);
+                std::string prefix_tip = graph[node.first].outgoing_edges[t].at(0).sequence.substr(0, prefix_len);
+                std::string prefix_edge = graph[node.first].outgoing_edges[e].at(0).sequence.substr(0, prefix_len);
                 double sim = matches_by_edlib(prefix_tip, prefix_edge);
                 if (sim > max_sim) {
                     max_sim = sim;
@@ -697,9 +701,8 @@ void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_ti
             if (max_edge.empty())
                 continue;
 
-            std::cout << "Check tip " << node.first << "->" << t << " multi " << graph[node.first].outgoing_edges[t].at(0).multiplicity << " to edge " << node.first << "->" << max_edge << " with sim " << max_sim << std::endl;
+            std::cout << "Check tip " << node.first << "->" << t << " multi " << graph[node.first].outgoing_edges[t].at(0).multiplicity << " len " << graph[node.first].outgoing_edges[t].at(0).length << " to edge " << node.first << "->" << max_edge << " multi " << graph[node.first].outgoing_edges[max_edge].at(0).multiplicity << " len " << graph[node.first].outgoing_edges[max_edge].at(0).length << " with sim " << max_sim << std::endl;
 
-            // always skip if the 100kb prefix similarity is lower than 0.8
             if (max_sim < 0.8)
                 continue;
 
@@ -715,7 +718,7 @@ void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_ti
             nodes_to_remove.insert(t);
             nodes_to_remove.insert(reverse_complementary_node(t));
             num_tips += 2;
-            std::cout << "Tip " << node.first << "->" << t << " multi " << graph[node.first].outgoing_edges[t].at(0).multiplicity << " is merged to edge " << node.first << "->" << max_edge << " with sim " << max_sim << " multi " << graph[node.first].outgoing_edges[max_edge].at(0).multiplicity << std::endl;
+            std::cout << "Tip " << node.first << "->" << t << " multi " << graph[node.first].outgoing_edges[t].at(0).multiplicity << " is merged to edge " << node.first << "->" << max_edge << " with sim " << max_sim << std::endl;
             std::cout << "Tip " << reverse_complementary_node(t) << "->" << reverse_complementary_node(node.first) << " multi " << graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(t)].at(0).multiplicity << " is merged to edge " << reverse_complementary_node(max_edge) << "->" << reverse_complementary_node(node.first) << " with sim " << max_sim << " multi " << graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(max_edge)].at(0).multiplicity << std::endl;
             graph[node.first].outgoing_edges.erase(t);
             graph[t].incoming_edges.erase(node.first);
@@ -757,8 +760,8 @@ void Graph::merge_tips_into_edges_further(unsigned& num_tips, double ratio) {
         Edge tip_edge = graph[node.first].outgoing_edges[tip][0];
         Edge non_tip_edge = graph[node.first].outgoing_edges[non_tip][0];
 
-        if (tip_edge.length >= 1000000)
-            continue; // skip long tips
+        // if (tip_edge.length >= 1000000)
+        //     continue; // skip long tips
 
         // this case should be resolved by merge_tips_into_edges 
         if (tip_edge.length * 0.8 <= non_tip_edge.length)
@@ -781,18 +784,20 @@ void Graph::merge_tips_into_edges_further(unsigned& num_tips, double ratio) {
         std::cout << "Check tip " << node.first << "->" << tip << " len " << tip_edge.sequence.size() << " and " << node.first << "->" << non_tip << "->" << out_node_non_tip << " len " << path.sequence.size() << std::endl;
 
         // if the path length is shorter than the tip length, do not merge
-        if (tip_edge.length * 0.8 > path.length)
+        if (tip_edge.length * 0.6 > path.length)
             continue;
 
         int prefix_size = std::max(1000000, int(non_tip_edge.sequence.size()) + 100000);
+
+        // global alignment of long sequences will be very time consuming
         if (prefix_size > 2000000)
             continue;
 
-        std::string prefix_tip = tip_edge.sequence.substr(graph[node.first].sequence.size(), prefix_size);
-        std::string prefix_edge = path.sequence.substr(graph[node.first].sequence.size(), prefix_size);
+        std::string prefix_tip = tip_edge.sequence.substr(0, prefix_size);
+        std::string prefix_edge = path.sequence.substr(0, prefix_size);
 
         double sim = matches_by_edlib(prefix_tip, prefix_edge);
-        std::cout << "Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " and " << node.first << "->" << non_tip << "->" << out_node_non_tip << ": sim (prefix 1Mb) " << sim << std::endl;
+        std::cout << "Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " len " << tip_edge.length << " to " << node.first << "->" << non_tip << "->" << out_node_non_tip << " multi " << path.multiplicity << " len " << path.length << ": sim " << sim << std::endl;
         if (sim < ratio)
             continue;
 
@@ -1529,8 +1534,12 @@ void Graph::general_whirl_removal(unsigned& removed_whirls, bool simple_whirl, b
     this->merge_non_branching_paths();
 }
 
-// deleting elements from the start and end of second sequence is "free"
 double Graph::matches_by_edlib(std::string sequence1, std::string sequence2, bool lcs) {
+    std::string seq_short, seq_long;
+    if (sequence1.size() <= sequence2.size())
+        sequence2 = sequence2.substr(0, sequence1.size());
+    else
+        sequence1 = sequence1.substr(0, sequence2.size());
     EdlibAlignResult result = edlibAlign(sequence1.c_str(), sequence1.size(), sequence2.c_str(), sequence2.size(), edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH, NULL, 0));
     if (result.status == EDLIB_STATUS_OK) {
         std::string cigar = edlibAlignmentToCigar(result.alignment, result.alignmentLength, EDLIB_CIGAR_EXTENDED);

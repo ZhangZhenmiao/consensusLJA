@@ -67,6 +67,11 @@ add_executable(cLJA
 
 # Standalone tool for chimeric analysis
 add_executable(analyze_chimeric src/scripts/analyze_chimeric.cpp)
+add_executable(unialigner_identity src/scripts/unialigner_identity.cpp lib/edlib/src/edlib.cpp)
+# Include directories
+target_include_directories(unialigner_identity PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/edlib/include
+)
 
 # Include directories
 target_include_directories(cLJA PRIVATE

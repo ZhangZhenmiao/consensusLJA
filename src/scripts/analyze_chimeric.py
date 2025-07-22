@@ -123,9 +123,18 @@ def read_bam(bam_file_path, dot_file_path):
             
             potential_pos = []
             if np.average(coverages) >= 5:
-                for i in range(bam_file.get_reference_length(r)):
-                    if coverages[i] <= 1 and i >= 5001- tolerant_size and i <= bam_file.get_reference_length(r)-5001+tolerant_size:
-                        potential_pos.append(i)
+                window_size = 20000
+                half_window = window_size // 2
+                ref_len = bam_file.get_reference_length(r)
+                for i in range(ref_len):
+                    if coverages[i] <= 1 and i >= 5001 - tolerant_size and i <= ref_len - 5001 + tolerant_size:
+                        # Calculate window boundaries
+                        left = max(0, i - half_window)
+                        right = min(ref_len, i + half_window)
+                        window_cov = coverages[left:right]
+                        avg_window_cov = np.average(window_cov) if len(window_cov) > 0 else 0
+                        if avg_window_cov >= 5:
+                            potential_pos.append(i)
                         # print("low coverage:", r, i)
             
             reads = set()
