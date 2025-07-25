@@ -1394,11 +1394,11 @@ void Graph::write_graph_colored_from_bam(const std::string& prefix, const std::s
     std::unordered_map<std::string, std::vector< std::string>> query_to_refs;
     while (std::getline(ref_mapping, line)) {
         std::istringstream iss(line);
-        std::string query_name, ref_name, aligned_len, identity;
-        iss >> query_name >> ref_name >> aligned_len >> identity;
+        std::string query_name, ref_name, query, ref, identity;
+        iss >> query_name >> ref_name >> query >> ref >> identity;
         if (iss.fail()) continue;
 
-        query_to_refs[query_name].push_back(ref_name + " " + aligned_len + " " + identity);
+        query_to_refs[query_name].push_back(ref_name + " " + query + " " + ref + " " + identity);
         // std::cout << "Read alignment for " << query_name << ": " << ref_name + " " + aligned_len + " " + identity << std::endl;
     }
 

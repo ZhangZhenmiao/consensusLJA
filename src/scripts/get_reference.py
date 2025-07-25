@@ -2,22 +2,69 @@
 import pysam
 import argparse
 import sys
+import re
 
-def calculate_identity(alignment):
-    try:
-        if alignment.has_tag('NM'):
-            nm = alignment.get_tag('NM')
-        else:
-            nm = sum([count for (operation, count) in alignment.cigartuples if operation == 8])
-    except:
-        nm = 0
-    
+def true_query_start_end(cigar):
+    # Parse the CIGAR string into list of (length, op)
+    tokens = re.findall(r'(\d+)([MIDNSHP=X])', cigar)
+    tokens = [(int(length), op) for length, op in tokens]
+
+    # Compute the total length of the read (excluding hard clips)
+    read_length = sum(length for length, op in tokens if op in ('M', 'I', 'S', '=', 'X', 'H'))
+
+    # Count left and right clip (soft + hard)
+    left_clip = 0
+    right_clip = 0
+
+    if tokens:
+        if tokens[0][1] in ('S', 'H'):
+            left_clip = tokens[0][0]
+        if tokens[-1][1] in ('S', 'H'):
+            right_clip = tokens[-1][0]
+
+    # true query start is where alignment begins in full read
+    true_query_start = left_clip
+    # true query end is where alignment ends in full read
+    true_query_end = read_length - right_clip
+
+    return true_query_start, true_query_end, read_length
+
+def calculate_identities(alignment, gap_threshold=10):
+    # Normal identity
+    nm = alignment.get_tag('NM')
     alignment_length = alignment.query_alignment_length
-    if alignment_length == 0:
-        return 0
-    
-    identity = (alignment_length - nm) / alignment_length
-    return identity
+    if alignment_length == 0 or alignment_length - nm <=0:
+        identity = 0
+    else:
+        identity = (alignment_length - nm) / alignment_length
+
+    # Second identity: matches / query_alignment_length, ignoring gaps >= gap_threshold
+    matches = 0
+    insertions = 0  # gaps in query (I operations)
+    deletions = 0  # gaps in reference (D operations)
+    long_gaps = 0
+
+    if hasattr(alignment, 'cigartuples') and alignment.cigartuples is not None:
+        for op, length in alignment.cigartuples:
+            if op == 0:  # M (match or mismatch)
+                matches += length
+            elif op == 1:  # I (insertion in query)
+                insertions += length
+                if length >= gap_threshold:
+                    long_gaps += length
+            elif op == 2:  # D (deletion in reference)
+                deletions += length
+
+    mismatches = nm - insertions - deletions
+    true_matches = matches - mismatches
+
+    denominator = alignment_length - long_gaps
+    if denominator <= 0:
+        identity_nogap = 0.0
+    else:
+        identity_nogap = true_matches / denominator
+
+    return identity*100,identity_nogap*100
 
 def filter_alignments_with_identity(bam_file_path, threshold=0):
     high_identity_alignments = {}
@@ -31,13 +78,10 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
             if alignment.is_unmapped:
                 continue
 
-            identity = calculate_identity(alignment)
+            identity, identity_nogap = calculate_identities(alignment, gap_threshold=10)
             
-            if identity >= threshold:
+            if identity_nogap >= threshold*100:
                 processed_alignments += 1
-                query_name = alignment.query_name.split('_')[0]
-                if query_name not in high_identity_alignments:
-                    high_identity_alignments[query_name] = []
                 
                 ref_id = alignment.reference_name[alignment.reference_name.find('_') + 1:]
                 id_map = {
@@ -126,15 +170,34 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     "CM075342.1": "Chr13",
                     "CM075343.1": "Chr14"   
                 }
+                
+                query_name = alignment.query_name.split('_')[0]
+                if query_name not in high_identity_alignments:
+                    high_identity_alignments[query_name] = []
+                
+                query_len = contig_lengths[query_name]
+                ref_len = bamfile.get_reference_length(alignment.reference_name)
+
                 if alignment.reference_name in id_map:
                     ref_id = id_map[alignment.reference_name]
+
+                query_alignment_start, query_alignment_end, read_length = true_query_start_end(alignment.cigarstring)
+                # print(query_name, read_length, query_len)
+                if (read_length != query_len):
+                    print(alignment.cigarstring)
+                assert(read_length == query_len)
+
                 high_identity_alignments[query_name].append({
                     'identity': identity,
+                    'identity_nogap': identity_nogap,
                     'ref_id': ref_id if alignment.is_forward else '-' + ref_id,
-                    'ref_start': alignment.reference_start if alignment.is_forward else bamfile.get_reference_length(alignment.reference_name) - alignment.reference_end,
-                    'ref_end': alignment.reference_end if alignment.is_forward else bamfile.get_reference_length(alignment.reference_name) - alignment.reference_start,
+                    'ref_start': 100 * (alignment.reference_start / ref_len) if alignment.is_forward else 100 * ((ref_len - alignment.reference_end) / ref_len),
+                    'ref_end': 100 * (alignment.reference_end / ref_len) if alignment.is_forward else 100 * ((ref_len - alignment.reference_start) / ref_len),
+                    'query_start': 100 * (query_alignment_start / query_len) if alignment.is_forward else 100 * ((query_len - query_alignment_end) / query_len),
+                    'query_end': 100 * (query_alignment_end / query_len) if alignment.is_forward else 100 * ((query_len - query_alignment_start) / query_len),
                     'reverse': alignment.is_reverse,
-                    'length': alignment.query_alignment_length,
+                    'length_query': alignment.query_alignment_end - alignment.query_alignment_start,
+                    'length_ref': alignment.reference_end - alignment.reference_start,
                     'alignment': alignment
                 })
 
@@ -144,33 +207,29 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                 
                 high_identity_alignments[query_name].append({
                     'identity': identity,
+                    'identity_nogap': identity_nogap,
                     'ref_id': ref_id if alignment.is_reverse else '-' + ref_id,
-                    'ref_start': alignment.reference_start if alignment.is_reverse else bamfile.get_reference_length(alignment.reference_name) - alignment.reference_end,
-                    'ref_end': alignment.reference_end if alignment.is_reverse else bamfile.get_reference_length(alignment.reference_name) - alignment.reference_start,
+                    'ref_start': 100 * (alignment.reference_start / ref_len) if alignment.is_reverse else 100 * ((ref_len - alignment.reference_end) / ref_len),
+                    'ref_end': 100 * (alignment.reference_end / ref_len) if alignment.is_reverse else 100 * ((ref_len - alignment.reference_start) / ref_len),
+                    'query_start': 100 * ((query_len - query_alignment_end) / query_len) if alignment.is_forward else 100 * (query_alignment_start / query_len),
+                    'query_end': 100 * ((query_len - query_alignment_start) / query_len) if alignment.is_forward else 100 * (query_alignment_end / query_len),
                     'reverse': alignment.is_reverse,
-                    'length': alignment.query_alignment_length,
+                    'length_query': alignment.query_alignment_end - alignment.query_alignment_start,
+                    'length_ref': alignment.reference_end - alignment.reference_start,
                     'alignment': alignment
                 })
         
         for query_name, alignments in high_identity_alignments.items():
-            alignments = sorted(alignments, key=lambda x: (x["ref_id"], x["ref_start"], -x["ref_end"], -x["identity"]))
-            # for x in alignments:
-            #     print(query_name, x['ref_id'], x['ref_start'], x['ref_end'], x['length'], x['identity'], sep='\t')
-            new_list = []
-            for aln in alignments:
-                if len(new_list) == 0 or new_list[-1]["ref_id"] != aln["ref_id"]:
-                    new_list.append(aln)
-                elif aln["ref_end"] > new_list[-1]["ref_end"]:
-                    if aln["ref_start"] < new_list[-1]["ref_end"] + 100000:
-                        new_list[-1]["ref_end"] = aln["ref_end"]
-                        # new_list[-1]["identity"] = (new_list[-1]["identity"]*new_list[-1]["length"] + aln["identity"]*aln["length"])/(new_list[-1]["length"] + aln["length"])
-                        new_list[-1]["identity"] = min(new_list[-1]["identity"], aln["identity"])
-                        # new_list[-1]["length"] = new_list[-1]["length"] + aln["length"]
-                        new_list[-1]["length"] = aln["ref_end"] - new_list[-1]["ref_start"]
-                    else:
-                        new_list.append(aln)
-                
-            high_identity_alignments[query_name] =  sorted(new_list, key=lambda x: x["ref_start"]-x["ref_end"])
+            alignments = sorted(alignments, key=lambda x: (x["ref_id"], x["ref_start"], x["ref_end"], x["query_start"], x["query_end"], -x["identity"]))
+            for x in alignments:
+                print(query_name, x['ref_id'], x['ref_start'], x['ref_end'], x['length_query'], x['identity'], sep='\t')
+            best_map = {}
+            for x in alignments:
+                key = (x['ref_id'], x['query_start'], x['query_end'], x['ref_start'], x['ref_end'])
+                if key not in best_map or x['identity'] > best_map[key]['identity']:
+                    best_map[key] = x
+            new_list = list(best_map.values())
+            high_identity_alignments[query_name] =  sorted(new_list, key=lambda x: (x["query_start"], x["query_end"]))
     
     
     print(f"Edges with label: {processed_alignments} of {total_alignments}")
@@ -183,8 +242,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Extract high-identity alignments from a BAM file.")
     parser.add_argument("bam_file", help="Path to the input BAM file.")
     parser.add_argument("fasta_file", help="Path to graph.fasta file.")
-    parser.add_argument("-t", "--threshold", type=float, default=0.89,
-                        help="Identity threshold (default: 0.89).")
+    parser.add_argument("-t", "--threshold", type=float, default=0.9,
+                        help="Identity threshold (default: 0.9).")
     parser.add_argument("-o", "--output", help="Path to the output file. If not specified, prints to stdout.")
     return parser.parse_args()
 
@@ -194,6 +253,7 @@ def main():
     threshold = args.threshold
     output_path = args.output
     fasta_file = pysam.FastaFile(args.fasta_file)
+    global contig_lengths
     contig_lengths = {}
     # Iterate through each contig in the FASTA file
     for contig in fasta_file.references:
@@ -212,8 +272,8 @@ def main():
     output_lines = []
     for query_name, alignments in high_identity_alignments.items():
         for aln in alignments:
-            if "tig" not in aln['ref_id'] and aln['ref_end']-aln['ref_start'] > contig_lengths[query_name]/10:
-                output_lines.append(f"{query_name}\t{aln['ref_id']}\t{aln['length']}({aln['ref_start']}-{aln['ref_end']})\t{aln['identity']:.2f}")
+            if "tig" not in aln['ref_id'] and aln['query_end']-aln['query_start'] > 10 or aln['length_query']> 1000000:
+                output_lines.append(f"{query_name}\t{aln['ref_id']}\tQ:{aln['length_query']:,}({aln['query_start']:.0f}-{aln['query_end']:.0f})\tR:{aln['length_ref']:,}({aln['ref_start']:.2f}-{aln['ref_end']:.2f})\tPI={aln['identity']:.0f}/{aln['identity_nogap']:.0f}")
     
     # Write to file or stdout
     if output_path:

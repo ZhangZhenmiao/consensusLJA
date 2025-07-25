@@ -64,11 +64,11 @@ int count_matches(std::string cigar) {
 }
 
 double matches_by_edlib(std::string sequence1, std::string sequence2, bool lcs = false) {
-    std::string seq_short, seq_long;
-    if (sequence1.size() <= sequence2.size())
-        sequence2 = sequence2.substr(0, sequence1.size());
-    else
-        sequence1 = sequence1.substr(0, sequence2.size());
+    // std::string seq_short, seq_long;
+    // if (sequence1.size() <= sequence2.size())
+    //     sequence2 = sequence2.substr(0, sequence1.size());
+    // else
+    //     sequence1 = sequence1.substr(0, sequence2.size());
     EdlibAlignResult result = edlibAlign(sequence1.c_str(), sequence1.size(), sequence2.c_str(), sequence2.size(), edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH, NULL, 0));
     if (result.status == EDLIB_STATUS_OK) {
         std::string cigar = edlibAlignmentToCigar(result.alignment, result.alignmentLength, EDLIB_CIGAR_EXTENDED);
@@ -90,10 +90,10 @@ double unialigner_identity(const std::string& seq1, const std::string& seq2) {
     // Preprocess: replace N, keep first 1Mbp, reverse complement second
     std::string s1 = replace_N(seq1);
     std::string s2 = replace_N(seq2);
-    if (seq1.size() <= seq2.size())
-        s2 = s2.substr(0, seq1.size());
-    else
-        s1 = s1.substr(0, seq2.size());
+    // if (seq1.size() <= seq2.size())
+    //     s2 = s2.substr(0, seq1.size());
+    // else
+    //     s1 = s1.substr(0, seq2.size());
 
     // Write temp FASTA files
     std::ofstream f1("seq1_tmp.fasta");
@@ -155,48 +155,26 @@ std::unordered_map<std::string, std::string> read_fasta_map(const std::string& f
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 4) {
-        std::cerr << "Usage: " << argv[0] << " <fasta> <ID1> <ID2>" << std::endl;
-        std::cerr << "  The fasta should contain contigs named as IDs_IDs. If ID is in the second part, it will be reverse complemented." << std::endl;
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " <fasta1> <fasta2>" << std::endl;
+        std::cerr << "  Each fasta should contain a single sequence." << std::endl;
         return 1;
     }
-    std::string fasta = argv[1];
-    std::string id1 = argv[2];
-    std::string id2 = argv[3];
-    auto contigs = read_fasta_map(fasta);
-    std::string seq1, seq2;
-    // Find contig for id1
-    bool found1 = false, found2 = false, rc2 = false;
-    for (const auto& kv : contigs) {
-        const std::string& name = kv.first;
-        size_t pos = name.find('_');
-        std::string first = name.substr(0, pos);
-        std::string second = name.substr(pos + 1);
-        if (first == id1) {
-            seq1 = kv.second;
-            found1 = true;
-        }
-        if (first == id2) {
-            seq2 = kv.second;
-            found2 = true;
-        }
-        if (second == id1) {
-            seq1 = reverse_complement(kv.second);
-            found1 = true;
-        }
-        if (second == id2) {
-            seq2 = reverse_complement(kv.second);
-            found2 = true;
-        }
-    }
-    if (!found1 || !found2) {
-        std::cerr << "Could not find contigs for " << id1 << " and/or " << id2 << std::endl;
+    std::string fasta1 = argv[1];
+    std::string fasta2 = argv[2];
+    auto contigs1 = read_fasta_map(fasta1);
+    auto contigs2 = read_fasta_map(fasta2);
+    if (contigs1.empty() || contigs2.empty()) {
+        std::cerr << "Could not find sequence in one or both fasta files." << std::endl;
         return 1;
     }
+    // Use the first sequence in each fasta
+    std::string seq1 = contigs1.begin()->second;
+    std::string seq2 = contigs2.begin()->second;
 
-    // Take 1Mbp prefix
-    seq1 = seq1.substr(0, 1000000);
-    seq2 = seq2.substr(0, 1000000);
+    // Take 1Mbp prefix if desired
+    // seq1 = seq1.substr(0, 1000000);
+    // seq2 = seq2.substr(0, 1000000);
 
     double idt = unialigner_identity(seq1, seq2);
     std::cout << "Unialigner identity: " << idt << std::endl;

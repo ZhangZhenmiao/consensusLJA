@@ -87,10 +87,6 @@ def read_bam(bam_file_path, dot_file_path):
             node2 = node2[:node2.find('.')]
             contig_len = bam_file.get_reference_length(r)
 
-            # if r == "84021.66_-85034.68":
-            #     for aln in alignments[r]:
-            #         print(r, contig_len, node2len[node1], node2len[node2], aln["name"], aln["start"], aln["end"], aln["aligned"], aln["idt"], sep="\t", flush=True)
-
             split_coordinate1 = min(node2len[node1], contig_len - node2len[node2])
             split_coordinate2 = max(node2len[node1], contig_len - node2len[node2])
             if split_coordinate1 <= 2*tolerant_size or split_coordinate2 >= contig_len-2*tolerant_size:
@@ -101,16 +97,24 @@ def read_bam(bam_file_path, dot_file_path):
             cnt_f = 0
             cnt_r = 0
             cnt_all = 0
+            end_counts = {}
+            min_internal = tolerant_size
+            max_internal = contig_len - tolerant_size
             for aln in alignments[r]:
                 if aln["start"] <= max(split_coordinate1 - tolerant_size, 0) and aln["end"] > node2len[node1]:
                     cnt_f += 1
                 if aln["start"] < contig_len - node2len[node2] and aln["end"] >= min(split_coordinate2 + tolerant_size, contig_len):
                     cnt_r += 1
                 cnt_all += 1
-            # print("contig name", r, "contig len", contig_len, "len 1", node2len[node1], "len 2", node2len[node2], "supporting reads", cnt_f, cnt_r, flush=True)
-            if cnt_f <= 0 or cnt_r <= 0:
-                print("contig name", r, "contig len", contig_len, "len 1", node2len[node1], "len 2", node2len[node2], "supporting reads", cnt_f, cnt_r, cnt_all, flush=True)
-                print(r, "is chimeric", flush=True)
+                if min_internal < aln["end"] < max_internal:
+                    end_counts[aln["end"]] = end_counts.get(aln["end"], 0) + 1
+                
+            # Threshold for pileup, can be adjusted
+            pileup_threshold = 5
+            has_internal_pileup = any(count >= pileup_threshold for count in end_counts.values())
+
+            if (cnt_f <= 0 or cnt_r <= 0) and has_internal_pileup:
+                print("contig name", r, "contig len", contig_len, "len 1", node2len[node1], "len 2", node2len[node2], "supporting reads", cnt_f, cnt_r, cnt_all, "is chimeric", flush=True)
                 chimeric_edges.extend(r.split('_'))
 
         # detect internal chimeric

@@ -48,9 +48,8 @@ if len(sys.argv) != 3:
 fasta1 = sys.argv[1]
 fasta2 = sys.argv[2]
 
-max_len = 100_000
-seq1 = reverse_complement(read_single_fasta(fasta1))[:max_len]
-seq2 = read_single_fasta(fasta2)[:max_len]
+seq1 = read_single_fasta(fasta1)
+seq2 = read_single_fasta(fasta2)
 
 # Write sequences to temp files for unialigner
 with open("seq1_tmp.fasta", "w") as f1:
