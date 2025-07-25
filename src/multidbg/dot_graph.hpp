@@ -34,6 +34,7 @@ namespace multidbg {
         std::unordered_map<std::string, std::vector<Edge>> incoming_edges;
         std::unordered_map<std::string, std::vector<Edge>> outgoing_edges;
         std::string sequence;
+        std::vector<std::string> contracted_long_sequences;
         int node_length = 0;
         int number_of_contracted_edge = 0;
         int length_of_contracted_edge = 0;
@@ -121,6 +122,7 @@ namespace multidbg {
         void merge_tips_into_edges(unsigned& num_tips, double ratio = 0.8, bool only_tips = false, bool merge_long_tips = false);
         void merge_tips_into_edges_further(unsigned& num_tips, double ratio = 0.8);
         void merge_tips(unsigned& num_tips);
+        void merge_secondary_edges(unsigned& num_edges);
 
         void general_whirl_removal(unsigned& removed_whirls, bool simple_whirl = false, bool force = false);
         void resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, int x, double identity, bool use_length = false, int security_level = 3, bool allow_reverse_comp = false, bool allow_tip = false, bool verbose = false);

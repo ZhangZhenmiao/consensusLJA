@@ -324,6 +324,9 @@ void MDBGRunner::simplifyMDBG() {
     // graph.write_graph_colored_from_bam(output + "/graph.before_final" + ".color", output + "/graph.before_final" + ".ref.bam.stats");
     // graph.get_annotation(output + "/graph.before_final");
 
+    // Graph graph;
+    // graph.restart_from_dot(output + "/graph.final.dot", output + "/graph.final.fasta");
+
     while (true) {
         bool flag = true;
 
@@ -399,6 +402,15 @@ void MDBGRunner::simplifyMDBG() {
                 flag = false;
             if (removed_bulges > 0)
                 std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
+        }
+
+        removed_edges = 1;
+        while (removed_edges) {
+            graph.merge_secondary_edges(removed_edges);
+            if (removed_edges)
+                flag = false;
+            if (removed_edges > 0)
+                std::cout << "Merged " << removed_edges << " deadend edges" << std::endl;
         }
 
         if (flag)

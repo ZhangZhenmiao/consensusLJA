@@ -602,6 +602,82 @@ void Graph::gluing_broken_bulges(unsigned& removed_bulges) {
     this->multi_bulge_removal(removed_bulges);
 }
 
+void Graph::merge_secondary_edges(unsigned& num_edges) {
+    num_edges = 0;
+    std::set<std::string> nodes_to_remove;
+    for (auto&& node : graph) {
+        std::string deadend_out;
+        bool find_similar = false;
+        double sim = 0;
+
+        for (auto&& n_o : node.second.outgoing_edges) {
+            deadend_out = n_o.first;
+
+            // No loop deadends
+            if (deadend_out == node.first || deadend_out == reverse_complementary_node(node.first))
+                continue;
+
+            // allow no bulges between node.first and deadend_out
+            if (node.second.outgoing_edges[deadend_out].size() > 1)
+                continue;
+
+            Edge& e_deadend = node.second.outgoing_edges[deadend_out][0];
+
+            // node.first --> n_out is a valid deadend edge
+            if (graph[deadend_out].outgoing_edges.empty() && e_deadend.length < 100000) {
+                // find all incident edges
+                std::vector<Edge> incident_edges;
+                for (auto&& n_in_start : node.second.incoming_edges) {
+                    if (n_in_start.first != reverse_complementary_node(node.first) && n_in_start.first != reverse_complementary_node(deadend_out)) {
+                        incident_edges.insert(incident_edges.end(), n_in_start.second.begin(), n_in_start.second.end());
+                    }
+                }
+                for (auto&& n_in_end : graph[deadend_out].incoming_edges) {
+                    if (n_in_end.first != reverse_complementary_node(node.first) && n_in_end.first != node.first && n_in_end.first != reverse_complementary_node(deadend_out)) {
+                        incident_edges.insert(incident_edges.end(), n_in_end.second.begin(), n_in_end.second.end());
+                    }
+                }
+
+                // check whether there is an incident edge having over 0.8 similariy with the deadend edge
+                for (auto&& incident_e : incident_edges) {
+                    sim = matches_by_edlib(e_deadend.sequence, incident_e.sequence);
+                    if (sim > 0.8) {
+                        find_similar = true;
+                        break;
+                    }
+                }
+                if (find_similar)
+                    break;
+            }
+        }
+        if (find_similar) {
+            std::cout << "Deadend edge " << node.first << " -> " << deadend_out << " is removed (sim=" << sim << ")" << std::endl;
+            std::cout << "Deadend edge " << reverse_complementary_node(deadend_out) << " -> " << reverse_complementary_node(node.first) << " is removed (sim=" << sim << ")" << std::endl;
+            graph[node.first].outgoing_edges.erase(deadend_out);
+            graph[deadend_out].incoming_edges.erase(node.first);
+            graph[reverse_complementary_node(deadend_out)].outgoing_edges.erase(reverse_complementary_node(node.first));
+            graph[reverse_complementary_node(node.first)].incoming_edges.erase(reverse_complementary_node(deadend_out));
+
+            num_edges += 2;
+
+            if (graph[node.first].outgoing_edges.empty() && graph[node.first].incoming_edges.empty()) {
+                nodes_to_remove.insert(node.first);
+                nodes_to_remove.insert(reverse_complementary_node(node.first));
+            }
+
+            if (graph[deadend_out].outgoing_edges.empty() && graph[deadend_out].incoming_edges.empty()) {
+                nodes_to_remove.insert(deadend_out);
+                nodes_to_remove.insert(reverse_complementary_node(deadend_out));
+            }
+        }
+    }
+
+    for (auto&& n : nodes_to_remove)
+        graph.erase(n);
+
+    merge_non_branching_paths(true);
+}
+
 void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_tips, bool merge_long_tips) {
     if (!only_tips) {
         unsigned removed_paths = 1;

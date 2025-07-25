@@ -458,8 +458,12 @@ void Graph::restart_from_dot(const std::string& graph_dot, const std::string& gr
             // extract node name
             size_t pos1 = line.find("->");
             std::string start_name = line.substr(1, pos1 - 3);
+            if (start_name.at(0) == '"')
+                start_name = start_name.substr(1, start_name.size() - 2);
             size_t pos2 = line.find('[');
             std::string end_name = line.substr(pos1 + 4, pos2 - pos1 - 6);
+            if (end_name.at(0) == '"')
+                end_name = end_name.substr(1, end_name.size() - 2);
             assert(this->graph.find(start_name) != this->graph.end() && this->graph.find(end_name) != this->graph.end());
 
             // parse edge label: starting base, length, multiplicity and sequence
@@ -480,16 +484,16 @@ void Graph::restart_from_dot(const std::string& graph_dot, const std::string& gr
             if (graph[start_name].sequence.empty()) {
                 graph[start_name].sequence = edge2sequence[edge_label].substr(0, graph[start_name].node_length);
             }
-            else {
-                assert(graph[start_name].sequence == edge2sequence[edge_label].substr(0, graph[start_name].node_length));
-            }
+            // else {
+            //     assert(graph[start_name].sequence == edge2sequence[edge_label].substr(0, graph[start_name].node_length));
+            // }
 
             if (graph[end_name].sequence.empty()) {
                 graph[end_name].sequence = edge2sequence[edge_label].substr(edge2sequence[edge_label].size() - graph[end_name].node_length);
             }
-            else {
-                assert(graph[end_name].sequence == edge2sequence[edge_label].substr(edge2sequence[edge_label].size() - graph[end_name].node_length));
-            }
+            // else {
+            //     assert(graph[end_name].sequence == edge2sequence[edge_label].substr(edge2sequence[edge_label].size() - graph[end_name].node_length));
+            // }
 
             Edge edge = Edge(start_base, length, edge2sequence[edge_label], multiplicity);
             edge.path_nodes_in_original_graph.push_back(start_name);
@@ -506,9 +510,22 @@ void Graph::restart_from_dot(const std::string& graph_dot, const std::string& gr
         // line is an node
         else {
             std::string node_name = line.substr(0, line.find('[') - 1);
+            if (node_name.at(0) == '"')
+                node_name = node_name.substr(1, node_name.size() - 2);
             Node node;
             this->graph[node_name] = node;
-            this->nodeid2Rev[node_name] = node_name.at(0) != '-' ? "-" + node_name : node_name.substr(1);
+            if (node_name.find('+') == std::string::npos)
+                this->nodeid2Rev[node_name] = node_name.at(0) != '-' ? "-" + node_name : node_name.substr(1);
+            else {
+                std::string n1, n2, n1_r, n2_r;
+                n1 = node_name.substr(0, node_name.find('+'));
+                n2 = node_name.substr(node_name.find('+') + 1);
+
+                n1_r = n1.at(0) != '-' ? "-" + n1 : n1.substr(1);
+                n2_r = n2.at(0) != '-' ? "-" + n2 : n2.substr(1);
+
+                this->nodeid2Rev[node_name] = n2_r + "+" + n1_r;
+            }
 
             size_t label_pos = line.find("label=\"");
             if (label_pos != std::string::npos) {
@@ -543,7 +560,8 @@ std::string Graph::get_contracted_name(std::string node) {
 }
 
 std::string Graph::get_contracted_label(std::string node) {
-    std::string label = node.substr(0, node.find_first_of('_')) + "_" + node.substr(node.find_last_of('_') + 1) + "_N" + std::to_string(graph[node].number_of_contracted_edge) + "_L" + std::to_string(graph[node].length_of_contracted_edge);
+    // std::string label = node.substr(0, node.find_first_of('_')) + "_" + node.substr(node.find_last_of('_') + 1) + "_N" + std::to_string(graph[node].number_of_contracted_edge) + "_L" + std::to_string(graph[node].length_of_contracted_edge);
+    std::string label = node.substr(0, node.find_first_of('_')) + "_" + node.substr(node.find_last_of('_') + 1) + "_N" + std::to_string(graph[node].number_of_contracted_edge) + "_L" + std::to_string(graph[node].sequence.size());
     if (graph[node].circles >= 2) {
         label += ("\\nC" + std::to_string(graph[node].circles));
         label += ("_CL" + std::to_string(graph[node].total_length));
@@ -574,6 +592,9 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
             nodeid2Rev[node_o] = get_contracted_name(reverse_complementary_node(node.first));
             nodeid2Rev[get_contracted_name(reverse_complementary_node(node.first))] = get_contracted_name(node.first);
             file_dot << "\"" << node_o << "\" [style=filled fillcolor=\"white\" label=\"" << get_contracted_label(node.first) << "\"]\n";
+        }
+        else if (node.first.find("+") != std::string::npos) {
+            file_dot << "\"" << node.first << "\" [style=filled fillcolor=\"white\" label=\"" << node.first + "_L" + std::to_string(graph[node.first].sequence.size()) << "\"]\n";
         }
         else
             file_dot << node.first << " [style=filled fillcolor=\"white\" label=\"" << node.first + "_L" + std::to_string(graph[node.first].sequence.size()) << "\"]\n";
@@ -1094,13 +1115,15 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
                         continue;
                     vector_to_remove.push_back(int(i));
                     auto& e = graph_vis[node].outgoing_edges[node][i];
-                    if (graph_vis[node].sequence.empty())
-                        graph_vis[node].sequence += ("NNNNNNNNNNNNNNNNNNNN" + e.sequence + "NNNNNNNNNNNNNNNNNNNN");
-                    else
-                        graph_vis[node].sequence += (e.sequence + "NNNNNNNNNNNNNNNNNNNN");
+                    // update_length means update length only, and does not change the graph
+                    if (!update_length) {
+                        if (graph_vis[node].sequence.empty())
+                            graph_vis[node].sequence += ("NNNNNNNNNNNNNNNNNNNN" + e.sequence + "NNNNNNNNNNNNNNNNNNNN");
+                        else
+                            graph_vis[node].sequence += (e.sequence + "NNNNNNNNNNNNNNNNNNNN");
+                    }
                     total_len += e.length;
                     lens.push_back(e.length);
-                    graph_vis[node].circles += 1;
                 }
                 if (!vector_to_remove.empty()) {
                     if (update_length) {
@@ -1112,7 +1135,7 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
                         else {
                             graph_vis[node].median_length = lens[size / 2];
                         }
-
+                        graph_vis[node].circles = lens.size();
                         graph_vis[node].total_length = total_len;
                     }
                     else {
