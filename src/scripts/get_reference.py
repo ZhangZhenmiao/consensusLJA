@@ -221,8 +221,8 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
         
         for query_name, alignments in high_identity_alignments.items():
             alignments = sorted(alignments, key=lambda x: (x["ref_id"], x["ref_start"], x["ref_end"], x["query_start"], x["query_end"], -x["identity"]))
-            for x in alignments:
-                print(query_name, x['ref_id'], x['ref_start'], x['ref_end'], x['length_query'], x['identity'], sep='\t')
+            # for x in alignments:
+            #     print(query_name, x['ref_id'], x['ref_start'], x['ref_end'], x['length_query'], x['identity'], sep='\t')
             best_map = {}
             for x in alignments:
                 key = (x['ref_id'], x['query_start'], x['query_end'], x['ref_start'], x['ref_end'])
@@ -232,7 +232,7 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
             high_identity_alignments[query_name] =  sorted(new_list, key=lambda x: (x["query_start"], x["query_end"]))
     
     
-    print(f"Edges with label: {processed_alignments} of {total_alignments}")
+    # print(f"Edges with label: {processed_alignments} of {total_alignments}")
     return high_identity_alignments
 
 def parse_arguments():

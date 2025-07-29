@@ -11,6 +11,7 @@
 #include <map>
 #include "src/dbg/dot_graph.hpp"
 #include "src/dbg/read_aln.hpp"
+#include "utils.hpp"
 namespace fs = std::filesystem;
 
 using namespace multidbg;
@@ -413,7 +414,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
     std::cout << "Read " << get_num_nodes() << " vertices, " << cnt_edge << " edges." << std::endl;
 }
 
-void Graph::restart_from_dot(const std::string& graph_dot, const std::string& graph_fasta) {
+void Graph::restart_from_dot(const std::string& graph_dot, const std::string& graph_fasta, int default_k) {
     // load fasta sequence
     unsigned e_id1, e_id2;
     std::string line, node1, node2, length, multiplicity, start_base;
@@ -495,7 +496,7 @@ void Graph::restart_from_dot(const std::string& graph_dot, const std::string& gr
             //     assert(graph[end_name].sequence == edge2sequence[edge_label].substr(edge2sequence[edge_label].size() - graph[end_name].node_length));
             // }
 
-            Edge edge = Edge(start_base, length, edge2sequence[edge_label], multiplicity);
+            Edge edge = Edge(start_base, edge2sequence[edge_label].size(), edge2sequence[edge_label], multiplicity);
             edge.path_nodes_in_original_graph.push_back(start_name);
             edge.path_nodes_in_original_graph.push_back(end_name);
             edge.path_edges_in_original_graph.push_back(edge_label);
@@ -539,6 +540,10 @@ void Graph::restart_from_dot(const std::string& graph_dot, const std::string& gr
                     std::cout << "Node " << node_name << " has length " << length << std::endl;
                 }
             }
+            else {
+                graph[node_name].node_length = default_k;
+                std::cout << "Node " << node_name << " has length " << default_k << std::endl;
+            }
         }
     }
     dot_file.close();
@@ -570,7 +575,7 @@ std::string Graph::get_contracted_label(std::string node) {
     return label;
 }
 
-void Graph::write_graph(const std::string& prefix, int thick, bool contracted, bool colored, std::unordered_set<std::string> nodes_retain) {
+void Graph::write_graph(const std::string& prefix, int thick, bool contracted, bool colored, std::unordered_set<std::string> nodes_retain, std::unordered_map<std::string, std::vector<std::string>> nodes2bc) {
     std::string graph_dot = prefix + ".dot";
     std::string graph_fasta = prefix + ".fasta";
     std::string graph_path = prefix + ".path";
@@ -596,8 +601,16 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
         else if (node.first.find("+") != std::string::npos) {
             file_dot << "\"" << node.first << "\" [style=filled fillcolor=\"white\" label=\"" << node.first + "_L" + std::to_string(graph[node.first].sequence.size()) << "\"]\n";
         }
-        else
-            file_dot << node.first << " [style=filled fillcolor=\"white\" label=\"" << node.first + "_L" + std::to_string(graph[node.first].sequence.size()) << "\"]\n";
+        else {
+            if (nodes2bc.find(node.second.sequence) != nodes2bc.end()) {
+                std::string bc = "";
+                for (auto&& b : nodes2bc[node.second.sequence])
+                    bc += ("\\nBC: " + b);
+                file_dot << node.first << " [style=filled fillcolor=\"white\" label=\"" << node.first + "_L" + std::to_string(graph[node.first].sequence.size()) << bc << "\"]\n";
+            }
+            else
+                file_dot << node.first << " [style=filled fillcolor=\"white\" label=\"" << node.first + "_L" + std::to_string(graph[node.first].sequence.size()) << "\"]\n";
+        }
         if (node.second.number_of_contracted_edge > max_contracted) {
             max_contracted_node = get_contracted_name(node.first);
             max_contracted = node.second.number_of_contracted_edge;
@@ -1517,4 +1530,383 @@ void Graph::write_graph_gfa(const std::string& prefix) {
     // }
 
     file_gfa.close();
+}
+
+void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jumbodbg, int threads) {
+    execute_command("mkdir -p " + output);
+    std::string output_prefix_suffix = output + "/graph.before_removing_contained.linear_edges.fa";
+    std::unordered_set<std::string> traversed_nodes;
+    std::ofstream outfile(output_prefix_suffix);
+    if (!outfile.is_open()) {
+        throw std::runtime_error("Failed to open file: " + output_prefix_suffix);
+    }
+
+    std::cout << "Write prefixed (and suffixes) of linear edges (and tips) to fasta" << std::endl;
+    int bc_id = 1;
+    std::unordered_map<std::string, std::vector<std::string>> kmer2bc;
+    std::unordered_map<int, std::string> bc2edge;
+    int k_mer = 501;
+
+    for (auto&& node : graph) {
+        if (traversed_nodes.find(node.first) != traversed_nodes.end())
+            continue;
+        if (node.second.outgoing_edges.size() == 1) {
+            std::string n_out;
+            for (auto&& n : node.second.outgoing_edges)
+                n_out = n.first;
+
+            if (graph[n_out].incoming_edges.size() != 1 || !graph[n_out].outgoing_edges.empty())
+                continue;
+
+            if (node.second.outgoing_edges[n_out].size() != 1)
+                continue;
+
+            traversed_nodes.insert(node.first);
+            traversed_nodes.insert(reverse_complementary_node(n_out));
+
+            // find a valid linear edge
+            if (node.second.incoming_edges.empty()) {
+                std::string seq1 = replaceNsWithRandomBases(node.second.sequence.substr(0, 5000));
+                outfile << ">" << node.first << "\n";
+                outfile << seq1 << "\n";
+
+                std::string seq2 = replaceNsWithRandomBases(graph[n_out].sequence.substr(graph[n_out].sequence.size() - 5000));
+                outfile << ">" << n_out << "\n";
+                outfile << seq2 << "\n";
+
+                std::string suffix_start = seq1.substr(seq1.size() - k_mer);
+                std::string prefix_end = seq2.substr(0, k_mer);
+                kmer2bc[suffix_start].push_back(std::to_string(bc_id) + "_L" + format_with_commas(node.second.outgoing_edges[n_out].at(0).sequence.size()));
+                kmer2bc[prefix_end].push_back(std::to_string(-bc_id) + "_L" + format_with_commas(node.second.outgoing_edges[n_out].at(0).sequence.size()));
+                bc2edge[bc_id] = node.first + "->" + n_out;
+
+                bc_id++;
+                kmer2bc[reverse_complementary(suffix_start)].push_back(std::to_string(-bc_id) + "_L" + format_with_commas(node.second.outgoing_edges[n_out].at(0).sequence.size()));
+                kmer2bc[reverse_complementary(prefix_end)].push_back(std::to_string(bc_id) + "_L" + format_with_commas(node.second.outgoing_edges[n_out].at(0).sequence.size()));
+                bc2edge[bc_id] = reverse_complementary_node(n_out) + "->" + reverse_complementary_node(node.first);
+
+                bc_id++;
+            }
+            else {
+                std::string seq2 = replaceNsWithRandomBases(graph[n_out].sequence.substr(graph[n_out].sequence.size() - 5000));
+                outfile << ">" << n_out << "\n";
+                outfile << seq2 << "\n";
+
+                std::string prefix_end = seq2.substr(0, k_mer);
+                kmer2bc[prefix_end].push_back(std::to_string(-bc_id) + "_L" + format_with_commas(node.second.outgoing_edges[n_out].at(0).sequence.size()));
+                bc2edge[bc_id] = node.first + "->" + n_out;
+
+                bc_id++;
+                kmer2bc[reverse_complementary(prefix_end)].push_back(std::to_string(bc_id) + "_L" + format_with_commas(node.second.outgoing_edges[n_out].at(0).sequence.size()));
+                bc2edge[bc_id] = reverse_complementary_node(n_out) + "->" + reverse_complementary_node(node.first);
+
+                bc_id++;
+            }
+        }
+    }
+    outfile.close();
+
+    for (auto&& bc : bc2edge) {
+        std::cout << bc.first << ": " << bc.second << std::endl;
+    }
+    // std::cout << "Kmers with barcode: " << kmer2bc.size() << std::endl;
+    // for (auto&& km : kmer2bc) {
+    //     std::cout << km.first << ": " << km.second.at(0) << " " << km.second.size() << std::endl;
+    // }
+
+    if (!fs::is_directory(output + "/graph.before_removing_contained.linear_edges.dbg"))
+        execute_command(jumbodbg + " --reads " + output + "/graph.before_removing_contained.linear_edges.fa" + " -t " + std::to_string(threads) + " --coverage -k " + std::to_string(k_mer) + " -o " + output + "/graph.before_removing_contained.linear_edges.dbg");
+
+    unsigned removed_paths = 1;
+    unsigned removed_whirls = 1;
+    unsigned removed_bulges = 1;
+    int decoupled = 1;
+    unsigned cnt_rounds = 0;
+    int total_removed = 0;
+    unsigned total_whirls = 0;
+    unsigned removed_edges = 1;
+    unsigned removed_tips = 1;
+
+    Graph graph_linear_edges;
+    graph_linear_edges.restart_from_dot(output + "/graph.before_removing_contained.linear_edges.dbg/graph.dot", output + "/graph.before_removing_contained.linear_edges.dbg/graph.fasta", 501);
+    graph_linear_edges.write_graph(output + "/graph_linear_edges.ori");
+    graph_linear_edges.get_annotation(output + "/graph_linear_edges.ori");
+    graph_linear_edges.write_graph(output + "/graph_linear_edges.ori.color", 1000000, false, true, std::unordered_set<std::string>(), kmer2bc);
+
+    removed_bulges = 1;
+    total_removed = 0;
+    while (removed_bulges) {
+        graph_linear_edges.multi_bulge_removal(removed_bulges);
+        total_removed += removed_bulges;
+    }
+    std::cout << "Removed " << total_removed << " simple bulges" << std::endl;
+    graph_linear_edges.write_graph(output + "/graph_linear_edges.bulge_removel");
+
+    removed_whirls = 1;
+    total_removed = 0;
+    while (removed_whirls) {
+        graph_linear_edges.general_whirl_removal(removed_whirls);
+        total_removed += removed_whirls;
+    }
+    std::cout << "Removed " << total_removed << " general whirls" << std::endl;
+
+    removed_paths = 1;
+    total_removed = 0;
+    while (removed_paths) {
+        graph_linear_edges.resolving_bulge_with_two_multi_edge_paths(removed_paths, 3, 0.8, true, 3);
+        total_removed += removed_paths;
+    }
+    removed_paths = 1;
+    while (removed_paths) {
+        graph_linear_edges.resolving_bulge_with_two_multi_edge_paths(removed_paths, 4, 0.8, true, 2);
+        total_removed += removed_paths;
+    }
+    removed_paths = 1;
+    while (removed_paths) {
+        graph_linear_edges.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.8, true, 2);
+        total_removed += removed_paths;
+    }
+
+    removed_paths = 1;
+    while (removed_paths) {
+        graph_linear_edges.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.6, true, 2);
+        total_removed += removed_paths;
+    }
+    std::cout << "Removed complex bulges: " << total_removed << std::endl;
+    graph_linear_edges.write_graph(output + "/graph_linear_edges.complex_bulge");
+
+    // ensure all below outputting graph_linear_edges have no simple bulges, or the program will fail
+    decoupled = 1;
+    total_removed = 0;
+    while (decoupled) {
+        graph_linear_edges.resolve_edges_in_reverse_complement(decoupled);
+        total_removed += decoupled;
+    }
+    graph_linear_edges.write_graph(output + "/graph_linear_edges.decoupling");
+
+    total_removed = 0;
+    removed_tips = 1;
+    while (removed_tips) {
+        graph_linear_edges.merge_tips_into_edges(removed_tips);
+        total_removed += removed_tips;
+        if (removed_tips > 0)
+            std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
+    }
+
+    std::cout << "Removed tips: " << total_removed << std::endl;
+    graph_linear_edges.write_graph(output + "/graph_linear_edges.remove_tips");
+
+
+    while (true) {
+        bool flag = true;
+        removed_paths = 1;
+        while (removed_paths) {
+            graph_linear_edges.resolving_bulge_with_two_multi_edge_paths(removed_paths, 8, 0.6, true, 2);
+            if (removed_paths)
+                flag = false;
+            if (removed_paths > 0)
+                std::cout << "Detoured " << removed_paths << " paths" << std::endl;
+        }
+
+        decoupled = 1;
+        while (decoupled) {
+            graph_linear_edges.resolve_edges_in_reverse_complement(decoupled);
+            if (decoupled)
+                flag = false;
+            if (decoupled > 0)
+                std::cout << "Decoupled " << decoupled << " strands" << std::endl;
+        }
+
+        removed_tips = 1;
+        while (removed_tips) {
+            graph_linear_edges.merge_tips_into_edges(removed_tips);
+            if (removed_tips)
+                flag = false;
+            if (removed_tips > 0)
+                std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
+        }
+
+        removed_whirls = 1;
+        while (removed_whirls) {
+            graph_linear_edges.general_whirl_removal(removed_whirls);
+            graph_linear_edges.merge_non_branching_paths(true);
+            if (removed_whirls)
+                flag = false;
+            if (removed_whirls > 0)
+                std::cout << "Removed " << removed_whirls << " whirls" << std::endl;
+        }
+
+        removed_bulges = 1;
+        while (removed_bulges) {
+            graph_linear_edges.multi_bulge_removal(removed_bulges);
+            graph_linear_edges.merge_non_branching_paths(true);
+            if (removed_bulges)
+                flag = false;
+            if (removed_bulges > 0)
+                std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
+        }
+
+        if (flag)
+            break;
+    }
+
+    graph_linear_edges.write_graph(output + "/graph_linear_edges.complex_comp");
+
+    std::cout << "----------Stage 7: decoupling further----------" << std::endl;
+    while (true)
+    {
+        bool flag = true;
+        removed_paths = 1;
+        while (removed_paths) {
+            graph_linear_edges.resolving_bulge_with_two_multi_edge_paths(removed_paths, 8, 0.6, true, 2, true);
+            if (removed_paths)
+                flag = false;
+            if (removed_paths > 0)
+                std::cout << "Detoured " << removed_paths << " paths" << std::endl;
+        }
+
+        decoupled = 1;
+        while (decoupled) {
+            graph_linear_edges.resolve_edges_in_reverse_complement(decoupled);
+            if (decoupled)
+                flag = false;
+            if (decoupled > 0)
+                std::cout << "Decoupled " << decoupled << " strands" << std::endl;
+        }
+
+        if (flag)
+            break;
+    }
+
+    graph_linear_edges.write_graph(output + "/graph_linear_edges.decoupling_further");
+
+    while (true) {
+        bool flag = true;
+        removed_paths = 1;
+        while (removed_paths) {
+            graph_linear_edges.resolving_bulge_with_two_multi_edge_paths(removed_paths, 8, 0, true, 2, true);
+            if (removed_paths)
+                flag = false;
+            if (removed_paths > 0)
+                std::cout << "Removed " << removed_paths << " paths" << std::endl;
+        }
+        decoupled = 1;
+        while (decoupled) {
+            graph_linear_edges.resolve_edges_in_reverse_complement(decoupled);
+            if (decoupled)
+                flag = false;
+            if (decoupled > 0)
+                std::cout << "Decoupled " << decoupled << " strands" << std::endl;
+        }
+
+        removed_tips = 1;
+        while (removed_tips) {
+            graph_linear_edges.merge_tips_into_edges(removed_tips, 0.8);
+            if (removed_tips)
+                flag = false;
+            if (removed_tips > 0)
+                std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
+        }
+
+        removed_whirls = 1;
+        while (removed_whirls) {
+            graph_linear_edges.general_whirl_removal(removed_whirls);
+            graph_linear_edges.merge_non_branching_paths(true);
+            if (removed_whirls)
+                flag = false;
+            if (removed_whirls > 0)
+                std::cout << "Removed " << removed_whirls << " whirls" << std::endl;
+        }
+
+        removed_bulges = 1;
+        while (removed_bulges) {
+            graph_linear_edges.multi_bulge_removal(removed_bulges);
+            graph_linear_edges.merge_non_branching_paths(true);
+            if (removed_bulges)
+                flag = false;
+            if (removed_bulges > 0)
+                std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
+        }
+
+        if (flag)
+            break;
+    }
+
+    graph_linear_edges.write_graph(output + "/graph_linear_edges.before_final", false, true);
+
+    while (true) {
+        bool flag = true;
+
+        removed_paths = 1;
+        while (removed_paths) {
+            graph_linear_edges.resolving_bulge_with_two_multi_edge_paths(removed_paths, 8, 0, true, 2, true);
+            if (removed_paths)
+                flag = false;
+            if (removed_paths > 0)
+                std::cout << "Removed " << removed_paths << " paths" << std::endl;
+        }
+
+        decoupled = 1;
+        while (decoupled) {
+            graph_linear_edges.resolve_edges_in_reverse_complement(decoupled);
+            if (decoupled)
+                flag = false;
+            if (decoupled > 0)
+                std::cout << "Decoupled " << decoupled << " strands" << std::endl;
+        }
+
+        removed_tips = 1;
+        while (removed_tips) {
+            graph_linear_edges.merge_tips_into_edges(removed_tips, 0.8, false, true);
+            if (removed_tips)
+                flag = false;
+            if (removed_tips > 0)
+                std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
+        }
+
+        removed_tips = 1;
+        while (removed_tips) {
+            graph_linear_edges.merge_tips(removed_tips);
+            if (removed_tips)
+                flag = false;
+            if (removed_tips > 0)
+                std::cout << "Merged " << removed_tips << " tips to tips" << std::endl;
+        }
+
+        removed_tips = 1;
+        while (removed_tips) {
+            graph_linear_edges.merge_tips_into_edges_further(removed_tips);
+            if (removed_tips)
+                flag = false;
+            if (removed_tips > 0)
+                std::cout << "Merged " << removed_tips << " tips to paths" << std::endl;
+        }
+
+        removed_whirls = 1;
+        while (removed_whirls) {
+            graph_linear_edges.general_whirl_removal(removed_whirls);
+            graph_linear_edges.merge_non_branching_paths(true);
+            if (removed_whirls)
+                flag = false;
+            if (removed_whirls > 0)
+                std::cout << "Removed " << removed_whirls << " whirls" << std::endl;
+        }
+
+        removed_bulges = 1;
+        while (removed_bulges) {
+            graph_linear_edges.multi_bulge_removal(removed_bulges);
+            graph_linear_edges.merge_non_branching_paths(true);
+            if (removed_bulges)
+                flag = false;
+            if (removed_bulges > 0)
+                std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
+        }
+
+        if (flag)
+            break;
+    }
+
+    graph_linear_edges.write_graph(output + "/graph_linear_edges.final", 1000000, false, true);
+    graph_linear_edges.get_annotation(output + "/graph_linear_edges.final");
+    graph_linear_edges.write_graph(output + "/graph_linear_edges.final.color", 1000000, false, true, std::unordered_set<std::string>(), kmer2bc);
 }

@@ -9,4 +9,8 @@ double unialigner_identity(const std::string& seq1, const std::string& seq2, int
 
 std::string getExecutablePath();
 
+std::string replaceNsWithRandomBases(const std::string& seq);
+
+std::string format_with_commas(int value);
+
 #endif // COMMAND_UTILS_H

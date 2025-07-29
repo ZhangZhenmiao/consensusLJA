@@ -25,6 +25,7 @@ public:
     std::string compress = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "compress";
     std::string remove_chimeric = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "remove_chimeric.sh";
     std::string analyze_chimeric = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "analyze_chimeric.py";
+    std::string jumbodbg = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "jumboDBG";
     std::string polisher = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "run_polishing";
 
     MDBGRunner(fs::path output_all, std::string reads, int threads, int first_peak, int first_minima, int mean_cov, std::string initial_dbg) {

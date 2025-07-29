@@ -114,3 +114,30 @@ double unialigner_identity(const std::string& seq1, const std::string& seq2, int
 
     return parse_cigar_identity(cigar, s1.size(), s2.size());
 }
+
+std::string replaceNsWithRandomBases(const std::string& seq) {
+    static const char bases[] = { 'A', 'C', 'G', 'T' };
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_int_distribution<> dis(0, 3);
+
+    std::string result = seq;
+    for (char& c : result) {
+        if (c == 'N' || c == 'n') {
+            c = bases[dis(gen)];
+        }
+    }
+    return result;
+}
+
+std::string format_with_commas(int value) {
+    std::string num = std::to_string(value);
+    int insertPosition = num.length() - 3;
+
+    while (insertPosition > 0) {
+        num.insert(insertPosition, ",");
+        insertPosition -= 3;
+    }
+
+    return num;
+}
