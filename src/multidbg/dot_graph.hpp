@@ -106,11 +106,14 @@ namespace multidbg {
         void read_from_dot(const std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta, const std::string& graph_dbg, const std::string& paths_dbg);
         void restart_from_dot(const std::string& graph_dot, const std::string& graph_fasta, int default_k = 5001);
         void write_graph(const std::string& prefix, int thick = 1000000, bool contracted = false, bool colored = false, std::unordered_set<std::string> nodes = std::unordered_set<std::string>(), std::unordered_map<std::string, std::vector<std::string>> nodes2bc = std::unordered_map<std::string, std::vector<std::string>>());
+        void write_graph_L(const std::string& prefix, int thick = 1000000, bool contracted = false, bool colored = false, std::unordered_set<std::string> nodes = std::unordered_set<std::string>(), std::unordered_map<std::string, std::vector<std::string>> nodes2bc = std::unordered_map<std::string, std::vector<std::string>>());
         void write_graph_contracted(const std::string& prefix, int min_length = 10000, bool simplify = false);
+        void write_graph_contracted_L(const std::string& prefix, int min_length = 600, bool simplify = false, std::unordered_map<std::string, std::vector<std::string>> nodes2bc = std::unordered_map<std::string, std::vector<std::string>>());
         void write_graph_colored(const std::string& prefix, const std::string& genomes);
         void write_graph_colored_from_bam(const std::string& prefix, const std::string& bam_processed);
         void write_graph_gfa(const std::string& prefix);
-        void write_prefix_siffux_linear_edges(std::string output_dir, std::string jumbodbg, int threads);
+        void write_prefix_siffux_linear_edges(std::string output_dir, std::string jumbodbg, int threads, int k_mer);
+        void write_tip_edges(std::string output_dir);
         void decoupling(std::string multidbg, std::string output);
         void remove_contained_contigs(const double sim = 0.8);
         int get_num_nodes();
@@ -120,6 +123,10 @@ namespace multidbg {
         void multi_bulge_removal(unsigned& removed_bulges, bool skip_rc_bulges = true);
         void merge_non_branching_paths(bool merge_self_loop = false);
         void gluing_broken_bulges(unsigned& removed_bulges);
+        void merge_tips_into_edges_L(unsigned& num_tips, double ratio = 0.8, bool only_tips = false, bool merge_long_tips = false, std::unordered_map<std::string, std::vector<std::string>> nodes2bc = std::unordered_map<std::string, std::vector<std::string>>());
+        void merge_tips_into_edges_further_L(unsigned& num_tips, double ratio = 0.8, std::unordered_map<std::string, std::vector<std::string>> nodes2bc = std::unordered_map<std::string, std::vector<std::string>>());
+        void merge_tips_L(unsigned& num_tips, std::unordered_map<std::string, std::vector<std::string>> nodes2bc = std::unordered_map<std::string, std::vector<std::string>>());
+        void remove_deadend_edges_L(unsigned& removed_edges, std::unordered_map<std::string, std::vector<std::string>> nodes2bc = std::unordered_map<std::string, std::vector<std::string>>());
         void merge_tips_into_edges(unsigned& num_tips, double ratio = 0.8, bool only_tips = false, bool merge_long_tips = false);
         void merge_tips_into_edges_further(unsigned& num_tips, double ratio = 0.8);
         void merge_tips(unsigned& num_tips);

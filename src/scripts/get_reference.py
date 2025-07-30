@@ -3,6 +3,16 @@ import pysam
 import argparse
 import sys
 import re
+from collections import defaultdict
+
+def query_overlap(a, b):
+    # Compute overlap fraction over the shorter span
+    start = max(a["query_start"], b["query_start"])
+    end = min(a["query_end"], b["query_end"])
+    overlap = max(0, end - start)
+    len_a = a["query_end"] - a["query_start"]
+    len_b = b["query_end"] - b["query_start"]
+    return overlap / min(len_a, len_b) if min(len_a, len_b) > 0 else 0
 
 def true_query_start_end(cigar):
     # Parse the CIGAR string into list of (length, op)
@@ -219,17 +229,46 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     'alignment': alignment
                 })
         
+        ## keep every alignment
+        # for query_name, alignments in high_identity_alignments.items():
+        #     alignments = sorted(alignments, key=lambda x: (x["ref_id"], x["ref_start"], x["ref_end"], x["query_start"], x["query_end"], -x["identity"]))
+        #     # for x in alignments:
+        #     #     print(query_name, x['ref_id'], x['ref_start'], x['ref_end'], x['length_query'], x['identity'], sep='\t')
+        #     best_map = {}
+        #     for x in alignments:
+        #         key = (x['ref_id'], x['query_start'], x['query_end'], x['ref_start'], x['ref_end'])
+        #         if key not in best_map or x['identity'] > best_map[key]['identity']:
+        #             best_map[key] = x
+        #     new_list = list(best_map.values())
+        #     high_identity_alignments[query_name] =  sorted(new_list, key=lambda x: (x["query_start"], x["query_end"]))
+
+        # keep the largest span if overlap
         for query_name, alignments in high_identity_alignments.items():
-            alignments = sorted(alignments, key=lambda x: (x["ref_id"], x["ref_start"], x["ref_end"], x["query_start"], x["query_end"], -x["identity"]))
-            # for x in alignments:
-            #     print(query_name, x['ref_id'], x['ref_start'], x['ref_end'], x['length_query'], x['identity'], sep='\t')
-            best_map = {}
-            for x in alignments:
-                key = (x['ref_id'], x['query_start'], x['query_end'], x['ref_start'], x['ref_end'])
-                if key not in best_map or x['identity'] > best_map[key]['identity']:
-                    best_map[key] = x
-            new_list = list(best_map.values())
-            high_identity_alignments[query_name] =  sorted(new_list, key=lambda x: (x["query_start"], x["query_end"]))
+            new_alignments = []
+
+            # Group by ref_id
+            ref_groups = defaultdict(list)
+            for aln in alignments:
+                ref_groups[aln["ref_id"]].append(aln)
+
+            for ref_id, group in ref_groups.items():
+                group = sorted(group, key=lambda x: -(x["query_end"] - x["query_start"]))  # largest span first
+                used = [False] * len(group)
+
+                for i, aln_i in enumerate(group):
+                    if used[i]:
+                        continue
+                    # This alignment will be kept
+                    new_alignments.append(aln_i)
+                    for j in range(i + 1, len(group)):
+                        if used[j]:
+                            continue
+                        aln_j = group[j]
+                        if query_overlap(aln_i, aln_j) >= 0.9:
+                            used[j] = True  # Drop overlapping one with smaller span
+
+            # Sort retained alignments by query coordinates
+            high_identity_alignments[query_name] = sorted(new_alignments, key=lambda x: (x["query_start"], x["query_end"]))
     
     
     # print(f"Edges with label: {processed_alignments} of {total_alignments}")

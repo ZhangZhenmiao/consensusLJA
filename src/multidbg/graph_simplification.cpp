@@ -2745,11 +2745,6 @@ void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved
         if (incoming_nodes[1] != reverse_complementary_node(outgoing_nodes[1]))
             return;
     }
-    if (node1 != node2)
-        std::cout << "Decouple strands: " << "path1: " << incoming_nodes[0] << "->" << node1 << "->...->" << node2 << "->" << outgoing_nodes[1] << "; path2: " << incoming_nodes[1] << "->" << node1 << "->...->" << node2 << "->" << outgoing_nodes[0] << std::endl;
-    else {
-        std::cout << "Decouple strands: " << "path1: " << incoming_nodes[0] << "->" << node1 << "->" << outgoing_nodes[1] << "; path2: " << incoming_nodes[1] << "->" << node1 << "->" << outgoing_nodes[0] << std::endl;
-    }
     // process for forward strand
     // remove a paired path from the graph
     Path path1;
@@ -2781,6 +2776,12 @@ void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved
     path2.multiplicity = 1.0 * (graph[incoming_nodes.at(1)].outgoing_edges[node1].at(0).multiplicity * graph[incoming_nodes.at(1)].outgoing_edges[node1].at(0).length
         + graph[node2].outgoing_edges[outgoing_nodes.at(0)].at(0).multiplicity * graph[node2].outgoing_edges[outgoing_nodes.at(0)].at(0).length)
         / (graph[incoming_nodes.at(1)].outgoing_edges[node1].at(0).length + graph[node2].outgoing_edges[outgoing_nodes.at(0)].at(0).length);
+
+    if (node1 != node2)
+        std::cout << "Decouple strands: " << "path1: " << incoming_nodes[0] << "->" << node1 << "->...->" << node2 << "->" << outgoing_nodes[1] << " multi " << path1.multiplicity << "; path2: " << incoming_nodes[1] << "->" << node1 << "->...->" << node2 << "->" << outgoing_nodes[0] << " multi " << path2.multiplicity << std::endl;
+    else {
+        std::cout << "Decouple strands: " << "path1: " << incoming_nodes[0] << "->" << node1 << "->" << outgoing_nodes[1] << " multi " << path1.multiplicity << "; path2: " << incoming_nodes[1] << "->" << node1 << "->" << outgoing_nodes[0] << " multi " << path2.multiplicity << std::endl;
+    }
 
     Path path_1_r, path_2_r;
     assert(get_reverse_path(path1, path_1_r));
@@ -2831,9 +2832,9 @@ void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved
         out_rev.push_back(reverse_complementary_node(incoming_nodes.at(0)));
         out_rev.push_back(reverse_complementary_node(incoming_nodes.at(1)));
         if (node1 != node2)
-            std::cout << "Decouple strands: " << "path1: " << in_rev[0] << "->" << reverse_complementary_node(node2) << "->...->" << reverse_complementary_node(node1) << "->" << out_rev[0] << "; path2: " << in_rev[1] << "->" << reverse_complementary_node(node2) << "->...->" << reverse_complementary_node(node1) << "->" << out_rev[1] << std::endl;
+            std::cout << "Decouple strands: " << "path1: " << in_rev[0] << "->" << reverse_complementary_node(node2) << "->...->" << reverse_complementary_node(node1) << "->" << out_rev[0] << " multi " << path_1_r.multiplicity << "; path2: " << in_rev[1] << "->" << reverse_complementary_node(node2) << "->...->" << reverse_complementary_node(node1) << "->" << out_rev[1] << " multi " << path_2_r.multiplicity << std::endl;
         else {
-            std::cout << "Decouple strands: " << "path1: " << in_rev[0] << "->" << reverse_complementary_node(node2) << "->" << out_rev[0] << "; path2: " << in_rev[1] << "->" << reverse_complementary_node(node2) << "->" << out_rev[1] << std::endl;
+            std::cout << "Decouple strands: " << "path1: " << in_rev[0] << "->" << reverse_complementary_node(node2) << "->" << out_rev[0] << " multi " << path_1_r.multiplicity << "; path2: " << in_rev[1] << "->" << reverse_complementary_node(node2) << "->" << out_rev[1] << " multi " << path_2_r.multiplicity << std::endl;
         }
 
 
