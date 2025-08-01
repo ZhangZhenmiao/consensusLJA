@@ -122,9 +122,9 @@ double unialigner_identity(const std::string& seq1, const std::string& seq2) {
     std::getline(cigar_file, cigar);
     cigar_file.close();
 
-    std::remove("seq1_tmp.fasta");
-    std::remove("seq2_tmp.fasta");
-    system("rm -rf unialigner_out");
+    // std::remove("seq1_tmp.fasta");
+    // std::remove("seq2_tmp.fasta");
+    // system("rm -rf unialigner_out");
 
     return parse_cigar_identity(cigar, s1.size(), s2.size());
 }

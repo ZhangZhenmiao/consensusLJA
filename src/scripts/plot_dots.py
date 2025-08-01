@@ -22,4 +22,4 @@ ax.set_ylabel(f"{sys.argv[2][:sys.argv[2].rfind('.')]} ({len(sequences_rm)/1e3:.
         
 fig.set_size_inches(16, 16)
 fig.tight_layout()
-pyplot.savefig(sys.argv[3], format="png", dpi=600, bbox_inches='tight')
+pyplot.savefig(sys.argv[3], format="png", dpi=1200, bbox_inches='tight')

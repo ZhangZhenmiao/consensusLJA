@@ -411,6 +411,66 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
 
     auto hist = create_histogram(edge_multis);
     analyze_histogram(hist);
+
+    // process single-nodes
+    std::unordered_set<std::string> nodes2remove;
+    std::unordered_set<std::string> nodes_to_process;
+    for (auto&& node : graph) {
+        if (nodes2remove.find(node.first) != nodes2remove.end())
+            continue;
+        if (node.second.sequence.size() <= 5001)
+            continue;
+        if (node.second.outgoing_edges.empty() && node.second.incoming_edges.empty()) {
+            nodes_to_process.insert(node.first);
+            nodes2remove.insert(node.first);
+            nodes2remove.insert(reverse_complementary_node(node.first));
+        }
+    }
+
+    for (auto&& n : nodes_to_process) {
+        std::string new_node1 = n + "1", new_node2 = n + "2";
+        while (graph.find(new_node1) != graph.end())
+            new_node1 += "1";
+        while (graph.find(new_node2) != graph.end())
+            new_node2 += "2";
+
+        std::string new_node1_r = new_node1.at(0) != '-' ? "-" + new_node1 : new_node1.substr(1);
+        std::string new_node2_r = new_node2.at(0) != '-' ? "-" + new_node2 : new_node2.substr(1);
+
+        nodeid2Rev[new_node1] = new_node1_r;
+        nodeid2Rev[new_node2] = new_node2_r;
+        nodeid2Rev[new_node1_r] = new_node1;
+        nodeid2Rev[new_node2_r] = new_node2;
+
+        std::cout << "Add linear edge " << new_node1 << " -> " << new_node2 << " for single node " << n << std::endl;
+        std::cout << "Add linear edge " << new_node2_r << " -> " << new_node1_r << " for single node " << reverse_complementary_node(n) << std::endl;
+
+        graph[new_node1].sequence = graph[n].sequence.substr(0, 5001);
+        graph[new_node2].sequence = graph[n].sequence.substr(graph[n].sequence.size() - 5001);
+
+        graph[new_node1_r].sequence = reverse_complementary(graph[new_node1].sequence);
+        graph[new_node2_r].sequence = reverse_complementary(graph[new_node2].sequence);
+
+        Edge edge = Edge(graph[n].sequence.at(5001), graph[n].sequence.size(), graph[n].sequence, mean_cov);
+        edge.path_edges_in_original_graph.push_back(n);
+        edge.path_nodes_in_original_graph.push_back(new_node1);
+        edge.path_nodes_in_original_graph.push_back(new_node2);
+        graph[new_node1].outgoing_edges[new_node2].push_back(edge);
+        graph[new_node2].incoming_edges[new_node1].push_back(edge);
+
+        Edge edge_r = Edge(reverse_complementary(graph[n].sequence).at(5001), graph[n].sequence.size(), reverse_complementary(graph[n].sequence), mean_cov);
+        edge_r.path_edges_in_original_graph.push_back(reverse_complementary_node(n));
+        edge_r.path_nodes_in_original_graph.push_back(reverse_complementary_node(new_node2_r));
+        edge_r.path_nodes_in_original_graph.push_back(reverse_complementary_node(new_node1_r));
+        graph[new_node2_r].outgoing_edges[new_node1_r].push_back(edge_r);
+        graph[new_node1_r].incoming_edges[new_node2_r].push_back(edge_r);
+        cnt_edge += 2;
+    }
+
+    for (auto&& n : nodes2remove) {
+        graph.erase(n);
+    }
+
     std::cout << "Read " << get_num_nodes() << " vertices, " << cnt_edge << " edges." << std::endl;
 }
 

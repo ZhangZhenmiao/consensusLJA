@@ -65,10 +65,7 @@ add_executable(cLJA
     lib/edlib/src/edlib.cpp
 )
 
-# Standalone tool for chimeric analysis
-add_executable(analyze_chimeric src/scripts/analyze_chimeric.cpp)
 add_executable(unialigner_identity src/scripts/unialigner_identity.cpp lib/edlib/src/edlib.cpp)
-# Include directories
 target_include_directories(unialigner_identity PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/edlib/include
 )
@@ -82,7 +79,6 @@ target_include_directories(cLJA PRIVATE
 
 # Link libraries
 target_link_libraries(cLJA PRIVATE OpenMP::OpenMP_CXX)
-target_link_libraries(analyze_chimeric PRIVATE ${HTS_LIB} ${ZLIB_LIB} ${BZ2_LIB})
 
 # Compile options
 target_compile_features(cLJA PRIVATE cxx_std_20)

@@ -112,10 +112,10 @@ namespace multidbg {
         void write_graph_colored(const std::string& prefix, const std::string& genomes);
         void write_graph_colored_from_bam(const std::string& prefix, const std::string& bam_processed);
         void write_graph_gfa(const std::string& prefix);
-        void write_prefix_siffux_linear_edges(std::string output_dir, std::string jumbodbg, int threads, int k_mer);
-        void write_tip_edges(std::string output_dir);
+        void write_prefix_siffux_linear_edges(std::string output_dir, std::string jumbodbg, int threads, int k_mer, unsigned& num_glued);
         void decoupling(std::string multidbg, std::string output);
         void remove_contained_contigs(const double sim = 0.8);
+        void remove_contained_contigs_minimap(std::string output, int threads, unsigned& num_contained);
         int get_num_nodes();
         std::string get_contracted_name(std::string node);
         std::string get_contracted_label(std::string node);

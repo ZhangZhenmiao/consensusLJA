@@ -5,6 +5,7 @@ import argparse
 import numpy as np
 import sys
 import os
+from itertools import groupby
 
 def calculate_identity(alignment):
     cigar = alignment.cigartuples
@@ -78,14 +79,16 @@ def read_bam(bam_file_path, dot_file_path):
 
         # detect chimeric at nodes
         tolerant_size = 1000
-        # print("Contig", "Contig_len", "Node_start", "Node_end", "Read", "Aln_start", "Aln_end", "Aligned_len", "PI", "AF", sep="\t", flush=True)
+        # print("Contig", "Contig_len", "Node_start", "Node_end", "Read", "Aln_start", "Aln_end", "Aligned_len", "PI", sep="\t", flush=True)
         for r in alignments:
             sorted(alignments[r], key=lambda x: x["start"])
-
             node1, node2 = r.split('_')
             node1 = node1[:node1.find('.')]
             node2 = node2[:node2.find('.')]
             contig_len = bam_file.get_reference_length(r)
+
+            # for aln in alignments[r]:
+            #     print(r, contig_len, node2len[node1], node2len[node2], aln["name"], aln["start"], aln["end"], aln["aligned"], aln["idt"], sep="\t", flush=True)
 
             split_coordinate1 = min(node2len[node1], contig_len - node2len[node2])
             split_coordinate2 = max(node2len[node1], contig_len - node2len[node2])
@@ -120,26 +123,46 @@ def read_bam(bam_file_path, dot_file_path):
         # detect internal chimeric
         tolerant_size = 100
         for r in alignments:
+            end_counts = {}
+            contig_len = bam_file.get_reference_length(r)
+            min_internal = 1000
+            max_internal = contig_len - 1000
             coverages = np.zeros(bam_file.get_reference_length(r), dtype=int)
             for i in alignments[r]:
                 if i["end"]-tolerant_size > i["start"]:
                     coverages[i["start"]:i["end"]-tolerant_size] += 1
+                if min_internal < i["end"] < max_internal:
+                    end_counts[i["end"]] = end_counts.get(i["end"], 0) + 1
             
+            pileup_threshold = 3
+            has_internal_pileup = any(count >= pileup_threshold for count in end_counts.values())
+
             potential_pos = []
             if np.average(coverages) >= 5:
                 window_size = 20000
                 half_window = window_size // 2
                 ref_len = bam_file.get_reference_length(r)
                 for i in range(ref_len):
-                    if coverages[i] <= 1 and i >= 5001 - tolerant_size and i <= ref_len - 5001 + tolerant_size:
+                    if coverages[i] <= 1 and i >= 5001 - 10 and i <= ref_len - 5001 + 10:
                         # Calculate window boundaries
                         left = max(0, i - half_window)
                         right = min(ref_len, i + half_window)
                         window_cov = coverages[left:right]
                         avg_window_cov = np.average(window_cov) if len(window_cov) > 0 else 0
+                        # if avg_window_cov >= 5 and has_internal_pileup:
                         if avg_window_cov >= 5:
                             potential_pos.append(i)
-                        # print("low coverage:", r, i)
+            
+            filtered_potential_pos = []
+            for k, g in groupby(enumerate(potential_pos), lambda x: x[0] - x[1]):
+                group = list(map(lambda x: x[1], g))
+                if len(group) <= tolerant_size + 10:
+                    filtered_potential_pos.extend(group)
+
+            potential_pos = filtered_potential_pos
+
+            # for i in potential_pos:
+            #     print("Potential chimeric (low cov) :", i, "in", r)
             
             reads = set()
             for i in alignments[r]:

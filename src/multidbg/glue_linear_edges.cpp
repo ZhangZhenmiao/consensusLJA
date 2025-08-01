@@ -1180,7 +1180,8 @@ void Graph::write_graph_contracted_L(const std::string& prefix, int min_length, 
     return;
 }
 
-void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jumbodbg, int threads, int k_mer) {
+void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jumbodbg, int threads, int k_mer, unsigned& num_glued) {
+    num_glued = 0;
     execute_command("mkdir -p " + output);
     std::string output_prefix_suffix = output + "/graph.before_removing_contained.linear_edges.fa";
     std::unordered_set<std::string> traversed_nodes;
@@ -1189,10 +1190,10 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
         throw std::runtime_error("Failed to open file: " + output_prefix_suffix);
     }
 
-    std::cout << "Write prefixed (and suffixes) of linear edges (and tips) to fasta" << std::endl;
+    std::cout << "Write prefixes (and suffixes) of linear edges (and tips) to fasta" << std::endl;
     int bc_id = 1;
     std::unordered_map<std::string, std::vector<std::string>> kmer2bc;
-    std::unordered_map<int, std::string> bc2edge;
+    std::unordered_map<std::string, std::vector<std::string>> kmer2nodes;
 
     for (auto&& node : graph) {
         if (traversed_nodes.find(node.first) != traversed_nodes.end())
@@ -1237,12 +1238,14 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
                 std::string prefix_end = seq2.substr(0, k_mer);
                 kmer2bc[suffix_start].push_back(std::to_string(bc_id) + " " + edge_label_forward);
                 kmer2bc[prefix_end].push_back(std::to_string(-bc_id) + " " + edge_label_forward);
-                bc2edge[bc_id] = node.first + "->" + n_out;
+                kmer2nodes[suffix_start].push_back(node.first);
+                kmer2nodes[prefix_end].push_back(n_out);
 
                 bc_id++;
                 kmer2bc[reverse_complementary(suffix_start)].push_back(std::to_string(-bc_id) + " " + edge_label_reverse);
                 kmer2bc[reverse_complementary(prefix_end)].push_back(std::to_string(bc_id) + " " + edge_label_reverse);
-                bc2edge[bc_id] = reverse_complementary_node(n_out) + "->" + reverse_complementary_node(node.first);
+                kmer2nodes[reverse_complementary(suffix_start)].push_back(reverse_complementary_node(node.first));
+                kmer2nodes[reverse_complementary(prefix_end)].push_back(reverse_complementary_node(n_out));
 
                 bc_id++;
             }
@@ -1253,11 +1256,11 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
 
                 std::string prefix_end = seq2.substr(0, k_mer);
                 kmer2bc[prefix_end].push_back(std::to_string(-bc_id) + " " + edge_label_forward);
-                bc2edge[bc_id] = node.first + "->" + n_out;
+                kmer2nodes[prefix_end].push_back(n_out);
 
                 bc_id++;
                 kmer2bc[reverse_complementary(prefix_end)].push_back(std::to_string(bc_id) + " " + edge_label_reverse);
-                bc2edge[bc_id] = reverse_complementary_node(n_out) + "->" + reverse_complementary_node(node.first);
+                kmer2nodes[reverse_complementary(prefix_end)].push_back(reverse_complementary_node(n_out));
 
                 bc_id++;
             }
@@ -1265,12 +1268,8 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
     }
     outfile.close();
 
-    for (auto&& bc : bc2edge) {
-        std::cout << bc.first << ": " << bc.second << std::endl;
-    }
-    // std::cout << "Kmers with barcode: " << kmer2bc.size() << std::endl;
-    // for (auto&& km : kmer2bc) {
-    //     std::cout << km.first << ": " << km.second.at(0) << " " << km.second.size() << std::endl;
+    // for (auto&& bc : bc2edge) {
+    //     std::cout << bc.first << ": " << bc.second << std::endl;
     // }
 
     if (!fs::is_directory(output + "/graph.before_removing_contained.linear_edges.dbg"))
@@ -1578,27 +1577,151 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
     graph_linear_edges.get_annotation(output + "/graph_linear_edges.final");
     graph_linear_edges.write_graph_L(output + "/graph_linear_edges.final.color", 1000000, false, true, std::unordered_set<std::string>(), kmer2bc);
     graph_linear_edges.write_graph_contracted_L(output + "/graph_linear_edges.final.color.contracted.600", 600, false, kmer2bc);
+
+    for (auto&& n : graph_linear_edges.graph) {
+        if (n.second.incoming_edges.empty() && n.second.outgoing_edges.size() == 1) {
+            std::string n_out;
+            for (auto&& n_o : n.second.outgoing_edges)
+                n_out = n_o.first;
+
+            if (n.second.outgoing_edges[n_out].size() != 1)
+                continue;
+
+            if (kmer2nodes.find(n.second.sequence) == kmer2nodes.end())
+                continue;
+
+            if (kmer2nodes.find(graph_linear_edges.graph[n_out].sequence) == kmer2nodes.end())
+                continue;
+
+            int max_i = -1;
+            int max_len_node1 = 0;
+            for (int i = 0; i < kmer2nodes.at(n.second.sequence).size(); ++i) {
+                std::string node1 = kmer2nodes.at(n.second.sequence).at(i);
+                std::string node1_in;
+                if (!graph[node1].outgoing_edges.empty())
+                    continue;
+                for (auto&& n1_i : graph[node1].incoming_edges)
+                    node1_in = n1_i.first;
+
+                int len = graph[node1_in].outgoing_edges[node1].at(0).sequence.size();
+                if (len > max_len_node1) {
+                    max_i = i;
+                    max_len_node1 = len;
+                }
+
+            }
+
+            int max_j = -1;
+            int max_len_node2 = 0;
+            for (int j = 0; j < kmer2nodes.at(graph_linear_edges.graph[n_out].sequence).size(); ++j) {
+                std::string node2 = kmer2nodes.at(graph_linear_edges.graph[n_out].sequence).at(j);
+                std::string node2_out;
+                if (!graph[node2].incoming_edges.empty())
+                    continue;
+                for (auto&& n2_o : graph[node2].outgoing_edges)
+                    node2_out = n2_o.first;
+
+                int len = graph[node2].outgoing_edges[node2_out].at(0).sequence.size();
+                if (len > max_len_node2) {
+                    max_j = j;
+                    max_len_node2 = len;
+                }
+
+            }
+
+            if (max_i == -1 || max_j == -1)
+                continue;
+
+            std::string node1 = kmer2nodes.at(n.second.sequence).at(max_i);
+            std::string node2 = kmer2nodes.at(graph_linear_edges.graph[n_out].sequence).at(max_j);
+
+            if (node1 == reverse_complementary_node(node2))
+                continue;
+
+            // node1 and node 2 can be glued
+            if (graph[node1].outgoing_edges.empty() && graph[node2].incoming_edges.empty() && graph[node2].outgoing_edges.find(node1) == graph[node2].outgoing_edges.end()) {
+                std::string node1_in, node2_out;
+                assert(graph[node1].incoming_edges.size() == 1);
+                for (auto&& n1_i : graph[node1].incoming_edges)
+                    node1_in = n1_i.first;
+                assert(graph[node2].outgoing_edges.size() == 1);
+                for (auto n2_o : graph[node2].outgoing_edges)
+                    node2_out = n2_o.first;
+
+                if (node1 == reverse_complementary_node(node2_out) || node2 == reverse_complementary_node(node1_in))
+                    continue;
+
+                std::cout << "Glue node " << node1 << " and " << node2 << " based on edge " << n.first << " -> " << n_out << std::endl;
+
+                // delete last 5000 bp for node1 and first 5000 bp for node2
+                graph[node1].sequence = graph[node1].sequence.substr(0, graph[node1].sequence.size() - 5000);
+                assert(graph[node1_in].outgoing_edges[node1].size() == 1);
+                graph[node1_in].outgoing_edges[node1].at(0).sequence = graph[node1_in].outgoing_edges[node1].at(0).sequence.substr(0, graph[node1_in].outgoing_edges[node1].at(0).sequence.size() - 5000);
+                graph[node1_in].outgoing_edges[node1].at(0).length = graph[node1_in].outgoing_edges[node1].at(0).sequence.size();
+                graph[node1].incoming_edges[node1_in].at(0).sequence = graph[node1_in].outgoing_edges[node1].at(0).sequence.substr(0, graph[node1_in].outgoing_edges[node1].at(0).sequence.size() - 5000);
+                graph[node1].incoming_edges[node1_in].at(0).length = graph[node1].incoming_edges[node1_in].at(0).sequence.size();
+
+                graph[node2].sequence = graph[node2].sequence.substr(5000);
+                assert(graph[node2].outgoing_edges[node2_out].size() == 1);
+                graph[node2].outgoing_edges[node2_out].at(0).sequence = graph[node2].outgoing_edges[node2_out].at(0).sequence.substr(5000);
+                graph[node2].outgoing_edges[node2_out].at(0).length = graph[node2].outgoing_edges[node2_out].at(0).sequence.size();
+                graph[node2_out].incoming_edges[node2].at(0).sequence = graph[node2].outgoing_edges[node2_out].at(0).sequence.substr(5000);
+                graph[node2_out].incoming_edges[node2].at(0).length = graph[node2_out].incoming_edges[node2].at(0).sequence.size();
+
+                // determine the edge sequence
+                std::string seq = n.second.outgoing_edges[n_out].at(0).sequence;
+                std::string new_edge_seq = graph[node1].sequence + seq + graph[node2].sequence;
+
+                Edge edge(new_edge_seq.at(graph[node1].sequence.size()), new_edge_seq.size(), new_edge_seq, mean_cov);
+                edge.path_edges_in_original_graph.push_back(node1 + "_" + node2);
+                edge.path_nodes_in_original_graph.push_back(node1);
+                edge.path_nodes_in_original_graph.push_back(node2);
+
+                graph[node1].outgoing_edges[node2].push_back(edge);
+                graph[node2].incoming_edges[node1].push_back(edge);
+                num_glued += 1;
+            }
+        }
+    }
+
+    merge_non_branching_paths(true);
 }
 
-void Graph::write_tip_edges(std::string output_dir) {
-    Graph graph_start;
-    graph_start.restart_from_dot(output_dir + "/graph.cleaned.dot", output_dir + "/graph.cleaned.fasta");
-
-    std::string output = output_dir + "/tips_to_check";
-
+void Graph::remove_contained_contigs_minimap(std::string output, int threads, unsigned& num_contained) {
+    num_contained = 0;
     execute_command("mkdir -p " + output);
-    std::string output_prefix_suffix = output + "/tip_nodes.txt";
-    std::unordered_set<std::string> traversed_nodes;
-    std::ofstream outfile(output_prefix_suffix);
-    if (!outfile.is_open()) {
+    std::string output_prefix_suffix = output + "/linear_prefix_and_suffix.fasta";
+    std::ofstream outfile_extracted(output_prefix_suffix);
+    if (!outfile_extracted.is_open()) {
         throw std::runtime_error("Failed to open file: " + output_prefix_suffix);
     }
 
-    std::cout << "Write tip nodes to file" << std::endl;
+    std::string output_all = output + "/linear_all.fasta";
+    std::ofstream outfile_all(output_all);
+    if (!outfile_all.is_open()) {
+        throw std::runtime_error("Failed to open file: " + output_all);
+    }
 
+    std::unordered_set<std::string> traversed_nodes;
+    std::cout << "Write prefixes and suffixes of linear edges to fasta" << std::endl;
+    int extract_length = 1000000;
     for (auto&& node : graph) {
         if (traversed_nodes.find(node.first) != traversed_nodes.end())
             continue;
+        if (node.second.outgoing_edges.size() == 1 && node.second.incoming_edges.size() == 1 && node.second.outgoing_edges.find(node.first) != node.second.outgoing_edges.end()) {
+            if (node.second.outgoing_edges[node.first].size() > 1)
+                continue;
+
+            traversed_nodes.insert(node.first);
+            traversed_nodes.insert(reverse_complementary_node(node.first));
+
+            std::string seq = node.second.outgoing_edges[node.first].at(0).sequence;
+            outfile_extracted << ">" << node.first << "_" << node.first << "_0" << "\n";
+            outfile_extracted << seq << "\n";
+
+            outfile_all << ">" << node.first << "_" << node.first << "\n";
+            outfile_all << seq << "\n";
+        }
         if (node.second.outgoing_edges.size() == 1) {
             std::string n_out;
             for (auto&& n : node.second.outgoing_edges)
@@ -1615,42 +1738,78 @@ void Graph::write_tip_edges(std::string output_dir) {
 
             // find a valid linear edge
             if (node.second.incoming_edges.empty()) {
-                std::string start_s = node.first;
-
-                bool flag = false;
-                if (graph_start.graph[start_s].outgoing_edges.size() == 1) {
-                    std::string start_e;
-                    for (auto&& n : graph_start.graph[start_s].outgoing_edges)
-                        start_e = n.first;
-
-                    if (graph_start.graph[start_s].outgoing_edges[start_e].size() == 1) {
-                        outfile << graph_start.graph[start_s].outgoing_edges[start_e].at(0).label << "\t" << start_s << "\n";
-                        std::cout << "Find edge label for " << node.first << " in " << node.first << " -> " << n_out << ": " << graph_start.graph[start_s].outgoing_edges[start_e].at(0).label << std::endl;
-                        flag = true;
-                    }
+                std::string seq = node.second.outgoing_edges[n_out].at(0).sequence;
+                if (seq.size() <= extract_length) {
+                    std::string seq1 = seq.substr(0, extract_length);
+                    outfile_extracted << ">" << node.first << "_" << n_out << "_0" << "\n";
+                    outfile_extracted << seq1 << "\n";
                 }
-                if (!flag) {
-                    std::cout << "Failed to find edge label for " << node.first << " in " << node.first << " -> " << n_out << std::endl;
-                }
-            }
-            std::string end_e = n_out;
-            bool flag = false;
+                else {
+                    std::string seq1 = seq.substr(0, extract_length);
+                    outfile_extracted << ">" << node.first << "_" << n_out << "_1" << "\n";
+                    outfile_extracted << seq1 << "\n";
 
-            if (graph_start.graph[end_e].incoming_edges.size() == 1) {
-                std::string end_s;
-                for (auto&& n : graph_start.graph[end_e].incoming_edges)
-                    end_s = n.first;
-                if (graph_start.graph[end_s].outgoing_edges[end_e].size() == 1) {
-                    outfile << graph_start.graph[end_s].outgoing_edges[end_e].at(0).label << "\t" << end_e << "\n";
-                    std::cout << "Find edge label for " << n_out << " in " << node.first << " -> " << n_out << ": " << graph_start.graph[end_s].outgoing_edges[end_e].at(0).label << std::endl;
-                    flag = true;
+                    std::string seq2 = seq.substr(seq.size() - extract_length);
+                    outfile_extracted << ">" << node.first << "_" << n_out << "_2" << "\n";
+                    outfile_extracted << seq2 << "\n";
                 }
-            }
-            if (!flag) {
-                std::cout << "Failed to find edge label for " << n_out << " in " << node.first << " -> " << n_out << std::endl;
+
+                outfile_all << ">" << node.first << "_" << n_out << "\n";
+                outfile_all << seq << "\n";
             }
         }
     }
-    outfile.close();
+    outfile_extracted.close();
+    outfile_all.close();
 
+    std::string out_bam_prefix = output + "/align.prefix_suffix.all";;
+
+    if (fs::is_regular_file(output_prefix_suffix + ".fai"))
+        execute_command(("rm " + output_prefix_suffix + ".fai").c_str());
+
+    if (!fs::is_regular_file(out_bam_prefix + ".bam")) {
+        if (execute_command(("minimap2 -ax asm20 --eqx -Y -p 0.1 " + output_all + " " + output_prefix_suffix + " -t " + std::to_string(threads) + " | grep -v '^@' > " + out_bam_prefix + ".sam").c_str()) != 0) {
+            exit(1);
+        }
+        if (!std::filesystem::exists(output_all + ".fai")) {
+            if (execute_command(("samtools faidx " + output_all).c_str()) != 0)
+                exit(1);
+        }
+        if (execute_command(("cut -f1,2 " + output_all + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + out_bam_prefix + ".header.sam").c_str()) != 0)
+            exit(1);
+        if (execute_command(("cat " + out_bam_prefix + ".header.sam " + out_bam_prefix + ".sam | samtools sort -@ " + std::to_string(threads) + " -o " + out_bam_prefix + ".bam").c_str()) != 0) {
+            exit(1);
+        }
+    }
+
+    std::string exeDir = getExecutablePath();
+    if (execute_command((exeDir + "/../src/scripts/remove_contained_from_alignments.py -o " + out_bam_prefix + ".results " + out_bam_prefix + ".bam").c_str()) != 0)
+        exit(1);
+
+    std::ifstream infile(out_bam_prefix + ".results");
+
+    // Check if file opened successfully
+    if (!infile.is_open()) {
+        std::cerr << "Error opening file: " << out_bam_prefix + ".results" << std::endl;
+        exit(1);
+    }
+
+    std::string line;
+    while (std::getline(infile, line)) {
+        size_t underscore_pos = line.find('_');
+        if (underscore_pos != std::string::npos) {
+            std::string node1 = line.substr(0, underscore_pos);
+            std::string node2 = line.substr(underscore_pos + 1);
+            std::cout << "Remove contained edge " << node1 << " -> " << node2 << std::endl;
+            std::cout << "Remove contained edge " << reverse_complementary_node(node2) << " -> " << reverse_complementary_node(node1) << std::endl;
+
+            graph.erase(node1);
+            graph.erase(node2);
+            graph.erase(reverse_complementary_node(node2));
+            graph.erase(reverse_complementary_node(node1));
+            num_contained += 2;
+        }
+    }
+
+    infile.close();
 }
