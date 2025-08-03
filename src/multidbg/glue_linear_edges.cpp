@@ -1702,10 +1702,13 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
         throw std::runtime_error("Failed to open file: " + output_all);
     }
 
+    std::unordered_map<std::string, std::string> print2node;
+
     std::unordered_set<std::string> traversed_nodes;
     std::cout << "Write prefixes and suffixes of linear edges to fasta" << std::endl;
     int extract_length = 1000000;
     for (auto&& node : graph) {
+        print2node[get_contracted_name(node.first)] = node.first;
         if (traversed_nodes.find(node.first) != traversed_nodes.end())
             continue;
         if (node.second.outgoing_edges.size() == 1 && node.second.incoming_edges.size() == 1 && node.second.outgoing_edges.find(node.first) != node.second.outgoing_edges.end()) {
@@ -1716,10 +1719,10 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
             traversed_nodes.insert(reverse_complementary_node(node.first));
 
             std::string seq = node.second.outgoing_edges[node.first].at(0).sequence;
-            outfile_extracted << ">" << node.first << "_" << node.first << "_0" << "\n";
+            outfile_extracted << ">" << get_contracted_name(node.first) << "_" << get_contracted_name(node.first) << "_0" << "\n";
             outfile_extracted << seq << "\n";
 
-            outfile_all << ">" << node.first << "_" << node.first << "\n";
+            outfile_all << ">" << get_contracted_name(node.first) << "_" << get_contracted_name(node.first) << "\n";
             outfile_all << seq << "\n";
         }
         if (node.second.outgoing_edges.size() == 1) {
@@ -1741,20 +1744,20 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
                 std::string seq = node.second.outgoing_edges[n_out].at(0).sequence;
                 if (seq.size() <= extract_length) {
                     std::string seq1 = seq.substr(0, extract_length);
-                    outfile_extracted << ">" << node.first << "_" << n_out << "_0" << "\n";
+                    outfile_extracted << ">" << get_contracted_name(node.first) << "_" << get_contracted_name(n_out) << "_0" << "\n";
                     outfile_extracted << seq1 << "\n";
                 }
                 else {
                     std::string seq1 = seq.substr(0, extract_length);
-                    outfile_extracted << ">" << node.first << "_" << n_out << "_1" << "\n";
+                    outfile_extracted << ">" << get_contracted_name(node.first) << "_" << get_contracted_name(n_out) << "_1" << "\n";
                     outfile_extracted << seq1 << "\n";
 
                     std::string seq2 = seq.substr(seq.size() - extract_length);
-                    outfile_extracted << ">" << node.first << "_" << n_out << "_2" << "\n";
+                    outfile_extracted << ">" << get_contracted_name(node.first) << "_" << get_contracted_name(n_out) << "_2" << "\n";
                     outfile_extracted << seq2 << "\n";
                 }
 
-                outfile_all << ">" << node.first << "_" << n_out << "\n";
+                outfile_all << ">" << get_contracted_name(node.first) << "_" << get_contracted_name(n_out) << "\n";
                 outfile_all << seq << "\n";
             }
         }
@@ -1763,9 +1766,6 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
     outfile_all.close();
 
     std::string out_bam_prefix = output + "/align.prefix_suffix.all";;
-
-    if (fs::is_regular_file(output_prefix_suffix + ".fai"))
-        execute_command(("rm " + output_prefix_suffix + ".fai").c_str());
 
     if (!fs::is_regular_file(out_bam_prefix + ".bam")) {
         if (execute_command(("minimap2 -ax asm20 --eqx -Y -p 0.1 " + output_all + " " + output_prefix_suffix + " -t " + std::to_string(threads) + " | grep -v '^@' > " + out_bam_prefix + ".sam").c_str()) != 0) {
@@ -1798,8 +1798,8 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
     while (std::getline(infile, line)) {
         size_t underscore_pos = line.find('_');
         if (underscore_pos != std::string::npos) {
-            std::string node1 = line.substr(0, underscore_pos);
-            std::string node2 = line.substr(underscore_pos + 1);
+            std::string node1 = print2node.at(line.substr(0, underscore_pos));
+            std::string node2 = print2node.at(line.substr(underscore_pos + 1));
             std::cout << "Remove contained edge " << node1 << " -> " << node2 << std::endl;
             std::cout << "Remove contained edge " << reverse_complementary_node(node2) << " -> " << reverse_complementary_node(node1) << std::endl;
 
@@ -1812,4 +1812,130 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
     }
 
     infile.close();
+}
+
+bool Graph::check_contained_tips_minimap(std::string output, std::string node_s, std::string node_t1, std::string node_t2, int threads) {
+    execute_command("mkdir -p " + output);
+    std::string output_prefix_suffix = output + "/tips_prefix_and_suffix.fasta";
+    std::ofstream outfile_extracted(output_prefix_suffix);
+    if (!outfile_extracted.is_open()) {
+        throw std::runtime_error("Failed to open file: " + output_prefix_suffix);
+    }
+
+    std::string output_all = output + "/tips_all.fasta";
+    std::ofstream outfile_all(output_all);
+    if (!outfile_all.is_open()) {
+        throw std::runtime_error("Failed to open file: " + output_all);
+    }
+
+    std::string output_all_tips = output + "/tips_all_tips.fasta";
+    std::ofstream outfile_all_tips(output_all_tips);
+    if (!outfile_all_tips.is_open()) {
+        throw std::runtime_error("Failed to open file: " + output_all);
+    }
+
+    std::unordered_set<std::string> traversed_nodes;
+    int extract_length = 2000000;
+    std::string seq1_tip = graph[node_s].outgoing_edges[node_t1].at(0).sequence;
+    std::string seq2_tip = graph[node_s].outgoing_edges[node_t2].at(0).sequence;
+
+    std::unordered_map<std::string, std::string> print2node;
+    print2node[get_contracted_name(node_s)] = node_s;
+    print2node[get_contracted_name(node_t1)] = node_t1;
+    print2node[get_contracted_name(node_t2)] = node_t2;
+
+    if (seq1_tip.size() <= seq2_tip.size()) {
+        std::string seq = seq1_tip;
+        if (seq.size() <= extract_length) {
+            std::string seq1 = seq.substr(0, extract_length);
+            outfile_extracted << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t1) << "_0" << "\n";
+            outfile_extracted << seq1 << "\n";
+        }
+        else {
+            std::string seq1 = seq.substr(0, extract_length);
+            outfile_extracted << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t1) << "_1" << "\n";
+            outfile_extracted << seq1 << "\n";
+
+            std::string seq2 = seq.substr(seq.size() - extract_length);
+            outfile_extracted << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t1) << "_2" << "\n";
+            outfile_extracted << seq2 << "\n";
+        }
+        outfile_all << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t2) << "\n";
+        outfile_all << seq2_tip << "\n";
+    }
+    else {
+        std::string seq = seq2_tip;
+        if (seq.size() <= extract_length) {
+            std::string seq1 = seq.substr(0, extract_length);
+            outfile_extracted << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t2) << "_0" << "\n";
+            outfile_extracted << seq1 << "\n";
+        }
+        else {
+            std::string seq1 = seq.substr(0, extract_length);
+            outfile_extracted << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t2) << "_1" << "\n";
+            outfile_extracted << seq1 << "\n";
+
+            std::string seq2 = seq.substr(seq.size() - extract_length);
+            outfile_extracted << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t2) << "_2" << "\n";
+            outfile_extracted << seq2 << "\n";
+        }
+        outfile_all << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t1) << "\n";
+        outfile_all << seq1_tip << "\n";
+    }
+
+    outfile_all_tips << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t1) << "\n";
+    outfile_all_tips << seq1_tip << "\n";
+    outfile_all_tips << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t2) << "\n";
+    outfile_all_tips << seq2_tip << "\n";
+
+    outfile_all_tips.close();
+    outfile_extracted.close();
+    outfile_all.close();
+
+    std::string out_bam_prefix = output + "/align.prefix_suffix.all";;
+
+    if (!fs::is_regular_file(out_bam_prefix + ".bam")) {
+        if (execute_command(("minimap2 -ax asm20 --eqx -Y -p 0.1 " + output_all + " " + output_prefix_suffix + " -t " + std::to_string(threads) + " | grep -v '^@' > " + out_bam_prefix + ".sam").c_str()) != 0) {
+            exit(1);
+        }
+        if (!std::filesystem::exists(output_all_tips + ".fai")) {
+            if (execute_command(("samtools faidx " + output_all_tips).c_str()) != 0)
+                exit(1);
+        }
+        if (execute_command(("cut -f1,2 " + output_all_tips + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + out_bam_prefix + ".header.sam").c_str()) != 0)
+            exit(1);
+        if (execute_command(("cat " + out_bam_prefix + ".header.sam " + out_bam_prefix + ".sam | samtools sort -@ " + std::to_string(threads) + " -o " + out_bam_prefix + ".bam").c_str()) != 0) {
+            exit(1);
+        }
+    }
+
+    std::string exeDir = getExecutablePath();
+    if (execute_command((exeDir + "/../src/scripts/remove_contained_from_alignments.py -o " + out_bam_prefix + ".results " + out_bam_prefix + ".bam").c_str()) != 0)
+        exit(1);
+
+    std::ifstream infile(out_bam_prefix + ".results");
+
+    // Check if file opened successfully
+    if (!infile.is_open()) {
+        std::cerr << "Error opening file: " << out_bam_prefix + ".results" << std::endl;
+        exit(1);
+    }
+
+    std::string line;
+    bool flag = false;
+    while (std::getline(infile, line)) {
+        size_t underscore_pos = line.find('_');
+        if (underscore_pos != std::string::npos) {
+            flag = true;
+            std::string node1 = print2node[line.substr(0, underscore_pos)];
+            std::string node2 = print2node[line.substr(underscore_pos + 1)];
+            std::cout << "Contained tip " << node1 << " -> " << node2 << std::endl;
+        }
+    }
+
+    infile.close();
+
+    // execute_command("rm -r " + output);
+
+    return flag;
 }

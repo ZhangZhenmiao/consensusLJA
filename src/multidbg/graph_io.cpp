@@ -621,7 +621,10 @@ std::string Graph::get_unique_label(std::unordered_set<std::string>& labels) {
 }
 
 std::string Graph::get_contracted_name(std::string node) {
-    return node.substr(0, node.find_first_of('_')) + "+" + node.substr(node.find_last_of('_') + 1);
+    if (graph[node].number_of_contracted_edge != 0)
+        return node.substr(0, node.find_first_of('_')) + "+" + node.substr(node.find_last_of('_') + 1);
+    else
+        return node;
 }
 
 std::string Graph::get_contracted_label(std::string node) {

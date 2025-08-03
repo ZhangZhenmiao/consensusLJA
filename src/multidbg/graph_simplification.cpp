@@ -462,14 +462,16 @@ void Graph::merge_tips(unsigned& num_tips) {
                 double sim = matches_by_edlib(prefix_tip_target, prefix_tip_to_merge);
                 std::cout << "Check tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
 
-                if (sim < 0.2)
+                if (sim < 0.8)
                     continue;
-                // if (sim < 0.9) {
-                //     double sim_len = 1.0 * std::min(graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length, graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length)
-                //         / std::max(graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length, graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length);
-                //     if (sim_len < 0.8)
-                //         continue;
-                // }
+
+                // the lengths of the two tips cannot be too different, otherwise both tips are meaningful
+                if (std::abs(int(graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length) - int(graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length)) >= 20000000) {
+                    // if the shorter length is not long, this might be noise tip
+                    if (std::min(int(graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length), int(graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length)) >= 10000000)
+                        continue;
+                }
+
                 std::cout << "Merge tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
                 merge_vecs(graph[node.first].outgoing_edges[outgoing_tips[max_index]], graph[node.first].outgoing_edges[outgoing_tips[i]]);
                 merge_vecs(graph[outgoing_tips[max_index]].incoming_edges[node.first], graph[outgoing_tips[i]].incoming_edges[node.first]);
@@ -836,8 +838,8 @@ void Graph::merge_tips_into_edges_further(unsigned& num_tips, double ratio) {
         Edge tip_edge = graph[node.first].outgoing_edges[tip][0];
         Edge non_tip_edge = graph[node.first].outgoing_edges[non_tip][0];
 
-        // if (tip_edge.length >= 1000000)
-        //     continue; // skip long tips
+        if (tip_edge.length >= 20000000)
+            continue; // skip long tips
 
         // this case should be resolved by merge_tips_into_edges 
         if (tip_edge.length * 0.8 <= non_tip_edge.length)
@@ -860,7 +862,7 @@ void Graph::merge_tips_into_edges_further(unsigned& num_tips, double ratio) {
         std::cout << "Check tip " << node.first << "->" << tip << " len " << tip_edge.sequence.size() << " and " << node.first << "->" << non_tip << "->" << out_node_non_tip << " len " << path.sequence.size() << std::endl;
 
         // if the path length is shorter than the tip length, do not merge
-        if (tip_edge.length * 0.6 > path.length)
+        if (tip_edge.length * 0.8 > path.length)
             continue;
 
         int prefix_size = std::max(1000000, int(non_tip_edge.sequence.size()) + 100000);
@@ -1625,6 +1627,7 @@ double Graph::matches_by_edlib(std::string sequence1, std::string sequence2, boo
             return lcs_len;
         else
             return 1.0 * lcs_len / std::min(sequence1.size(), sequence1.size());
+        // return calculate_identities_from_cigar(cigar).second;
     }
     else {
         std::cout << "edlib failed" << std::endl;

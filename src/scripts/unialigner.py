@@ -41,6 +41,60 @@ def parse_cigar(cigar):
     identity = matches / shorter_len if shorter_len > 0 else 0
     return identity
 
+def calculate_identities_from_cigar(cigar, gap_threshold=10):
+    """
+    Calculate identity metrics from a CIGAR string.
+
+    Returns:
+    - identity = matches / min(query_len, ref_len)
+    - identity_nogap = (matches - mismatches) / (aligned_bases - long gaps)
+    """
+    matches = 0
+    mismatches = 0
+    insertions = 0
+    deletions = 0
+    long_gaps = 0
+
+    query_len = 0
+    ref_len = 0
+    aligned_bases = 0
+
+    cigar_operations = re.findall(r'(\d+)([MIDNSHP=X])', cigar)
+    for length_str, op in cigar_operations:
+        length = int(length_str)
+
+        if op in ['M', '=', 'X']:
+            query_len += length
+            ref_len += length
+            aligned_bases += length
+            if op == '=':
+                matches += length
+            elif op == 'X':
+                mismatches += length
+            elif op == 'M':
+                matches += length  # assume M = match by default (could overestimate if mismatches not marked as X)
+
+        elif op == 'I':
+            query_len += length
+            insertions += length
+            aligned_bases += length
+            if length >= gap_threshold:
+                long_gaps += length
+
+        elif op == 'D':
+            ref_len += length
+            deletions += length
+            aligned_bases += length
+            if length >= gap_threshold:
+                long_gaps += length
+
+        # S/H/N/P ignored for alignment stats
+
+    identity = matches / (matches + mismatches + insertions + deletions)
+    identity_nogap = matches / (matches + mismatches + insertions + deletions - long_gaps)
+
+    return identity,identity_nogap
+
 if len(sys.argv) != 3:
     print(f"Usage: {sys.argv[0]} <fasta1> <fasta2>")
     sys.exit(1)
@@ -48,8 +102,8 @@ if len(sys.argv) != 3:
 fasta1 = sys.argv[1]
 fasta2 = sys.argv[2]
 
-seq1 = read_single_fasta(fasta1)
-seq2 = read_single_fasta(fasta2)
+seq1 = read_single_fasta(fasta1)[:1000000]
+seq2 = read_single_fasta(fasta2)[:1000000]
 
 # Write sequences to temp files for unialigner
 with open("seq1_tmp.fasta", "w") as f1:
@@ -71,9 +125,10 @@ if result.returncode == 0:
     try:
         with open(cigar_file_path, "r") as cigar_file:
             cigar_string = cigar_file.read().strip()
-        identity = parse_cigar(cigar_string)
+        identity,identity_ng = calculate_identities_from_cigar(cigar_string)
         print(f"CIGAR: {cigar_string}")
         print(f"Identity: {identity:.4f}")
+        print(f"Identity_ng: {identity_ng:.4f}")
     except FileNotFoundError:
         print("CIGAR file not found. Alignment may have failed.")
 else:

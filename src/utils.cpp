@@ -141,3 +141,65 @@ std::string format_with_commas(int value) {
 
     return num;
 }
+
+std::pair<double, double> calculate_identities_from_cigar(const std::string& cigar, int gap_threshold) {
+    int matches = 0;
+    int mismatches = 0;
+    int insertions = 0;
+    int deletions = 0;
+    int long_gaps = 0;
+
+    int query_len = 0;
+    int ref_len = 0;
+    int aligned_bases = 0;
+
+    std::regex cigar_regex(R"((\d+)([MIDNSHP=X]))");
+    auto words_begin = std::sregex_iterator(cigar.begin(), cigar.end(), cigar_regex);
+    auto words_end = std::sregex_iterator();
+
+    for (auto it = words_begin; it != words_end; ++it) {
+        int length = std::stoi((*it)[1]);
+        char op = (*it)[2].str()[0];
+
+        if (op == 'M' || op == '=' || op == 'X') {
+            query_len += length;
+            ref_len += length;
+            aligned_bases += length;
+
+            if (op == '=') {
+                matches += length;
+            }
+            else if (op == 'X') {
+                mismatches += length;
+            }
+            else if (op == 'M') {
+                matches += length;  // Assumes M = match
+            }
+        }
+        else if (op == 'I') {
+            query_len += length;
+            insertions += length;
+            aligned_bases += length;
+            if (length >= gap_threshold) {
+                long_gaps += length;
+            }
+        }
+        else if (op == 'D') {
+            ref_len += length;
+            deletions += length;
+            aligned_bases += length;
+            if (length >= gap_threshold) {
+                long_gaps += length;
+            }
+        }
+        // S, H, N, P are ignored
+    }
+
+    double denom = matches + mismatches + insertions + deletions;
+    double denom_no_gap = denom - long_gaps;
+
+    double identity = (denom > 0) ? matches / denom : 0.0;
+    double identity_nogap = (denom_no_gap > 0) ? matches / denom_no_gap : 0.0;
+
+    return std::make_pair(identity, identity_nogap);
+}

@@ -13,4 +13,6 @@ std::string replaceNsWithRandomBases(const std::string& seq);
 
 std::string format_with_commas(int value);
 
+std::pair<double, double> calculate_identities_from_cigar(const std::string& cigar, int gap_threshold = 10);
+
 #endif // COMMAND_UTILS_H

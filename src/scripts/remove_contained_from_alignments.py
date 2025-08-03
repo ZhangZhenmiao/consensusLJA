@@ -4,6 +4,7 @@ import argparse
 import sys
 import re
 from collections import defaultdict
+import copy
 
 def true_query_start_end(cigar):
     # Parse the CIGAR string into list of (length, op)
@@ -111,7 +112,7 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     'alignment': alignment
                 }
 
-                # if linear_edge_name == "-145900_-149909" or ref_id == "-149760_86969":
+                # if linear_edge_name == "-5274_4784":
                 #     print(query_name, ref_id, aln["aln_length_query"], aln["query_start"], aln["query_end"], aln["ref_start"], aln["ref_end"], aln["reverse"])
 
                 if ref_id not in high_identity_alignments:
@@ -132,17 +133,17 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     high_identity_alignments[ref_id][linear_edge_name]["end"].append(aln)
     return high_identity_alignments
 
-def merge_and_filter_alignments(alns, overlap_thresh=0.9, max_gap=100000):
+def merge_and_filter_alignments_ref(alns, overlap_thresh=0.9):
     if not alns:
         return [], []
 
-    # Group by orientation
-    forward = [a for a in alns if not a["reverse"]]
-    reverse = [a for a in alns if a["reverse"]]
+    # Work on copies to preserve original input
+    forward = [copy.deepcopy(a) for a in alns if not a["reverse"]]
+    reverse = [copy.deepcopy(a) for a in alns if a["reverse"]]
 
     def process_group(group):
         # Sort by ref_start
-        group.sort(key=lambda x: x["ref_start"])
+        group.sort(key=lambda x: (x["ref_start"], -x["ref_end"]))
         merged = []
 
         for aln in group:
@@ -160,11 +161,12 @@ def merge_and_filter_alignments(alns, overlap_thresh=0.9, max_gap=100000):
                 if min_span > 0 and overlap / min_span >= overlap_thresh:
                     # Keep the one with larger span
                     if span2 > span1:
-                        m.update(aln)
+                        m.update(copy.deepcopy(aln))
                     added = True
                     break
 
                 # Check if within mergeable distance
+                max_gap = max(100000, min(200000, m["length_query"]/5))
                 gap = start2 - end1
                 if gap <= max_gap:
                     # Merge: extend ref and query coordinates
@@ -176,7 +178,7 @@ def merge_and_filter_alignments(alns, overlap_thresh=0.9, max_gap=100000):
                     break
 
             if not added:
-                merged.append(aln)
+                merged.append(copy.deepcopy(aln))
 
         if not merged:
             return []
@@ -191,14 +193,139 @@ def merge_and_filter_alignments(alns, overlap_thresh=0.9, max_gap=100000):
 
     return process_group(forward), process_group(reverse)
 
+def merge_and_filter_alignments_query(alns, overlap_thresh=0.9):
+    if not alns:
+        return [], []
+
+    # Work on deep copies to preserve original input
+    forward = [copy.deepcopy(a) for a in alns if not a["reverse"]]
+    reverse = [copy.deepcopy(a) for a in alns if a["reverse"]]
+
+    def process_group(group):
+        # Sort by query_start
+        group.sort(key=lambda x: (x["query_start"], -x["query_end"]))
+        merged = []
+
+        for aln in group:
+            added = False
+            for m in merged:
+                # Compute overlap on query
+                start1, end1 = m["query_start"], m["query_end"]
+                start2, end2 = aln["query_start"], aln["query_end"]
+
+                overlap = max(0, min(end1, end2) - max(start1, start2))
+                span1 = end1 - start1
+                span2 = end2 - start2
+                min_span = min(span1, span2)
+
+                if min_span > 0 and overlap / min_span >= overlap_thresh:
+                    # Keep the one with larger span
+                    if span2 > span1:
+                        m.update(copy.deepcopy(aln))
+                    added = True
+                    break
+
+                # Check if within mergeable distance
+                max_gap = max(100000, min(200000, m["length_query"]/5))
+                gap = start2 - end1
+                if gap <= max_gap:
+                    # Merge: extend ref and query coordinates
+                    m["ref_end"] = max(m["ref_end"], aln["ref_end"])
+                    m["query_end"] = max(m["query_end"], aln["query_end"])
+                    m["ref_start"] = min(m["ref_start"], aln["ref_start"])
+                    m["query_start"] = min(m["query_start"], aln["query_start"])
+                    added = True
+                    break
+
+            if not added:
+                merged.append(copy.deepcopy(aln))
+
+        if not merged:
+            return []
+
+        # Select the record with the largest ref span
+        best = max(merged, key=lambda x: x["query_end"] - x["query_start"])
+        ref_span = best["ref_end"] - best["ref_start"]
+        query_span = best["query_end"] - best["query_start"]
+        if ref_span < 0.8 * query_span or query_span < 0.8 * ref_span:
+            return []
+
+        return [best]
+
+    return process_group(forward), process_group(reverse)
+
 def find_contained_contigs(high_identity_alignments):
     contained_contigs = set()
+    # for ref in high_identity_alignments:
+    #     for edge in high_identity_alignments[ref]:
+    #         data = high_identity_alignments[ref][edge]
+    #         entire_forward, entire_reverse = merge_and_filter_alignments_ref(data["entire"])
+    #         start_forward, start_reverse = merge_and_filter_alignments_ref(data["start"])
+    #         end_forward, end_reverse = merge_and_filter_alignments_ref(data["end"])
+            
+    #         flag = False
+    #         # process entire alignment
+    #         if len(entire_forward) == 1:
+    #             aln = entire_forward[0]
+    #             span_ref = aln["ref_end"] - aln["ref_start"]
+    #             ratio = min(aln["length_entire_query"], span_ref) / max(aln["length_entire_query"], span_ref)
+    #             if ratio >= 0.8:
+    #                 if aln["length_entire_query"] < aln["length_ref"]:
+    #                     print(f'Edge {edge} is contained in {ref}, identity {aln["identity"]}, lengths {aln["length_entire_query"]} and {aln["length_ref"]}')
+    #                     contained_contigs.add(edge)
+    #                 else:
+    #                     print(f'Edge {ref} is contained in {edge}, identity {aln["identity"]}, lengths {aln["length_ref"]} and {aln["length_entire_query"]}')
+    #                     contained_contigs.add(ref)
+    #                 flag = True
+            
+    #         if flag: continue
+            
+    #         if len(entire_reverse) == 1:
+    #             aln = entire_reverse[0]
+    #             span_ref = max(aln["ref_end"], aln["ref_end"]) - min(aln["ref_start"], aln["ref_start"])
+    #             ratio = min(aln["length_entire_query"], span_ref) / max(aln["length_entire_query"], span_ref)
+    #             if ratio >= 0.8:
+    #                 if aln["length_entire_query"] <= aln["length_ref"]:
+    #                     print(f'Edge {edge} is contained in {ref}, identity {aln["identity"]}, lengths {aln["length_entire_query"]} and {aln["length_ref"]}')
+    #                     contained_contigs.add(edge)
+    #                 else:
+    #                     print(f'Edge {ref} is contained in {edge}, identity {aln["identity"]}, lengths {aln["length_ref"]} and {aln["length_entire_query"]}')
+    #                     contained_contigs.add(ref)
+    #                 flag = True
+            
+    #         if flag: continue
+            
+    #         if len(start_reverse) == 1 and len(end_reverse) == 1:
+    #             aln_start = start_reverse[0]
+    #             aln_end = end_reverse[0]
+
+    #             span_ref = max(aln_start["ref_end"], aln_end["ref_end"]) - min(aln_start["ref_start"], aln_end["ref_start"])
+    #             ratio = min(aln_start["length_entire_query"], span_ref) / max(aln_start["length_entire_query"], span_ref)
+    #             if ratio >= 0.8:
+    #                 if aln_start["length_entire_query"] <= aln_start["length_ref"]:
+    #                     print(f'Edge {edge} is contained in {ref}, lengths edge {aln_start["length_entire_query"]} and ref span {span_ref}')
+    #                     contained_contigs.add(edge)
+    #                     flag = True
+            
+    #         if flag: continue
+            
+    #         if len(start_forward) == 1 and len(end_forward) == 1:
+    #             aln_start = start_forward[0]
+    #             aln_end = end_forward[0]
+
+    #             span_ref = max(aln_start["ref_end"], aln_end["ref_end"]) - min(aln_start["ref_start"], aln_end["ref_start"])
+    #             ratio = min(aln_start["length_entire_query"], span_ref) / max(aln_start["length_entire_query"], span_ref)
+    #             if ratio >= 0.8:
+    #                 if aln_start["length_entire_query"] <= aln_start["length_ref"]:
+    #                     print(f'Edge {edge} is contained in {ref}, lengths edge {aln_start["length_entire_query"]} and ref span {span_ref}')
+    #                     contained_contigs.add(edge)
+    
     for ref in high_identity_alignments:
         for edge in high_identity_alignments[ref]:
             data = high_identity_alignments[ref][edge]
-            entire_forward, entire_reverse = merge_and_filter_alignments(data["entire"])
-            start_forward, start_reverse = merge_and_filter_alignments(data["start"])
-            end_forward, end_reverse = merge_and_filter_alignments(data["end"])
+            entire_forward, entire_reverse = merge_and_filter_alignments_query(data["entire"])
+            start_forward, start_reverse = merge_and_filter_alignments_query(data["start"])
+            end_forward, end_reverse = merge_and_filter_alignments_query(data["end"])
             
             flag = False
             # process entire alignment
@@ -256,6 +383,7 @@ def find_contained_contigs(high_identity_alignments):
                     if aln_start["length_entire_query"] <= aln_start["length_ref"]:
                         print(f'Edge {edge} is contained in {ref}, lengths edge {aln_start["length_entire_query"]} and ref span {span_ref}')
                         contained_contigs.add(edge)
+
     return contained_contigs
 
 

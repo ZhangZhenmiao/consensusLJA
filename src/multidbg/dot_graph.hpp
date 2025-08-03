@@ -116,6 +116,7 @@ namespace multidbg {
         void decoupling(std::string multidbg, std::string output);
         void remove_contained_contigs(const double sim = 0.8);
         void remove_contained_contigs_minimap(std::string output, int threads, unsigned& num_contained);
+        bool check_contained_tips_minimap(std::string output, std::string node_s, std::string node_t1, std::string node_t2, int threads);
         int get_num_nodes();
         std::string get_contracted_name(std::string node);
         std::string get_contracted_label(std::string node);

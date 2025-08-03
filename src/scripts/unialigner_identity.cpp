@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <regex>
+#include <unordered_map>
 #include <random>
 
 std::string replace_N(const std::string& seq) {
@@ -17,18 +18,66 @@ std::string replace_N(const std::string& seq) {
     return out;
 }
 
-double parse_cigar_identity(const std::string& cigar, size_t len1, size_t len2) {
-    std::regex re("(\\d+)([MIDNSHP=X])");
-    auto begin = std::sregex_iterator(cigar.begin(), cigar.end(), re);
-    auto end = std::sregex_iterator();
-    size_t matches = 0;
-    for (auto i = begin; i != end; ++i) {
-        int length = std::stoi((*i)[1]);
-        char op = (*i)[2].str()[0];
-        if (op == 'M' || op == '=') matches += length;
+std::pair<double, double> calculate_identities_from_cigar(const std::string& cigar, int gap_threshold = 10) {
+    int matches = 0;
+    int mismatches = 0;
+    int insertions = 0;
+    int deletions = 0;
+    int long_gaps = 0;
+
+    int query_len = 0;
+    int ref_len = 0;
+    int aligned_bases = 0;
+
+    std::regex cigar_regex(R"((\d+)([MIDNSHP=X]))");
+    auto words_begin = std::sregex_iterator(cigar.begin(), cigar.end(), cigar_regex);
+    auto words_end = std::sregex_iterator();
+
+    for (auto it = words_begin; it != words_end; ++it) {
+        int length = std::stoi((*it)[1]);
+        char op = (*it)[2].str()[0];
+
+        if (op == 'M' || op == '=' || op == 'X') {
+            query_len += length;
+            ref_len += length;
+            aligned_bases += length;
+
+            if (op == '=') {
+                matches += length;
+            }
+            else if (op == 'X') {
+                mismatches += length;
+            }
+            else if (op == 'M') {
+                matches += length;  // Assumes M = match
+            }
+        }
+        else if (op == 'I') {
+            query_len += length;
+            insertions += length;
+            aligned_bases += length;
+            if (length >= gap_threshold) {
+                long_gaps += length;
+            }
+        }
+        else if (op == 'D') {
+            ref_len += length;
+            deletions += length;
+            aligned_bases += length;
+            if (length >= gap_threshold) {
+                long_gaps += length;
+            }
+        }
+        // S, H, N, P are ignored
     }
-    size_t shorter_len = std::min(len1, len2);
-    return shorter_len > 0 ? (double)matches / shorter_len : 0.0;
+
+    double denom = matches + mismatches + insertions + deletions;
+    double denom_no_gap = denom - long_gaps;
+
+    double identity = (denom > 0) ? matches / denom : 0.0;
+    double identity_nogap = (denom_no_gap > 0) ? matches / denom_no_gap : 0.0;
+
+    return std::make_pair(identity, identity_nogap);
 }
 
 std::string reverse_complement(std::string seq) {
@@ -63,74 +112,45 @@ int count_matches(std::string cigar) {
     return matches;
 }
 
-double matches_by_edlib(std::string sequence1, std::string sequence2, bool lcs = false) {
-    // std::string seq_short, seq_long;
-    // if (sequence1.size() <= sequence2.size())
-    //     sequence2 = sequence2.substr(0, sequence1.size());
-    // else
-    //     sequence1 = sequence1.substr(0, sequence2.size());
+void edlib_identity(std::string sequence1, std::string sequence2) {
     EdlibAlignResult result = edlibAlign(sequence1.c_str(), sequence1.size(), sequence2.c_str(), sequence2.size(), edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH, NULL, 0));
-    if (result.status == EDLIB_STATUS_OK) {
-        std::string cigar = edlibAlignmentToCigar(result.alignment, result.alignmentLength, EDLIB_CIGAR_EXTENDED);
-        edlibFreeAlignResult(result);
-        int lcs_len = count_matches(cigar);
-        if (lcs)
-            return lcs_len;
-        else
-            return 1.0 * lcs_len / std::min(sequence1.size(), sequence1.size());
-    }
-    else {
-        std::cout << "edlib failed" << std::endl;
-        return 0;
-    }
+    std::string cigar = edlibAlignmentToCigar(result.alignment, result.alignmentLength, EDLIB_CIGAR_EXTENDED);
+    edlibFreeAlignResult(result);
+    auto idts = calculate_identities_from_cigar(cigar);
+    std::cout << "Edlib identity: " << idts.first << " " << idts.second << std::endl;
+    std::cout << 1.0 * count_matches(cigar) / std::min(sequence1.size(), sequence2.size()) << std::endl;
 }
 
 
-double unialigner_identity(const std::string& seq1, const std::string& seq2) {
-    // Preprocess: replace N, keep first 1Mbp, reverse complement second
+void unialigner_identity(const std::string& seq1, const std::string& seq2) {
     std::string s1 = replace_N(seq1);
     std::string s2 = replace_N(seq2);
-    // if (seq1.size() <= seq2.size())
-    //     s2 = s2.substr(0, seq1.size());
-    // else
-    //     s1 = s1.substr(0, seq2.size());
+
+    system("mkdir -p unialigner_out");
 
     // Write temp FASTA files
-    std::ofstream f1("seq1_tmp.fasta");
+    std::ofstream f1("unialigner_out/seq1_tmp.fasta");
     f1 << ">seq1\n" << s1 << "\n";
     f1.close();
-    std::ofstream f2("seq2_tmp.fasta");
+    std::ofstream f2("unialigner_out/seq2_tmp.fasta");
     f2 << ">seq2\n" << s2 << "\n";
     f2.close();
 
     // Run unialigner
-    system("mkdir -p unialigner_out");
-    std::string cmd = "/Poppy/zmzhang/software/unialigner_new/tandem_aligner/build/bin/tandem_aligner --first seq1_tmp.fasta --second seq2_tmp.fasta -o unialigner_out > /dev/null 2>&1";
-    int ret = system(cmd.c_str());
-    if (ret != 0) {
-        std::cerr << "Unialigner failed\n";
-        return -1.0;
-    }
+    std::string cmd = "/Poppy/zmzhang/software/unialigner_new/tandem_aligner/build/bin/tandem_aligner --first unialigner_out/seq1_tmp.fasta --second unialigner_out/seq2_tmp.fasta -o unialigner_out > /dev/null 2>&1";
+    system(cmd.c_str());
 
     // Read CIGAR
     std::ifstream cigar_file("unialigner_out/cigar.txt");
-    if (!cigar_file) {
-        std::cerr << "CIGAR file not found\n";
-        return -1.0;
-    }
     std::string cigar;
     std::getline(cigar_file, cigar);
     cigar_file.close();
 
-    // std::remove("seq1_tmp.fasta");
-    // std::remove("seq2_tmp.fasta");
-    // system("rm -rf unialigner_out");
-
-    return parse_cigar_identity(cigar, s1.size(), s2.size());
+    auto idts = calculate_identities_from_cigar(cigar);
+    std::cout << "Unialigner identity: " << idts.first << " " << idts.second << std::endl;
 }
 
 // Read all contigs from a fasta into a map
-#include <unordered_map>
 std::unordered_map<std::string, std::string> read_fasta_map(const std::string& filename) {
     std::unordered_map<std::string, std::string> contigs;
     std::ifstream in(filename);
@@ -173,12 +193,10 @@ int main(int argc, char* argv[]) {
     std::string seq2 = contigs2.begin()->second;
 
     // Take 1Mbp prefix if desired
-    // seq1 = seq1.substr(0, 1000000);
-    // seq2 = seq2.substr(0, 1000000);
+    seq1 = seq1.substr(0, 100000);
+    seq2 = seq2.substr(0, 100000);
 
-    double idt = unialigner_identity(seq1, seq2);
-    std::cout << "Unialigner identity: " << idt << std::endl;
-    idt = matches_by_edlib(seq1, seq2);
-    std::cout << "Edlib identity: " << idt << std::endl;
+    unialigner_identity(seq1, seq2);
+    edlib_identity(seq1, seq2);
     return 0;
 }
