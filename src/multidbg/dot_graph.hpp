@@ -115,9 +115,8 @@ namespace multidbg {
         void write_graph_gfa(const std::string& prefix);
         void write_prefix_siffux_linear_edges(std::string output_dir, std::string jumbodbg, int threads, int k_mer, unsigned& num_glued);
         void decoupling(std::string multidbg, std::string output);
-        void remove_contained_contigs(const double sim = 0.8);
         void remove_contained_contigs_minimap(std::string output, int threads, unsigned& num_contained);
-        bool check_contained_tips_minimap(std::string output, std::string node_s, std::string node_t1, std::string node_t2, int threads);
+        void connect_linear_and_tips_using_spanning_reads(std::string output, int threads, std::string reads);
         int get_num_nodes();
         std::string get_contracted_name(std::string node);
         std::string get_contracted_label(std::string node);

@@ -60,9 +60,9 @@ int Graph::count_matches(std::string cigar) {
 }
 
 void Graph::get_annotation(std::string prefix) {
-    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
+    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
-    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
+    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Mytilus_gallo/genome/GCA_037788925.1_MytGallo_primary_0.1_genomic.compressed.fa";
     if (fs::is_regular_file(prefix + ".fasta.fai"))
         system(("rm " + prefix + ".fasta.fai").c_str());
@@ -3377,78 +3377,5 @@ void Graph::remove_chimeric_edge(std::string chimeric_path) {
         graph[e_name].incoming_edges[s_name].push_back(tip.E);
 
         std::cout << "Add linear edge (chimeric tip) " << s_name << " -> " << e_name << std::endl;
-    }
-}
-
-void Graph::remove_contained_contigs(const double sim) {
-    // extract single edges
-    std::unordered_map<std::string, std::unordered_set<std::string>> node2paths;
-    std::unordered_map<std::string, std::string> node2next;
-    for (auto&& n : graph) {
-        if (n.second.outgoing_edges.size() != 1)
-            continue;
-        if (n.second.incoming_edges.size() != 0)
-            continue;
-
-        std::string next_node;
-        for (auto&& n_o : n.second.outgoing_edges) {
-            next_node = n_o.first;
-        }
-        if (graph[next_node].outgoing_edges.size() != 0)
-            continue;
-        if (graph[next_node].incoming_edges.size() != 1)
-            continue;
-        if (n.second.outgoing_edges[next_node].size() != 1)
-            continue;
-
-        Edge& edge = n.second.outgoing_edges[next_node][0];
-
-        for (auto&& item : edge.path_edges_in_original_graph) {
-            node2paths[n.first].insert(edge_initial_to_path_in_dbg[item].begin(), edge_initial_to_path_in_dbg[item].end());
-            node2next[n.first] = next_node;
-        }
-    }
-
-    std::vector<std::string> keys;
-    for (const auto& [key, _] : node2paths) {
-        keys.push_back(key);
-    }
-
-    for (size_t i = 0; i < keys.size(); ++i) {
-        for (size_t j = i + 1; j < keys.size(); ++j) {
-            if (graph.find(keys[i]) == graph.end() || graph.find(keys[j]) == graph.end())
-                continue;
-            const auto& set1 = node2paths.at(keys[i]);
-            const auto& set2 = node2paths.at(keys[j]);
-
-            size_t intersection_count = 0;
-            for (const auto& elem : set1) {
-                if (set2.find(elem) != set2.end()) {
-                    ++intersection_count;
-                }
-            }
-
-            size_t min_size = std::min(set1.size(), set2.size());
-            double score = min_size == 0 ? 0.0 : static_cast<double>(intersection_count) / min_size;
-
-            if (score >= sim) {
-                if (keys[i] == reverse_complementary_node(node2next[keys[j]]) && node2next[keys[i]] == reverse_complementary_node(keys[j]))
-                    continue;
-                std::cout << "Overlap(" << keys[i] << "->" << node2next[keys[i]] << ", " << keys[j] << "->" << node2next[keys[j]] << ") = " << score << std::endl;
-                std::cout << "Overlap(" << reverse_complementary_node(node2next[keys[i]]) << "->" << reverse_complementary_node(keys[i]) << ", " << reverse_complementary_node(node2next[keys[j]]) << "->" << reverse_complementary_node(keys[j]) << ") = " << score << std::endl;
-                if (graph[keys[i]].outgoing_edges[node2next[keys[i]]].at(0).sequence.size() < graph[keys[j]].outgoing_edges[node2next[keys[j]]].at(0).sequence.size()) {
-                    graph.erase(keys[i]);
-                    graph.erase(node2next[keys[i]]);
-                    graph.erase(reverse_complementary_node(keys[i]));
-                    graph.erase(reverse_complementary_node(node2next[keys[i]]));
-                }
-                else {
-                    graph.erase(keys[j]);
-                    graph.erase(node2next[keys[j]]);
-                    graph.erase(reverse_complementary_node(keys[j]));
-                    graph.erase(reverse_complementary_node(node2next[keys[j]]));
-                }
-            }
-        }
     }
 }

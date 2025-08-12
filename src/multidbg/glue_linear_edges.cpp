@@ -1814,128 +1814,189 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
     infile.close();
 }
 
-bool Graph::check_contained_tips_minimap(std::string output, std::string node_s, std::string node_t1, std::string node_t2, int threads) {
+void Graph::connect_linear_and_tips_using_spanning_reads(std::string output, int threads, std::string reads) {
     execute_command("mkdir -p " + output);
-    std::string output_prefix_suffix = output + "/tips_prefix_and_suffix.fasta";
-    std::ofstream outfile_extracted(output_prefix_suffix);
-    if (!outfile_extracted.is_open()) {
-        throw std::runtime_error("Failed to open file: " + output_prefix_suffix);
-    }
 
-    std::string output_all = output + "/tips_all.fasta";
+    std::string output_all = output + "/linear_all.fasta";
     std::ofstream outfile_all(output_all);
     if (!outfile_all.is_open()) {
         throw std::runtime_error("Failed to open file: " + output_all);
     }
 
-    std::string output_all_tips = output + "/tips_all_tips.fasta";
-    std::ofstream outfile_all_tips(output_all_tips);
-    if (!outfile_all_tips.is_open()) {
-        throw std::runtime_error("Failed to open file: " + output_all);
-    }
-
-    std::unordered_set<std::string> traversed_nodes;
-    int extract_length = 2000000;
-    std::string seq1_tip = graph[node_s].outgoing_edges[node_t1].at(0).sequence;
-    std::string seq2_tip = graph[node_s].outgoing_edges[node_t2].at(0).sequence;
-
     std::unordered_map<std::string, std::string> print2node;
-    print2node[get_contracted_name(node_s)] = node_s;
-    print2node[get_contracted_name(node_t1)] = node_t1;
-    print2node[get_contracted_name(node_t2)] = node_t2;
+    std::unordered_set<std::string> traversed_nodes;
+    for (auto&& node : graph) {
+        print2node[get_contracted_name(node.first)] = node.first;
+        if (traversed_nodes.find(node.first) != traversed_nodes.end())
+            continue;
+        if (node.second.outgoing_edges.size() == 1 && node.second.incoming_edges.size() == 1 && node.second.outgoing_edges.find(node.first) != node.second.outgoing_edges.end()) {
+            if (node.second.outgoing_edges[node.first].size() > 1)
+                continue;
 
-    if (seq1_tip.size() <= seq2_tip.size()) {
-        std::string seq = seq1_tip;
-        if (seq.size() <= extract_length) {
-            std::string seq1 = seq.substr(0, extract_length);
-            outfile_extracted << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t1) << "_0" << "\n";
-            outfile_extracted << seq1 << "\n";
-        }
-        else {
-            std::string seq1 = seq.substr(0, extract_length);
-            outfile_extracted << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t1) << "_1" << "\n";
-            outfile_extracted << seq1 << "\n";
+            traversed_nodes.insert(node.first);
+            traversed_nodes.insert(reverse_complementary_node(node.first));
 
-            std::string seq2 = seq.substr(seq.size() - extract_length);
-            outfile_extracted << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t1) << "_2" << "\n";
-            outfile_extracted << seq2 << "\n";
+            std::string seq = node.second.outgoing_edges[node.first].at(0).sequence;
+            outfile_all << ">" << get_contracted_name(node.first) << "_" << get_contracted_name(node.first) << "\n";
+            outfile_all << seq << "\n";
         }
-        outfile_all << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t2) << "\n";
-        outfile_all << seq2_tip << "\n";
+        if (node.second.outgoing_edges.size() == 1) {
+            std::string n_out;
+            for (auto&& n : node.second.outgoing_edges)
+                n_out = n.first;
+
+            if (graph[n_out].incoming_edges.size() != 1 || !graph[n_out].outgoing_edges.empty())
+                continue;
+
+            if (node.second.outgoing_edges[n_out].size() != 1)
+                continue;
+
+            traversed_nodes.insert(node.first);
+            traversed_nodes.insert(reverse_complementary_node(n_out));
+
+            // find a valid linear edge
+            if (node.second.incoming_edges.empty()) {
+                std::string seq = node.second.outgoing_edges[n_out].at(0).sequence;
+                outfile_all << ">" << get_contracted_name(node.first) << "_" << get_contracted_name(n_out) << "\n";
+                outfile_all << seq << "\n";
+            }
+        }
     }
-    else {
-        std::string seq = seq2_tip;
-        if (seq.size() <= extract_length) {
-            std::string seq1 = seq.substr(0, extract_length);
-            outfile_extracted << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t2) << "_0" << "\n";
-            outfile_extracted << seq1 << "\n";
-        }
-        else {
-            std::string seq1 = seq.substr(0, extract_length);
-            outfile_extracted << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t2) << "_1" << "\n";
-            outfile_extracted << seq1 << "\n";
-
-            std::string seq2 = seq.substr(seq.size() - extract_length);
-            outfile_extracted << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t2) << "_2" << "\n";
-            outfile_extracted << seq2 << "\n";
-        }
-        outfile_all << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t1) << "\n";
-        outfile_all << seq1_tip << "\n";
-    }
-
-    outfile_all_tips << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t1) << "\n";
-    outfile_all_tips << seq1_tip << "\n";
-    outfile_all_tips << ">" << get_contracted_name(node_s) << "_" << get_contracted_name(node_t2) << "\n";
-    outfile_all_tips << seq2_tip << "\n";
-
-    outfile_all_tips.close();
-    outfile_extracted.close();
     outfile_all.close();
 
-    std::string out_bam_prefix = output + "/align.prefix_suffix.all";;
-
-    if (!fs::is_regular_file(out_bam_prefix + ".bam")) {
-        if (execute_command(("minimap2 -ax asm20 --eqx -Y -p 0.1 " + output_all + " " + output_prefix_suffix + " -t " + std::to_string(threads) + " | grep -v '^@' > " + out_bam_prefix + ".sam").c_str()) != 0) {
-            exit(1);
-        }
-        if (!std::filesystem::exists(output_all_tips + ".fai")) {
-            if (execute_command(("samtools faidx " + output_all_tips).c_str()) != 0)
-                exit(1);
-        }
-        if (execute_command(("cut -f1,2 " + output_all_tips + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + out_bam_prefix + ".header.sam").c_str()) != 0)
-            exit(1);
-        if (execute_command(("cat " + out_bam_prefix + ".header.sam " + out_bam_prefix + ".sam | samtools sort -@ " + std::to_string(threads) + " -o " + out_bam_prefix + ".bam").c_str()) != 0) {
-            exit(1);
-        }
-    }
+    std::string out_bam = output + "/linear_all.flanks.bam";
+    std::string out_result = output + "/linear_all.flanks.results";
 
     std::string exeDir = getExecutablePath();
-    if (execute_command((exeDir + "/../src/scripts/remove_contained_from_alignments.py -o " + out_bam_prefix + ".results " + out_bam_prefix + ".bam").c_str()) != 0)
-        exit(1);
+    std::string compress = exeDir + "/../lib/LJA/bin/compress";
+    std::string spanning_reads_script = exeDir + "/../src/scripts/investigate_spanning_reads.py";
 
-    std::ifstream infile(out_bam_prefix + ".results");
+    if (!fs::is_regular_file(out_result)) {
+        if (execute_command((spanning_reads_script + " " + output_all + " " + reads + " " + out_bam + " " + out_result + " -c " + compress + " -t " + std::to_string(threads)).c_str()) != 0)
+            throw std::runtime_error("Failed to execute: " + spanning_reads_script + " " + output_all + " " + reads + " " + out_bam + " " + out_result + " -c " + compress + " -t " + std::to_string(threads));
+    }
+
+    std::ifstream infile(out_result);
 
     // Check if file opened successfully
     if (!infile.is_open()) {
-        std::cerr << "Error opening file: " << out_bam_prefix + ".results" << std::endl;
-        exit(1);
+        throw std::runtime_error("Error opening file: " + out_result);
     }
 
     std::string line;
-    bool flag = false;
+    struct Connection {
+        std::string node1;
+        std::string node2;
+        std::string node1_in;
+        std::string node2_out;
+        std::string connecting_seq;
+        int len_both_edges;
+    };
+    std::vector<Connection> connections;
     while (std::getline(infile, line)) {
         size_t underscore_pos = line.find('_');
+        size_t space_pos = line.find('\t');
         if (underscore_pos != std::string::npos) {
-            flag = true;
-            std::string node1 = print2node[line.substr(0, underscore_pos)];
-            std::string node2 = print2node[line.substr(underscore_pos + 1)];
-            std::cout << "Contained tip " << node1 << " -> " << node2 << std::endl;
+            std::string node1 = print2node.at(line.substr(0, underscore_pos));
+            std::string node2 = print2node.at(line.substr(underscore_pos + 1, space_pos - underscore_pos - 1));
+            std::string connecting_seq = line.substr(space_pos + 1);
+
+            if (node1 == reverse_complementary_node(node2))
+                continue;
+
+            if (graph.find(node1) == graph.end() || graph[node1].incoming_edges.size() != 1 || graph[node1].outgoing_edges.size() != 0)
+                continue;
+            if (graph.find(node2) == graph.end() || graph[node2].incoming_edges.size() != 0 || graph[node2].outgoing_edges.size() != 1)
+                continue;
+
+            std::string node1_in, node2_out;
+            for (auto&& n1_i : graph[node1].incoming_edges)
+                node1_in = n1_i.first;
+            for (auto n2_o : graph[node2].outgoing_edges)
+                node2_out = n2_o.first;
+
+            if (node1 == reverse_complementary_node(node2_out) || node2 == reverse_complementary_node(node1_in))
+                continue;
+
+            assert(graph[node1_in].outgoing_edges[node1].size() == 1);
+            assert(graph[node2].outgoing_edges[node2_out].size() == 1);
+
+            connections.push_back({ node1, node2, node1_in, node2_out, connecting_seq,
+                                   (int)graph[node1_in].outgoing_edges[node1].at(0).sequence.size() + (int)graph[node2].outgoing_edges[node2_out].at(0).sequence.size() });
         }
     }
-
     infile.close();
 
-    // execute_command("rm -r " + output);
+    // sort connections by the length of both edges descending
+    std::sort(connections.begin(), connections.end(), [](const Connection& a, const Connection& b) {
+        return a.len_both_edges > b.len_both_edges;
+        });
 
-    return flag;
+    for (auto&& conn : connections) {
+        if (graph.find(conn.node1) == graph.end() || graph.find(conn.node2) == graph.end())
+            continue;
+
+        std::string node1 = conn.node1;
+        std::string node2 = conn.node2;
+
+        if (graph.find(node1) == graph.end() || graph[node1].incoming_edges.size() != 1 || graph[node1].outgoing_edges.size() != 0)
+            continue;
+        if (graph.find(node2) == graph.end() || graph[node2].incoming_edges.size() != 0 || graph[node2].outgoing_edges.size() != 1)
+            continue;
+
+        std::string node1_in, node2_out;
+        for (auto&& n1_i : graph[node1].incoming_edges)
+            node1_in = n1_i.first;
+        for (auto n2_o : graph[node2].outgoing_edges)
+            node2_out = n2_o.first;
+
+        if (node1 == reverse_complementary_node(node2_out) || node2 == reverse_complementary_node(node1_in))
+            continue;
+
+        if (node1 == reverse_complementary_node(node1_in) || node2 == reverse_complementary_node(node2_out))
+            continue;
+
+        assert(graph[node1_in].outgoing_edges[node1].size() == 1);
+        assert(graph[node2].outgoing_edges[node2_out].size() == 1);
+
+        std::string connecting_seq = conn.connecting_seq;
+
+        Edge edge_in = graph[node1_in].outgoing_edges[node1].at(0);
+        Edge edge_out = graph[node2].outgoing_edges[node2_out].at(0);
+
+        std::string edge_in_unique = edge_in.sequence.size() >= 20000 ? edge_in.sequence.substr(0, edge_in.sequence.size() - 20000) : "";
+        std::string edge_out_unique = edge_out.sequence.size() >= 20000 ? edge_out.sequence.substr(20000) : "";
+
+        // for forward strand
+        std::cout << "Connect " << node1 << " and " << node2 << " using spanning reads" << std::endl;
+        std::string new_edge_seq = edge_in_unique + connecting_seq + edge_out_unique;
+        Edge new_edge(new_edge_seq.at(graph[node1_in].sequence.size()), new_edge_seq.size(), new_edge_seq, std::max(edge_in.multiplicity, edge_out.multiplicity));
+        new_edge.path_edges_in_original_graph.push_back(node1 + "_" + node2);
+        new_edge.path_nodes_in_original_graph.push_back(node1);
+        new_edge.path_nodes_in_original_graph.push_back(node2);
+        graph[node1_in].outgoing_edges.erase(node1);
+        graph[node1].incoming_edges.erase(node1_in);
+        graph[node2].outgoing_edges.erase(node2_out);
+        graph[node2_out].incoming_edges.erase(node2);
+        graph[node1_in].outgoing_edges[node2_out].push_back(new_edge);
+        graph[node2_out].incoming_edges[node1_in].push_back(new_edge);
+        graph.erase(node1);
+        graph.erase(node2);
+
+        // for reverse strand
+        std::cout << "Connect " << reverse_complementary_node(node2) << " and " << reverse_complementary_node(node1) << " using spanning reads" << std::endl;
+        std::string new_edge_seq_rc = reverse_complementary(new_edge_seq);
+        Edge new_edge_rc(new_edge_seq_rc.at(graph[node2_out].sequence.size()), new_edge_seq_rc.size(), new_edge_seq_rc, std::max(edge_in.multiplicity, edge_out.multiplicity));
+        new_edge_rc.path_edges_in_original_graph.push_back(reverse_complementary_node(node2) + "_" + reverse_complementary_node(node1));
+        new_edge_rc.path_nodes_in_original_graph.push_back(reverse_complementary_node(node2));
+        new_edge_rc.path_nodes_in_original_graph.push_back(reverse_complementary_node(node1));
+        graph[reverse_complementary_node(node2_out)].outgoing_edges.erase(reverse_complementary_node(node2));
+        graph[reverse_complementary_node(node2)].incoming_edges.erase(reverse_complementary_node(node2_out));
+        graph[reverse_complementary_node(node1)].outgoing_edges.erase(reverse_complementary_node(node1_in));
+        graph[reverse_complementary_node(node1_in)].incoming_edges.erase(reverse_complementary_node(node1));
+        graph[reverse_complementary_node(node2_out)].outgoing_edges[reverse_complementary_node(node1_in)].push_back(new_edge_rc);
+        graph[reverse_complementary_node(node1_in)].incoming_edges[reverse_complementary_node(node2_out)].push_back(new_edge_rc);
+        graph.erase(reverse_complementary_node(node1));
+        graph.erase(reverse_complementary_node(node2));
+    }
 }
