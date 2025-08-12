@@ -192,9 +192,9 @@ int main(int argc, char* argv[]) {
     std::string seq1 = contigs1.begin()->second;
     std::string seq2 = contigs2.begin()->second;
 
-    // Take 1Mbp prefix if desired
-    seq1 = seq1.substr(0, 100000);
-    seq2 = seq2.substr(0, 100000);
+    // // Take 1Mbp prefix if desired
+    // seq1 = seq1.substr(0, 100000);
+    // seq2 = seq2.substr(0, 100000);
 
     unialigner_identity(seq1, seq2);
     edlib_identity(seq1, seq2);

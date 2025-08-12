@@ -468,7 +468,7 @@ void Graph::merge_tips(unsigned& num_tips) {
                 // the lengths of the two tips cannot be too different, otherwise both tips are meaningful
                 if (std::abs(int(graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length) - int(graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length)) >= 20000000) {
                     // if the shorter length is not long, this might be noise tip
-                    if (std::min(int(graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length), int(graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length)) >= 10000000)
+                    if (std::min(int(graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length), int(graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length)) >= 1000000)
                         continue;
                 }
 

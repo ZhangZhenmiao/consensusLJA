@@ -112,8 +112,8 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     'alignment': alignment
                 }
 
-                # if linear_edge_name == "-5274_4784":
-                #     print(query_name, ref_id, aln["aln_length_query"], aln["query_start"], aln["query_end"], aln["ref_start"], aln["ref_end"], aln["reverse"])
+                if linear_edge_name == "-28642_103784" and ref_id == "-149491_-101548":
+                    print(query_name, ref_id, aln["aln_length_query"], aln["query_start"], aln["query_end"], aln["ref_start"], aln["ref_end"], aln["reverse"])
 
                 if ref_id not in high_identity_alignments:
                     high_identity_alignments[ref_id] = {}

@@ -934,6 +934,302 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
     std::cout << "Total number of edges: " << num_edges << std::endl;
 }
 
+void Graph::write_graph_final_formatting(const std::string& prefix, int thick, bool contracted, bool colored, std::unordered_set<std::string> nodes_retain, std::unordered_map<std::string, std::vector<std::string>> nodes2bc) {
+    std::string graph_dot = prefix + ".dot";
+    std::string graph_fasta = prefix + ".fasta";
+    std::string graph_path = prefix + ".path";
+
+    std::cout << "Write graph " << graph_dot << ", fasta " << graph_fasta << std::endl;
+    std::ofstream file_dot(graph_dot);
+    std::ofstream file_fasta(graph_fasta);
+    std::ofstream file_path(graph_path);
+
+    int num_edges = 0;
+    file_dot << "digraph {\nnodesep = 0.5;\n";
+    int max_contracted = 0;
+    std::string max_contracted_node;
+    for (auto&& node : this->graph) {
+        if (!nodes_retain.empty() && nodes_retain.find(node.first) == nodes_retain.end())
+            continue;
+        if (node.second.number_of_contracted_edge > 0) {
+            std::string node_o = get_contracted_name(node.first);
+            nodeid2Rev[node_o] = get_contracted_name(reverse_complementary_node(node.first));
+            nodeid2Rev[get_contracted_name(reverse_complementary_node(node.first))] = get_contracted_name(node.first);
+            file_dot << "\"" << node_o << "\" [style=filled fillcolor=\"white\" label=\"" << get_contracted_label(node.first) << "\"]\n";
+        }
+        else if (node.first.find("+") != std::string::npos) {
+            file_dot << "\"" << node.first << "\" [style=filled fillcolor=\"white\" label=\"" << node.first + "_L" + std::to_string(graph[node.first].sequence.size()) << "\"]\n";
+        }
+        else {
+            if (nodes2bc.find(node.second.sequence) != nodes2bc.end()) {
+                std::string bc = "";
+                for (auto&& b : nodes2bc[node.second.sequence])
+                    bc += ("\\nBC: " + b);
+                file_dot << node.first << " [style=filled fillcolor=\"white\" label=\"" << node.first + "_L" + std::to_string(graph[node.first].sequence.size()) << bc << "\"]\n";
+            }
+            else
+                file_dot << node.first << " [style=filled fillcolor=\"white\" label=\"" << node.first + "_L" + std::to_string(graph[node.first].sequence.size()) << "\"]\n";
+        }
+        if (node.second.number_of_contracted_edge > max_contracted) {
+            max_contracted_node = get_contracted_name(node.first);
+            max_contracted = node.second.number_of_contracted_edge;
+        }
+    }
+    if (max_contracted > 0)
+        std::cout << "Max contracted node: " << max_contracted_node << " has " << max_contracted << " edges." << std::endl;
+
+    // construct labels for vertices
+    std::unordered_map<std::string, std::unordered_set<std::string>> vertice2labels;
+    for (auto&& node : this->graph) {
+        std::string start_node = node.first;
+        for (auto&& edges : node.second.outgoing_edges) {
+            for (auto&& edge : edges.second) {
+                if (!edge.label.empty())
+                    vertice2labels[start_node].insert(edge.label.substr(edge.label.find('.') + 1));
+            }
+        }
+    }
+
+    std::unordered_map<std::string, std::string> color_map = {
+        {"1A", "#325527"},
+        {"1B", "#325527"},
+        {"2A", "#628DCF"},
+        {"2B", "#628DCF"},
+        {"3A", "#41496B"},
+        {"3B", "#41496B"},
+        {"4A", "#12CCD6"},
+        {"4B", "#12CCD6"},
+        {"5A", "#3E16F3"},
+        {"5B", "#3E16F3"},
+        {"6A", "#E46C0A"},
+        {"6B", "#E46C0A"},
+        {"7A", "#446768"},
+        {"7B", "#446768"},
+        {"8A", "#FF0000"},
+        {"8B", "#FF0000"},
+        {"9A", "#3C06A6"},
+        {"9B", "#3C06A6"},
+        {"10A", "#6CB9AB"},
+        {"10B", "#6CB9AB"},
+        {"11A", "#988430"},
+        {"11B", "#988430"},
+        {"12A", "#4BAA54"},
+        {"12B", "#4BAA54"},
+        {"13A", "#154E54"},
+        {"13B", "#154E54"},
+        {"14A", "#A74C5D"},
+        {"14B", "#A74C5D"},
+        {"15A", "#528444"},
+        {"15B", "#528444"},
+        {"16A", "#B61664"},
+        {"16B", "#B61664"},
+        {"17A", "#8F3296"},
+        {"17B", "#8F3296"},
+        {"18A", "#E1A9E7"},
+        {"18B", "#E1A9E7"},
+        {"19A", "#54340D"},
+        {"19B", "#54340D"},
+        {"20A", "#316260"},
+        {"20B", "#316260"},
+        {"21A", "#8041AF"},
+        {"21B", "#8041AF"},
+        {"22A", "#5AB499"},
+        {"22B", "#5AB499"},
+        {"23A", "#952395"},
+        {"23B", "#952395"},
+        {"24A", "#70229F"},
+        {"24B", "#70229F"},
+        {"25A", "#4D4050"},
+        {"25B", "#4D4050"},
+        {"26A", "#969696"},
+        {"26B", "#969696"},
+        {"1M", "#325527"},
+        {"1P", "#325527"},
+        {"2M", "#628DCF"},
+        {"2P", "#628DCF"},
+        {"3M", "#41496B"},
+        {"3P", "#41496B"},
+        {"4M", "#12CCD6"},
+        {"4P", "#12CCD6"},
+        {"5M", "#3E16F3"},
+        {"5P", "#3E16F3"},
+        {"6M", "#E46C0A"},
+        {"6P", "#E46C0A"},
+        {"7M", "#446768"},
+        {"7P", "#446768"},
+        {"8M", "#FF0000"},
+        {"8P", "#FF0000"},
+        {"9M", "#3C06A6"},
+        {"9P", "#3C06A6"},
+        {"10M", "#6CB9AB"},
+        {"10P", "#6CB9AB"},
+        {"11M", "#988430"},
+        {"11P", "#988430"},
+        {"12M", "#4BAA54"},
+        {"12P", "#4BAA54"},
+        {"13M", "#154E54"},
+        {"13P", "#154E54"},
+        {"14M", "#A74C5D"},
+        {"14P", "#A74C5D"},
+        {"15M", "#528444"},
+        {"15P", "#528444"},
+        {"16M", "#B61664"},
+        {"16P", "#B61664"},
+        {"17M", "#8F3296"},
+        {"17P", "#8F3296"},
+        {"18M", "#E1A9E7"},
+        {"18P", "#E1A9E7"},
+        {"19M", "#54340D"},
+        {"19P", "#54340D"},
+        {"20M", "#316260"},
+        {"20P", "#316260"},
+        {"21M", "#8041AF"},
+        {"21P", "#8041AF"},
+        {"22M", "#5AB499"},
+        {"22P", "#5AB499"},
+        {"23M", "#952395"},
+        {"23P", "#952395"},
+        {"X", "#969696"},
+        {"Y", "#969696"},
+        {"mtDNA", "#FF0000"},
+        {"Chr1", "#325527"},
+        {"Chr2", "#628DCF"},
+        {"Chr3", "#41496B"},
+        {"Chr4", "#12CCD6"},
+        {"Chr5", "#3E16F3"},
+        {"Chr6", "#E46C0A"},
+        {"Chr7", "#446768"},
+        {"Chr8", "#FF0000"},
+        {"Chr9", "#3C06A6"},
+        {"Chr10", "#6CB9AB"},
+        {"Chr11", "#988430"},
+        {"Chr12", "#4BAA54"},
+        {"Chr13", "#154E54"},
+        {"Chr14", "#A74C5D"}
+    };
+
+    std::unordered_set <std::string> traversed_labels;
+    for (auto&& node : this->graph) {
+        std::string start_node = node.first;
+        if (node.second.number_of_contracted_edge > 0) {
+            start_node = get_contracted_name(node.first);
+        }
+        for (auto&& edges : node.second.outgoing_edges) {
+            std::string end_node = edges.first;
+            if (!nodes_retain.empty() && nodes_retain.find(node.first) == nodes_retain.end() && nodes_retain.find(end_node) == nodes_retain.end())
+                continue;
+            if (graph[edges.first].number_of_contracted_edge > 0) {
+                end_node = get_contracted_name(edges.first);
+            }
+            for (auto&& edge : edges.second) {
+                if (traversed_labels.find(edge.label) != traversed_labels.end()) {
+                    num_edges += 1;
+                    if (contracted || colored) {
+                        if (edge.ref_ids.empty())
+                            file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << format_with_commas(edge.length) << "(" << static_cast<int>(round(edge.multiplicity)) << ")\" color=\"black\"]\n";
+                        else {
+                            file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << format_with_commas(edge.length) << "(" << static_cast<int>(round(edge.multiplicity)) << ")";
+                            for (int i = 0; i < edge.ref_ids.size(); ++i) {
+                                file_dot << "\\n" << edge.ref_ids[i];
+                            }
+                            std::string chr = edge.ref_ids.at(0).substr(0, edge.ref_ids.at(0).find(' '));
+                            if (chr.at(0) == '-') chr = chr.substr(1);
+                            std::string color = color_map[chr];
+                            file_dot << "\" color=\"" << color << "\"]\n";
+                        }
+                    }
+                    else
+                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << format_with_commas(edge.length) << "(" << edge.multiplicity << ")\" color=\"black\"]\n";
+                    continue;
+                }
+                if (!edge.label.empty()) {
+                    traversed_labels.insert(edge.rc_label);
+                }
+                else {
+                    std::unordered_set<std::string>& forward_labels = vertice2labels[start_node];
+                    std::unordered_set<std::string>& reverse_labels = vertice2labels[reverse_complementary_node(end_node)];
+                    std::string label_forward = start_node + '.' + get_unique_label(forward_labels), label_reverse = reverse_complementary_node(end_node) + '.' + get_unique_label(reverse_labels);
+                    if (edge.sequence == reverse_complementary(edge.sequence)) {
+                        assert(end_node == reverse_complementary_node(start_node));
+                        label_reverse = label_forward;
+                    }
+                    edge.label = label_forward;
+                    edge.rc_label = label_reverse;
+                    // std::cout << "New label " << label_forward << " and " << label_reverse << std::endl;
+                    bool flag = false;
+                    for (auto&& edge_i : graph[edges.first].incoming_edges[node.first]) {
+                        if (edge_i.sequence == edge.sequence) {
+                            // the edge should appear only once
+                            assert(flag == false);
+                            flag = true;
+                            edge_i.label = label_forward;
+                            edge_i.rc_label = label_reverse;
+                        }
+                    }
+                    assert(flag);
+                    flag = false;
+                    for (auto&& edge_r : graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(node.first)]) {
+                        if (edge_r.sequence == reverse_complementary(edge.sequence) || graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(node.first)].size() == 1) {
+                            assert(flag == false);
+                            flag = true;
+                            edge_r.rc_label = label_forward;
+                            edge_r.label = label_reverse;
+                        }
+                    }
+                    assert(flag);
+                    flag = false;
+                    for (auto&& edge_r_i : graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(edges.first)]) {
+                        if (edge_r_i.sequence == reverse_complementary(edge.sequence) || graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(edges.first)].size() == 1) {
+                            assert(flag == false);
+                            flag = true;
+                            edge_r_i.rc_label = label_forward;
+                            edge_r_i.label = label_reverse;
+                        }
+                    }
+                    assert(flag);
+
+                    traversed_labels.insert(label_reverse);
+                    vertice2labels[start_node].insert(label_forward.substr(label_forward.find('.') + 1));
+                    vertice2labels[reverse_complementary_node(end_node)].insert(label_reverse.substr(label_reverse.find('.') + 1));
+                }
+
+                num_edges += 1;
+                if (contracted || colored) {
+                    if (edge.ref_ids.empty())
+                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << format_with_commas(edge.length) << "(" << static_cast<int>(round(edge.multiplicity)) << ")\" color=\"black\"]\n";
+                    else {
+                        file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << format_with_commas(edge.length) << "(" << static_cast<int>(round(edge.multiplicity)) << ")";
+                        for (int i = 0; i < edge.ref_ids.size(); ++i) {
+                            file_dot << "\\n" << edge.ref_ids[i];
+                        }
+                        std::string chr = edge.ref_ids.at(0).substr(0, edge.ref_ids.at(0).find(' '));
+                        if (chr.at(0) == '-') chr = chr.substr(1);
+                        std::string color = color_map[chr];
+                        file_dot << "\" color=\"" << color << "\"]\n";
+                    }
+                }
+                else
+                    file_dot << "\"" << start_node << "\" -> \"" << end_node << "\" [label=\"" << edge.label << " " << edge.start_base << " " << format_with_commas(edge.length) << "(" << edge.multiplicity << ")\" color=\"black\"]\n";
+                file_fasta << ">" << edge.label << "_" << edge.rc_label << "\n";
+                file_fasta << edge.sequence << "\n";
+                file_path << ">" << edge.label << "_" << edge.rc_label << " " << edge.length << "\n";
+                assert(edge.path_nodes_in_original_graph.size() == edge.path_edges_in_original_graph.size() + 1);
+                if (edge.path_nodes_in_original_graph.size() >= 1)
+                    file_path << edge.path_nodes_in_original_graph.at(0);
+                for (int i = 1; i < edge.path_nodes_in_original_graph.size(); ++i)
+                    file_path << "->(" << edge.path_edges_in_original_graph.at(i - 1) << ")->" << edge.path_nodes_in_original_graph.at(i);
+                file_path << "\n";
+            }
+        }
+    }
+    file_dot << "}" << std::endl;
+    file_dot.close();
+    file_fasta.close();
+    file_path.close();
+    std::cout << "Total number of nodes: " << this->get_num_nodes() << std::endl;
+    std::cout << "Total number of edges: " << num_edges << std::endl;
+}
+
 // assume no simple bubbles
 void Graph::write_graph_contracted(const std::string& prefix, int min_length, bool simplify) {
     // std::cout << "----------Contracted visulization----------" << std::endl;

@@ -13,7 +13,7 @@ print(len(sequences_ori), len(sequences_rm))
 ems = []
 fig, ax = pyplot.subplots(1, 1)
 
-em = wotplot.DotPlotMatrix(sequences_ori, sequences_rm, 1000, verbose=True)
+em = wotplot.DotPlotMatrix(sequences_ori, sequences_rm, 300, verbose=True)
 wotplot.viz_spy(
     em, markersize=0.01, ax=ax, title=f""
 )
