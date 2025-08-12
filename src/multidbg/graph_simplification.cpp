@@ -462,7 +462,7 @@ void Graph::merge_tips(unsigned& num_tips) {
                 double sim = matches_by_edlib(prefix_tip_target, prefix_tip_to_merge);
                 std::cout << "Check tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
 
-                if (sim < 0.8)
+                if (sim < 0.6)
                     continue;
 
                 // the lengths of the two tips cannot be too different, otherwise both tips are meaningful

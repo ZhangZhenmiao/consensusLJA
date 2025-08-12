@@ -426,7 +426,8 @@ def main():
     for query_name, alignments in high_identity_alignments.items():
         for aln in alignments:
             if "tig" not in aln['ref_id'] and aln['query_end']-aln['query_start'] > 10 or aln['length_query']> 1000000:
-                output_lines.append(f"{query_name}\t{aln['ref_id']}\tQ:{aln['length_query']:,}({aln['query_start']:.0f}-{aln['query_end']:.0f})\tQ:{aln['length_query']:,}({aln['query_start_cood']:.0f}-{aln['query_end_cood']:.0f})\tR:{aln['length_ref']:,}({aln['ref_start']:.2f}-{aln['ref_end']:.2f})\tR:{aln['length_ref']:,}({aln['ref_start_cood']:.0f}-{aln['ref_end_cood']:.0f})\tPI={aln['identity']:.0f}/{aln['identity_nogap']:.0f}")
+                # output_lines.append(f"{query_name}\t{aln['ref_id']}\tQ:{aln['length_query']:,}({aln['query_start']:.0f}-{aln['query_end']:.0f})\tQ:{aln['length_query']:,}({aln['query_start_cood']:.0f}-{aln['query_end_cood']:.0f})\tR:{aln['length_ref']:,}({aln['ref_start']:.2f}-{aln['ref_end']:.2f})\tR:{aln['length_ref']:,}({aln['ref_start_cood']:.0f}-{aln['ref_end_cood']:.0f})\tPI={aln['identity']:.0f}/{aln['identity_nogap']:.0f}")
+                output_lines.append(f"{query_name}\t{aln['ref_id']}\tQ:{aln['length_query']:,}({aln['query_start']:.0f}-{aln['query_end']:.0f})\tR:{aln['length_ref']:,}({aln['ref_start']:.2f}-{aln['ref_end']:.2f})\tPI={aln['identity']:.0f}/{aln['identity_nogap']:.0f}")
     
     ref_alignments = defaultdict(list)
 
@@ -442,7 +443,7 @@ def main():
             query_span = aln['query_end'] - aln['query_start']
 
             if "tig" not in ref_id and (query_span > 10 or aln['length_query'] > 1_000_000):
-                m = re.match(r"^(\d+)([MP])$", ref_id)  # match 1M, 2P, ...
+                m = re.match(r"^(\d+)([MPAB])$", ref_id)  # match 1M, 2P, ...
                 if m:
                     chrom = m.group(1)
                     hap = m.group(2)
@@ -482,7 +483,7 @@ def main():
     # Step 3: Print autosomal haplotype groups
     for chrom in sorted(haplo_groups.keys(), key=lambda x: int(x)):
         all_spans = []
-        for hap in ['M', 'P']:
+        for hap in ['M', 'P', 'A', 'B']:
             ref_id = f"{chrom}{hap}"
             if hap not in haplo_groups[chrom]:
                 continue
