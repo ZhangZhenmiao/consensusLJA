@@ -1183,7 +1183,7 @@ void Graph::write_graph_contracted_L(const std::string& prefix, int min_length, 
 void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jumbodbg, int threads, int k_mer, unsigned& num_glued) {
     num_glued = 0;
     execute_command("mkdir -p " + output);
-    std::string output_prefix_suffix = output + "/graph.before_removing_contained.linear_edges.fa";
+    std::string output_prefix_suffix = output + "/graph_linear_edges.fa";
     std::unordered_set<std::string> traversed_nodes;
     std::ofstream outfile(output_prefix_suffix);
     if (!outfile.is_open()) {
@@ -1272,8 +1272,8 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
     //     std::cout << bc.first << ": " << bc.second << std::endl;
     // }
 
-    if (!fs::is_directory(output + "/graph.before_removing_contained.linear_edges.dbg"))
-        execute_command(jumbodbg + " --reads " + output + "/graph.before_removing_contained.linear_edges.fa" + " -t " + std::to_string(threads) + " --coverage -k " + std::to_string(k_mer) + " -o " + output + "/graph.before_removing_contained.linear_edges.dbg");
+    if (!fs::is_directory(output + "/graph_linear_edges.dbg"))
+        execute_command(jumbodbg + " --reads " + output + "/graph_linear_edges.fa" + " -t " + std::to_string(threads) + " --coverage -k " + std::to_string(k_mer) + " -o " + output + "/graph_linear_edges.dbg");
 
     unsigned removed_paths = 1;
     unsigned removed_whirls = 1;
@@ -1286,7 +1286,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
     unsigned removed_tips = 1;
 
     Graph graph_linear_edges;
-    graph_linear_edges.restart_from_dot(output + "/graph.before_removing_contained.linear_edges.dbg/graph.dot", output + "/graph.before_removing_contained.linear_edges.dbg/graph.fasta", k_mer);
+    graph_linear_edges.restart_from_dot(output + "/graph_linear_edges.dbg/graph.dot", output + "/graph_linear_edges.dbg/graph.fasta", k_mer);
     graph_linear_edges.write_graph(output + "/graph_linear_edges.ori");
     // graph_linear_edges.get_annotation(output + "/graph_linear_edges.ori");
     // graph_linear_edges.write_graph(output + "/graph_linear_edges.ori.color", 1000000, false, true, std::unordered_set<std::string>(), kmer2bc);
@@ -1814,7 +1814,7 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
     infile.close();
 }
 
-void Graph::connect_linear_and_tips_using_spanning_reads(std::string output, int threads, std::string reads) {
+void Graph::connect_linear_and_tips_using_spanning_reads(std::string output, int threads, std::string reads, double identity) {
     execute_command("mkdir -p " + output);
 
     std::string output_all = output + "/linear_all.fasta";
@@ -1872,7 +1872,7 @@ void Graph::connect_linear_and_tips_using_spanning_reads(std::string output, int
     std::string spanning_reads_script = exeDir + "/../src/scripts/investigate_spanning_reads.py";
 
     if (!fs::is_regular_file(out_result)) {
-        if (execute_command((spanning_reads_script + " " + output_all + " " + reads + " " + out_bam + " " + out_result + " -c " + compress + " -t " + std::to_string(threads)).c_str()) != 0)
+        if (execute_command((spanning_reads_script + " " + output_all + " " + reads + " " + out_bam + " " + out_result + " -c " + compress + " -t " + std::to_string(threads) + " -i " + std::to_string(identity)).c_str()) != 0)
             throw std::runtime_error("Failed to execute: " + spanning_reads_script + " " + output_all + " " + reads + " " + out_bam + " " + out_result + " -c " + compress + " -t " + std::to_string(threads));
     }
 

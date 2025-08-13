@@ -11,7 +11,6 @@ public:
     int threads = 0;
     //input for multidbg
     std::string graph_gfa, graph_aln;
-    int first_peak = 0, first_minima = 0, mean_cov = 0;
     //input for simplification
     std::string graph_dot, graph_fasta, nodes_fasta, graph_dbg, paths_dbg;
     std::string reads;
@@ -28,10 +27,7 @@ public:
     std::string jumbodbg = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "jumboDBG";
     std::string polisher = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "run_polishing";
 
-    MDBGRunner(fs::path output_all, std::string reads, int threads, int first_peak, int first_minima, int mean_cov, std::string initial_dbg) {
-        this->first_peak = first_peak;
-        this->first_minima = first_minima;
-        this->mean_cov = mean_cov;
+    MDBGRunner(fs::path output_all, std::string reads, int threads, std::string initial_dbg) {
         this->initial_dbg = initial_dbg;
         srand(2025);
         this->threads = threads;

@@ -65,6 +65,15 @@ add_executable(cLJA
     lib/edlib/src/edlib.cpp
 )
 
+# Add the executable
+add_executable(connecting_contigs
+    src/connecting_contigs_and_polishing.cpp
+    src/utils.cpp
+    ${DBG_SOURCES}
+    ${MULTIDBG_SOURCES}
+    lib/edlib/src/edlib.cpp
+)
+
 add_executable(unialigner_identity src/scripts/unialigner_identity.cpp lib/edlib/src/edlib.cpp)
 target_include_directories(unialigner_identity PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/edlib/include
@@ -77,8 +86,16 @@ target_include_directories(cLJA PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src # Assuming you might need this
 )
 
+# Include directories
+target_include_directories(connecting_contigs PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/cmdline
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/edlib/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src # Assuming you might need this
+)
+
 # Link libraries
 target_link_libraries(cLJA PRIVATE OpenMP::OpenMP_CXX)
+target_link_libraries(connecting_contigs PRIVATE OpenMP::OpenMP_CXX)
 
 # Compile options
 target_compile_features(cLJA PRIVATE cxx_std_20)
@@ -88,5 +105,14 @@ target_compile_options(cLJA PRIVATE
     ${OpenMP_CXX_FLAGS}
 )
 
+# Compile options
+target_compile_features(connecting_contigs PRIVATE cxx_std_20)
+target_compile_options(connecting_contigs PRIVATE
+    $<$<CONFIG:Release>:-O3>
+    $<$<CONFIG:Debug>:-g>
+    ${OpenMP_CXX_FLAGS}
+)
+
 # Better to explicitly link OpenMP flags
 target_link_options(cLJA PRIVATE ${OpenMP_CXX_FLAGS})
+target_link_options(connecting_contigs PRIVATE ${OpenMP_CXX_FLAGS})

@@ -330,6 +330,7 @@ def main():
     parser.add_argument("--flank_size", type=int, default=20000, help="Flank size (default: 20000)")
     parser.add_argument("-t", "--thread", type=int, default=50, help="number of threads to use (default: 50)")
     parser.add_argument("-c", "--compress", help="path to LJA compress")
+    parser.add_argument("-i", "--identity", type=float, default=0.9, help="identity threshold for filtering alignments (default: 0.9)")
     args = parser.parse_args()
 
     flank_fasta = args.fasta[:args.fasta.rfind(".fa")] + ".flanks.fasta"
