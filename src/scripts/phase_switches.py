@@ -18,7 +18,7 @@ def get_paths(graphaligner):
                 genome_path = items[5]
                 genome_path = re.split("<|>", genome_path[1:])
                 idt = float(items[-2][5:])
-                if idt >= 0.99:
+                if idt >= 0.9:
                     if contig in contig2paths:
                         contig2paths[contig].append(genome_path)
                     else:
@@ -147,7 +147,7 @@ def get_switches(graphaligner, paths, dot, out):
                 if len(refs) > 0:
                     pathid += 1
                     majority = Most_Common(refs)
-                    if majority == "17": continue
+                    # if majority == "17": continue
                     previous = ""
                     for e in genome_path:
                         if e in edge2ref:

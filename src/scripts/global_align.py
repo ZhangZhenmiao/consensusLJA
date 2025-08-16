@@ -183,6 +183,12 @@ with open(alignment_file, 'r') as file:
 for c in chromosome_strand_dict:
     print(c, chromosome_contig_dict[c], chromosome_strand_dict[c])
 
+print("\n=== Largest Contig Length Per Chromosome ===")
+print("{:<15} {:<20} {:>10}".format("Chromosome", "Contig ID", "Length"))
+for chromosome, (contig_id, length) in sorted(chromosome_contig_dict.items()):
+    print("{:<15} {:<20} {:>10}".format(chromosome, contig_id, length))
+print("============================================\n", flush=True)
+
 # Step 3: Read contig sequences
 contig_sequences = read_fasta(contig_sequence_file)
 

@@ -7,19 +7,21 @@ def main():
     parser = argparse.ArgumentParser(description="Remove contigs fully contained in others (allowing mismatches)")
     parser.add_argument("input_fasta", help="Input FASTA file with contigs")
     parser.add_argument("output_fasta", help="Output FASTA file with filtered contigs")
-    parser.add_argument("--threads", type=int, default=8, help="Number of threads for minimap2 (default: 8)")
+    parser.add_argument("--threads", type=int, default=50, help="Number of threads for minimap2 (default: 8)")
     parser.add_argument("--min_coverage", type=float, default=0.9, help="Minimum coverage to consider contained (default: 0.9)")
     args = parser.parse_args()
 
-    paf_file = str(Path(args.output_fasta).with_suffix(".paf"))
+    paf_file = Path(args.output_fasta).with_suffix(".paf")
 
-    # Step 1: Run minimap2
-    cmd = [
-        "minimap2", "-x", "asm5", "-t", str(args.threads),
-        args.input_fasta, args.input_fasta
-    ]
-    with open(paf_file, "w") as out:
-        subprocess.run(cmd, stdout=out, check=True)
+    if not paf_file.exists():
+
+        # Step 1: Run minimap2
+        cmd = [
+            "minimap2", "-x", "asm20", "-t", str(args.threads),
+            args.input_fasta, args.input_fasta
+        ]
+        with open(paf_file, "w") as out:
+            subprocess.run(cmd, stdout=out, check=True)
 
     # Step 3: Write filtered FASTA
     name2len = {}
