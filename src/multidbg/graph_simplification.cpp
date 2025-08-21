@@ -60,13 +60,13 @@ int Graph::count_matches(std::string cigar) {
 }
 
 void Graph::get_annotation(std::string prefix) {
-    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
-    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fna";
+    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
+    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fasta";
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Mytilus_gallo/genome/GCA_037788925.1_MytGallo_primary_0.1_genomic.compressed.fa";
     if (fs::is_regular_file(prefix + ".fasta.fai"))
         system(("rm " + prefix + ".fasta.fai").c_str());
-    if (system(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str()) != 0) {
+    if (system(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -p 0.1 -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str()) != 0) {
         exit(1);
     }
     if (!std::filesystem::exists(ref_seq + ".fai")) {
@@ -874,20 +874,40 @@ void Graph::merge_tips_into_edges_further(unsigned& num_tips, double ratio) {
         std::string prefix_tip = tip_edge.sequence.substr(0, prefix_size);
         std::string prefix_edge = path.sequence.substr(0, prefix_size);
 
-        double sim = matches_by_edlib(prefix_tip, prefix_edge);
-        std::cout << "Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " len " << tip_edge.length << " to " << node.first << "->" << non_tip << "->" << out_node_non_tip << " multi " << path.multiplicity << " len " << path.length << ": sim " << sim << std::endl;
-        if (sim < ratio)
-            continue;
+        if (graph[out_node_non_tip].outgoing_edges.size() != 0) {
+            double sim = matches_by_edlib(prefix_tip, prefix_edge);
+            std::cout << "Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " len " << tip_edge.length << " to " << node.first << "->" << non_tip << "->" << out_node_non_tip << " multi " << path.multiplicity << " len " << path.length << ": sim " << sim << std::endl;
+            if (sim < ratio)
+                continue;
 
-        nodes_to_remove.insert(tip);
-        nodes_to_remove.insert(reverse_complementary_node(tip));
-        num_tips += 2;
-        std::cout << "Tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " is merged to path " << node.first << "->" << non_tip << "->" << out_node_non_tip << " with sim " << sim << std::endl;
-        std::cout << "Tip " << reverse_complementary_node(tip) << "->" << reverse_complementary_node(node.first) << " multi " << tip_edge.multiplicity << " is merged to path " << reverse_complementary_node(out_node_non_tip) << "->" << reverse_complementary_node(non_tip) << "->" << reverse_complementary_node(node.first) << " with sim " << sim << std::endl;
-        graph[node.first].outgoing_edges.erase(tip);
-        graph[tip].incoming_edges.erase(node.first);
-        graph[reverse_complementary_node(node.first)].incoming_edges.erase(reverse_complementary_node(tip));
-        graph[reverse_complementary_node(tip)].outgoing_edges.erase(reverse_complementary_node(node.first));
+            nodes_to_remove.insert(tip);
+            nodes_to_remove.insert(reverse_complementary_node(tip));
+            num_tips += 2;
+            std::cout << "Tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " is merged to path " << node.first << "->" << non_tip << "->" << out_node_non_tip << " with sim " << sim << std::endl;
+            std::cout << "Tip " << reverse_complementary_node(tip) << "->" << reverse_complementary_node(node.first) << " multi " << tip_edge.multiplicity << " is merged to path " << reverse_complementary_node(out_node_non_tip) << "->" << reverse_complementary_node(non_tip) << "->" << reverse_complementary_node(node.first) << " with sim " << sim << std::endl;
+            graph[node.first].outgoing_edges.erase(tip);
+            graph[tip].incoming_edges.erase(node.first);
+            graph[reverse_complementary_node(node.first)].incoming_edges.erase(reverse_complementary_node(tip));
+            graph[reverse_complementary_node(tip)].outgoing_edges.erase(reverse_complementary_node(node.first));
+        }
+        else {
+            double sim = matches_by_edlib(prefix_tip, prefix_edge);
+            std::cout << "Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " len " << tip_edge.length << " to " << node.first << "->" << non_tip << "->" << out_node_non_tip << " multi " << path.multiplicity << " len " << path.length << ": sim " << sim << std::endl;
+            if (sim < 0.6)
+                continue;
+
+            if (tip_edge.length < path.length) {
+                nodes_to_remove.insert(tip);
+                nodes_to_remove.insert(reverse_complementary_node(tip));
+                num_tips += 2;
+                std::cout << "Tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " is merged to path " << node.first << "->" << non_tip << "->" << out_node_non_tip << " with sim " << sim << std::endl;
+                std::cout << "Tip " << reverse_complementary_node(tip) << "->" << reverse_complementary_node(node.first) << " multi " << tip_edge.multiplicity << " is merged to path " << reverse_complementary_node(out_node_non_tip) << "->" << reverse_complementary_node(non_tip) << "->" << reverse_complementary_node(node.first) << " with sim " << sim << std::endl;
+                graph[node.first].outgoing_edges.erase(tip);
+                graph[tip].incoming_edges.erase(node.first);
+                graph[reverse_complementary_node(node.first)].incoming_edges.erase(reverse_complementary_node(tip));
+                graph[reverse_complementary_node(tip)].outgoing_edges.erase(reverse_complementary_node(node.first));
+            }
+        }
     }
     for (auto&& n : nodes_to_remove)
         graph.erase(n);

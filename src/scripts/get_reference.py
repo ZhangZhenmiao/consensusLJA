@@ -355,27 +355,28 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     'alignment': alignment
                 })
 
+                query_name = "*" + alignment.query_name.split('_')[0]
                 # query_name = alignment.query_name.split('_')[1]
-                # if query_name not in high_identity_alignments:
-                #     high_identity_alignments[query_name] = []
+                if query_name not in high_identity_alignments:
+                    high_identity_alignments[query_name] = []
                 
-                # high_identity_alignments[query_name].append({
-                #     'identity': identity,
-                #     'identity_nogap': identity_nogap,
-                #     'ref_id': ref_id if alignment.is_reverse else '-' + ref_id,
-                #     'ref_start': 100 * (alignment.reference_start / ref_len) if alignment.is_reverse else 100 * ((ref_len - alignment.reference_end) / ref_len),
-                #     'ref_end': 100 * (alignment.reference_end / ref_len) if alignment.is_reverse else 100 * ((ref_len - alignment.reference_start) / ref_len),
-                #     'ref_start_cood': alignment.reference_start if alignment.is_reverse else ref_len - alignment.reference_end,
-                #     'ref_end_cood': alignment.reference_end if alignment.is_reverse else ref_len - alignment.reference_start,
-                #     'query_start': 100 * ((query_len - query_alignment_end) / query_len) if alignment.is_forward else 100 * (query_alignment_start / query_len),
-                #     'query_end': 100 * ((query_len - query_alignment_start) / query_len) if alignment.is_forward else 100 * (query_alignment_end / query_len),
-                #     'query_start_cood': query_len - query_alignment_end if alignment.is_forward else query_alignment_start,
-                #     'query_end_cood': query_len - query_alignment_start if alignment.is_forward else query_alignment_end,
-                #     'reverse': alignment.is_reverse,
-                #     'length_query': alignment.query_alignment_end - alignment.query_alignment_start,
-                #     'length_ref': alignment.reference_end - alignment.reference_start,
-                #     'alignment': alignment
-                # })
+                high_identity_alignments[query_name].append({
+                    'identity': identity,
+                    'identity_nogap': identity_nogap,
+                    'ref_id': ref_id if alignment.is_reverse else '-' + ref_id,
+                    'ref_start': 100 * (alignment.reference_start / ref_len) if alignment.is_reverse else 100 * ((ref_len - alignment.reference_end) / ref_len),
+                    'ref_end': 100 * (alignment.reference_end / ref_len) if alignment.is_reverse else 100 * ((ref_len - alignment.reference_start) / ref_len),
+                    'ref_start_cood': alignment.reference_start if alignment.is_reverse else ref_len - alignment.reference_end,
+                    'ref_end_cood': alignment.reference_end if alignment.is_reverse else ref_len - alignment.reference_start,
+                    'query_start': 100 * ((query_len - query_alignment_end) / query_len) if alignment.is_forward else 100 * (query_alignment_start / query_len),
+                    'query_end': 100 * ((query_len - query_alignment_start) / query_len) if alignment.is_forward else 100 * (query_alignment_end / query_len),
+                    'query_start_cood': query_len - query_alignment_end if alignment.is_forward else query_alignment_start,
+                    'query_end_cood': query_len - query_alignment_start if alignment.is_forward else query_alignment_end,
+                    'reverse': alignment.is_reverse,
+                    'length_query': alignment.query_alignment_end - alignment.query_alignment_start,
+                    'length_ref': alignment.reference_end - alignment.reference_start,
+                    'alignment': alignment
+                })
 
         # keep the largest span if overlap
         for query_name, alignments in high_identity_alignments.items():
@@ -393,7 +394,8 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                 new_alignments.extend(final_alignments)
 
             # Sort retained alignments by query coordinates
-            high_identity_alignments[query_name] = sorted(new_alignments, key=lambda x: (x["query_start"], x["query_end"]))
+            # high_identity_alignments[query_name] = sorted(new_alignments, key=lambda x: (x["query_start"], x["query_end"], -x["identity"], -x["identity_nogap"]))
+            high_identity_alignments[query_name] = sorted(new_alignments, key=lambda x: (x["query_start"]-x["query_end"], -x["identity"], -x["identity_nogap"]))
     
     
     # print(f"Edges with label: {processed_alignments} of {total_alignments}")

@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+import sys
+import re
+import matplotlib.pyplot as plt
+import numpy as np
+import argparse
+
+def parse_span(field):
+    """Parse fields like Q:3,386,989(0-35) → (span_bp, ref_start_pct, ref_end_pct)"""
+    m = re.search(r"Q:([\d,]+)\((\d+)-(\d+)\)", field)
+    if not m:
+        return 0, None, None
+    span = int(m.group(1).replace(",", ""))
+    ref_start = int(m.group(2))
+    ref_end = int(m.group(3))
+    return span, ref_start, ref_end
+
+def parse_ref(raw_ref):
+    """Extract (ref_name, is_reverse)"""
+    is_rev = raw_ref.startswith("-")
+    core = raw_ref[1:] if is_rev else raw_ref
+    core = core.rstrip(")")
+    m = re.search(r"(\d+)", core)
+    ref_name = m.group(1) if m else core
+    return ref_name, is_rev
+
+def read_fai(fai_file):
+    lengths = {}
+    with open(fai_file) as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            if len(parts) >= 2:
+                name, length = parts[0], int(parts[1])
+                lengths[name] = length
+    return lengths
+
+def load_exclude_list(path):
+    """Load contigs to exclude (first column only)."""
+    exclude = set()
+    if path is None:
+        return exclude
+    with open(path) as f:
+        for line in f:
+            if line.strip() and "len" in line:
+                exclude.add(line.split()[0])
+    return exclude
+
+def read_stats(stats_file, contig_lengths, exclude):
+    best_refs = {}
+    with open(stats_file) as f:
+        for line in f:
+            if not line.strip():
+                continue
+            parts = line.strip().split()
+            if len(parts) < 3:
+                continue
+            contig, raw_ref, span_field = parts[0], parts[1], parts[2]
+
+            if contig in exclude:
+                continue  # skip excluded contigs
+
+            span, ref_start, ref_end = parse_span(span_field)
+            if ref_start is None:
+                continue
+
+            ref_name, is_rev = parse_ref(raw_ref)
+            if is_rev:
+                ref_start, ref_end = (100 - ref_end), (100 - ref_start)
+            
+            if ref_end - ref_start < 2:
+                continue
+
+            if contig not in best_refs or span > best_refs[contig][1]:
+                best_refs[contig] = (ref_name, span, ref_start, ref_end)
+
+    print(f"\nBest refs for {stats_file}:")
+    for contig, (ref, span, start, end) in best_refs.items():
+        print(f"{contig}\t{ref}\t{span}\t({start}-{end})")
+
+    chr_contigs = {}
+    for contig, (ref, span, ref_start, ref_end) in best_refs.items():
+        contig_len = contig_lengths.get(contig, 0)
+        chr_contigs.setdefault(ref, []).append((ref_start, ref_end, contig_len))
+    return chr_contigs
+
+def plot_single(ax, stats_file, contigs_fai, stats2_file, contigs2_fai, ref_fai, exclude_file1, exclude_file2, add_dots=False):
+    contig_lengths1 = read_fai(contigs_fai)
+    contig_lengths2 = read_fai(contigs2_fai)
+    ref_lengths = read_fai(ref_fai)
+    exclude1 = load_exclude_list(exclude_file1)
+    exclude2 = load_exclude_list(exclude_file2)
+
+    chr_contigs1 = read_stats(stats_file, contig_lengths1, exclude1)
+    chr_contigs2 = read_stats(stats2_file, contig_lengths2, exclude2)
+
+    def chr_sort_key(c):
+        m = re.search(r'\d+', c)
+        return int(m.group()) if m else float('inf')
+
+    chromosomes_sorted = sorted(set(list(chr_contigs1.keys()) + list(chr_contigs2.keys())),
+                                key=chr_sort_key)
+    x = np.arange(len(chromosomes_sorted))
+
+    hapA_bp = []
+    hapB_bp = []
+    for c in chromosomes_sorted:
+        valA = ref_lengths.get(f"chromosome_{c}A") or next((ref_lengths[k] for k in ref_lengths if f"chr{c}_mat" in k), 0)
+        valB = ref_lengths.get(f"chromosome_{c}B") or next((ref_lengths[k] for k in ref_lengths if f"chr{c}_pat" in k), 0)
+        hapA_bp.append(valA)
+        hapB_bp.append(valB)
+    hapA_mb = [v/1e6 for v in hapA_bp]
+    hapB_mb = [v/1e6 for v in hapB_bp]
+
+    total_width = 0.8
+    hapA_added = False
+    hapB_added = False
+
+    for i, c in enumerate(chromosomes_sorted):
+        slots = []
+        if c != "Y": slots.append(('hapA', hapA_mb[i], "#4C72B0"))
+        if c != "X": slots.append(('hapB', hapB_mb[i], "#55A868"))
+        slots.append(('cons1', chr_contigs1.get(c, []), "#C44E52"))
+        slots.append(('cons2', chr_contigs2.get(c, []), "#8172B3"))
+
+        n_slots = len(slots)
+        slot_width = total_width / n_slots
+        start_pos = x[i] - total_width / 2
+
+        for j, (name, val, color) in enumerate(slots):
+            if 'cons' in name:
+                bottom = 0.0
+                for rs, re_, clen in sorted(val, key=lambda t: (t[0], t[1])):
+                    ax.bar(start_pos + j*slot_width, clen/1e6, slot_width, bottom=bottom,
+                           color=color, edgecolor='white', linewidth=0.3,
+                           label=name if (i==0 and j==0 and name=='cons1') else None)
+                    bottom += clen/1e6
+
+                # --- Add dots for contig counts (only if add_dots=True) ---
+                if add_dots and len(val) > 0:
+                    # count only contigs longer than 1 Mb
+                    long_contigs = [clen for rs, re_, clen in val if clen > 1e6]
+                    if long_contigs:
+                        # get the consensus bar total height (Mb)
+                        bar_height = sum(clen/1e6 for rs, re_, clen in val)
+                        dot_start = bar_height + 5.0  # start 5 Mb above bar top
+                        dot_spacing = 5.0             # vertical spacing (Mb)
+
+                        for k in range(len(long_contigs)):
+                            ax.scatter(
+                                start_pos + j*slot_width,
+                                dot_start + k*dot_spacing,
+                                s=15, c="black", marker="o", zorder=5
+                            )
+
+            else:
+                label = None
+                if name=='hapA' and not hapA_added:
+                    label='Haplome 1'; hapA_added=True
+                if name=='hapB' and not hapB_added:
+                    label='Haplome 2'; hapB_added=True
+                ax.bar(start_pos + j*slot_width, val, slot_width, color=color, edgecolor='white', linewidth=0.3, label=label)
+
+    # Dummy bars for consensus legend
+    ax.bar(0,0,color="#C44E52", label='cLJA', edgecolor='white')
+    ax.bar(0,0,color="#8172B3", label='hifiasm', edgecolor='white')
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"chr{c}" for c in chromosomes_sorted], fontsize=10)
+    ax.grid(False)
+    ax.tick_params(axis='y', labelsize=10)
+    ax.tick_params(axis='x', labelsize=10)
+    return ax
+
+def main():
+    parser = argparse.ArgumentParser(description="Integrate three contig comparison plots into one figure")
+    parser.add_argument('--stats', nargs=3, required=True)
+    parser.add_argument('--fai', nargs=3, required=True)
+    parser.add_argument('--stats2', nargs=3, required=True)
+    parser.add_argument('--fai2', nargs=3, required=True)
+    parser.add_argument('--ref', nargs=3, required=True)
+    parser.add_argument('--exclude1', nargs=3, required=True, help="Files listing contigs to exclude (3)")
+    parser.add_argument('--exclude2', nargs=3, required=True, help="Files listing contigs to exclude (3)")
+    parser.add_argument('--output', required=True)
+    args = parser.parse_args()
+
+    fig, axes = plt.subplots(3, 1, figsize=(16, 18))
+
+    for i in range(3):
+        plot_single(
+            axes[i],
+            args.stats[i], args.fai[i],
+            args.stats2[i], args.fai2[i],
+            args.ref[i], args.exclude1[i], args.exclude2[i],
+            add_dots=(i == 2)
+        )
+        axes[i].set_ylabel("Length (Mb)", fontsize=14)
+        axes[i].set_xlabel("Chromosome", fontsize=14)
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, fontsize=12, frameon=False, loc='lower center', ncol=4, bbox_to_anchor=(0.5, 0.01))
+    fig.tight_layout(rect=[0, 0.05, 1, 1])
+    plt.savefig(args.output, dpi=300)
+    plt.show()
+
+if __name__=="__main__":
+    main()
