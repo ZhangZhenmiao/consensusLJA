@@ -1,0 +1,1 @@
+/usr/bin/c++  -I/Poppy/zmzhang/software/anaconda3/envs/clja/include -g CMakeFiles/unialigner_identity.dir/src/scripts/unialigner_identity.cpp.o CMakeFiles/unialigner_identity.dir/lib/edlib/src/edlib.cpp.o -o bin/unialigner_identity   -L/Poppy/zmzhang/software/anaconda3/envs/clja/lib 
