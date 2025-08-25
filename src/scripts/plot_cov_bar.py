@@ -13,7 +13,7 @@ args = parser.parse_args()
 # Load data
 data = np.loadtxt(args.input_file)
 df = pd.DataFrame(data, columns=['length', 'coverage'])
-df['group'] = np.where(df['length'] <= 10000, 'Length ≤ 10,000', 'Length > 10,000')
+df['group'] = np.where(df['length'] <= 20000, 'Length ≤ 20,000', 'Length > 20,000')
 
 # Bin coverage
 bins = np.arange(0, 101, 1)
