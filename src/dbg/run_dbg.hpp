@@ -25,9 +25,13 @@ public:
         fs::path dbg_dir = output_all / "0_condensed_dbg";
         this->dbg_dir = dbg_dir;
 
-        std::cout << "[RunLJAInitial] Construct condensed DBG using LJA" << std::endl;
+        std::cout << "==========[cLJA start]==========" << std::endl;
         if (!fs::is_directory(dbg_dir)) {
+            std::cout << "[CDB] Construct condensed DBG using LJA" << std::endl;
             execute_command(lja_cdb + " -t " + std::to_string(threads) + " --reads " + reads + " --output-dir " + dbg_dir.string() + " --diploid");
+        }
+        else {
+            std::cout << "[CDB] LJA directory already exists. Skipping LJA run." << std::endl;
         }
 
         graph_dot = dbg_dir / "01_TopologyBasedCorrection" / "final_dbg.dot";
@@ -39,7 +43,7 @@ public:
         std::string correct_reads_lja = output + "/corrected_reads.fasta";
         std::string correct_reads_high = output + "/reads_all.corrected.fasta";
 
-        std::cout << "==========[GraphCleaning]==========" << std::endl;
+        std::cout << "==========[Graph Cleaning]==========" << std::endl;
 
         bool correct_high = false;
         if (!fs::is_regular_file(high_contigs))
@@ -53,7 +57,7 @@ public:
             }
 
             if (!fs::is_directory(dbg_dir)) {
-                std::cout << "[RunLJACorrected] Construct condensed DBG using LJA" << std::endl;
+                std::cout << "[Cleaning] Construct condensed DBG using LJA" << std::endl;
                 execute_command(lja_cdb + " -t " + std::to_string(threads) + " --reads " + correct_reads_high + " --output-dir " + dbg_dir.string() + " --diploid");
             }
         }
@@ -76,6 +80,8 @@ public:
 
         if (!fs::is_directory(output))
             cleanDBG();
+        else
+            std::cout << "[Cleaning] Cleaned DBG directory already exists. Skipping DBG cleaning." << std::endl;
     }
     bool correctHigh();
     void cleanDBG();

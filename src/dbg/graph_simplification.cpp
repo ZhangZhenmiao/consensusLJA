@@ -2253,12 +2253,12 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
                 if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || n2.second.at(i).multiplicity == 0) {
                     indices1.push_back(i);
                     removed_edges += 1;
-                    if (is_in_high_multi_bulge(n2.second))
-                        std::cout << "[RemoveLow] " << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is in bulge" << std::endl;
-                    else if (is_connected_to_high_muilti_edge(node, n2.first))
-                        std::cout << "[RemoveLow] " << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is low-high connector" << std::endl;
-                    else
-                        std::cout << "[RemoveLow] " << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is low" << std::endl;
+                    // if (is_in_high_multi_bulge(n2.second))
+                    //     std::cout << "[RemoveLow] " << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is in bulge" << std::endl;
+                    // else if (is_connected_to_high_muilti_edge(node, n2.first))
+                    //     std::cout << "[RemoveLow] " << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is low-high connector" << std::endl;
+                    // else
+                    //     std::cout << "[RemoveLow] " << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is low" << std::endl;
                     for (auto&& r : n2.second.at(i).reads) {
                         ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
                         aln.prefix = 0;
@@ -2309,12 +2309,12 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
                 if (node_is_tip || force || is_in_high_multi_bulge(n2.second) || is_connected_to_high_muilti_edge(node, n2.first) || graph[n2.first].outgoing_edges[node].at(i).multiplicity == 0) {
                     indices2.push_back(i);
                     removed_edges += 1;
-                    if (is_in_high_multi_bulge(n2.second))
-                        std::cout << "[RemoveLow] " << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is in bulge" << std::endl;
-                    else if (is_connected_to_high_muilti_edge(node, n2.first))
-                        std::cout << "[RemoveLow] " << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is low-high connector" << std::endl;
-                    else
-                        std::cout << "[RemoveLow] " << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is low" << std::endl;
+                    // if (is_in_high_multi_bulge(n2.second))
+                    //     std::cout << "[RemoveLow] " << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is in bulge" << std::endl;
+                    // else if (is_connected_to_high_muilti_edge(node, n2.first))
+                    //     std::cout << "[RemoveLow] " << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is low-high connector" << std::endl;
+                    // else
+                    //     std::cout << "[RemoveLow] " << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is low" << std::endl;
                     for (auto&& r : graph[n2.first].outgoing_edges[node].at(i).reads) {
                         ReadAln& aln = read2aln.find(r) != read2aln.end() ? read2aln[r] : pseudo2aln[r];
                         aln.prefix = 0;

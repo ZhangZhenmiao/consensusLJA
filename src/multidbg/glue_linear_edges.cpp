@@ -1287,7 +1287,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
 
     Graph graph_linear_edges;
     graph_linear_edges.restart_from_dot(output + "/graph_linear_edges.dbg/graph.dot", output + "/graph_linear_edges.dbg/graph.fasta", k_mer);
-    graph_linear_edges.write_graph(output + "/graph_linear_edges.ori");
+    // graph_linear_edges.write_graph(output + "/graph_linear_edges.ori");
     // graph_linear_edges.get_annotation(output + "/graph_linear_edges.ori");
     // graph_linear_edges.write_graph(output + "/graph_linear_edges.ori.color", 1000000, false, true, std::unordered_set<std::string>(), kmer2bc);
 
@@ -1297,8 +1297,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
         graph_linear_edges.multi_bulge_removal(removed_bulges);
         total_removed += removed_bulges;
     }
-    std::cout << "[Connect] Removed " << total_removed << " simple bulges" << std::endl;
-    graph_linear_edges.write_graph(output + "/graph_linear_edges.bulge_removel");
 
     removed_whirls = 1;
     total_removed = 0;
@@ -1306,7 +1304,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
         graph_linear_edges.general_whirl_removal(removed_whirls);
         total_removed += removed_whirls;
     }
-    std::cout << "[Connect] Removed " << total_removed << " general whirls" << std::endl;
 
     removed_paths = 1;
     total_removed = 0;
@@ -1330,8 +1327,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
         graph_linear_edges.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.6, true, 2);
         total_removed += removed_paths;
     }
-    std::cout << "[Connect] Removed complex bulges: " << total_removed << std::endl;
-    graph_linear_edges.write_graph(output + "/graph_linear_edges.complex_bulge");
 
     // ensure all below outputting graph_linear_edges have no simple bulges, or the program will fail
     decoupled = 1;
@@ -1340,7 +1335,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
         graph_linear_edges.resolve_edges_in_reverse_complement(decoupled, true);
         total_removed += decoupled;
     }
-    graph_linear_edges.write_graph(output + "/graph_linear_edges.decoupling");
 
     total_removed = 0;
     removed_tips = 1;
@@ -1350,10 +1344,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
         if (removed_tips > 0)
             std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
     }
-
-    std::cout << "[Connect] Removed tips: " << total_removed << std::endl;
-    graph_linear_edges.write_graph(output + "/graph_linear_edges.remove_tips");
-
 
     while (true) {
         bool flag = true;
@@ -1408,8 +1398,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             break;
     }
 
-    graph_linear_edges.write_graph(output + "/graph_linear_edges.complex_comp");
-
     while (true)
     {
         bool flag = true;
@@ -1435,8 +1423,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             break;
     }
 
-    graph_linear_edges.write_graph(output + "/graph_linear_edges.decoupling_further");
-
     while (true) {
         bool flag = true;
         removed_paths = 1;
@@ -1444,16 +1430,12 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             graph_linear_edges.resolving_bulge_with_two_multi_edge_paths(removed_paths, 8, 0, true, 2, true);
             if (removed_paths)
                 flag = false;
-            if (removed_paths > 0)
-                std::cout << "[Connect] Removed " << removed_paths << " paths" << std::endl;
         }
         decoupled = 1;
         while (decoupled) {
             graph_linear_edges.resolve_edges_in_reverse_complement(decoupled, false);
             if (decoupled)
                 flag = false;
-            if (decoupled > 0)
-                std::cout << "[Connect] Decoupled " << decoupled << " strands" << std::endl;
         }
 
         removed_tips = 1;
@@ -1461,8 +1443,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             graph_linear_edges.merge_tips_into_edges_L(removed_tips, 0.8, false, false, kmer2bc);
             if (removed_tips)
                 flag = false;
-            if (removed_tips > 0)
-                std::cout << "[Connect] Merged " << removed_tips << " tips to edges" << std::endl;
         }
 
         removed_whirls = 1;
@@ -1471,8 +1451,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             graph_linear_edges.merge_non_branching_paths(true);
             if (removed_whirls)
                 flag = false;
-            if (removed_whirls > 0)
-                std::cout << "[Connect] Removed " << removed_whirls << " whirls" << std::endl;
         }
 
         removed_bulges = 1;
@@ -1481,15 +1459,11 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             graph_linear_edges.merge_non_branching_paths(true);
             if (removed_bulges)
                 flag = false;
-            if (removed_bulges > 0)
-                std::cout << "[Connect] Removed " << removed_bulges << " bulges" << std::endl;
         }
 
         if (flag)
             break;
     }
-
-    graph_linear_edges.write_graph(output + "/graph_linear_edges.before_final", false, true);
 
     while (true) {
         bool flag = true;
@@ -1508,8 +1482,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             graph_linear_edges.resolve_edges_in_reverse_complement(decoupled);
             if (decoupled)
                 flag = false;
-            if (decoupled > 0)
-                std::cout << "[Connect] Decoupled " << decoupled << " strands" << std::endl;
         }
 
         removed_tips = 1;
@@ -1517,8 +1489,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             graph_linear_edges.merge_tips_into_edges_L(removed_tips, 0.8, false, true, kmer2bc);
             if (removed_tips)
                 flag = false;
-            if (removed_tips > 0)
-                std::cout << "[Connect] Merged " << removed_tips << " tips to edges" << std::endl;
         }
 
         removed_tips = 1;
@@ -1526,8 +1496,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             graph_linear_edges.merge_tips_L(removed_tips, kmer2bc);
             if (removed_tips)
                 flag = false;
-            if (removed_tips > 0)
-                std::cout << "[Connect] Merged " << removed_tips << " tips to tips" << std::endl;
         }
 
         removed_tips = 1;
@@ -1535,8 +1503,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             graph_linear_edges.merge_tips_into_edges_further_L(removed_tips, 0.8, kmer2bc);
             if (removed_tips)
                 flag = false;
-            if (removed_tips > 0)
-                std::cout << "[Connect] Merged " << removed_tips << " tips to paths" << std::endl;
         }
 
         removed_whirls = 1;
@@ -1545,8 +1511,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             graph_linear_edges.merge_non_branching_paths(true);
             if (removed_whirls)
                 flag = false;
-            if (removed_whirls > 0)
-                std::cout << "[Connect] Removed " << removed_whirls << " whirls" << std::endl;
         }
 
         removed_bulges = 1;
@@ -1555,8 +1519,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             graph_linear_edges.merge_non_branching_paths(true);
             if (removed_bulges)
                 flag = false;
-            if (removed_bulges > 0)
-                std::cout << "[Connect] Removed " << removed_bulges << " bulges" << std::endl;
         }
 
         removed_edges = 1;
@@ -1564,16 +1526,12 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             graph_linear_edges.remove_deadend_edges_L(removed_edges, kmer2bc);
             if (removed_edges)
                 flag = false;
-            if (removed_edges > 0)
-                std::cout << "[Connect] Merged " << removed_edges << " deadend edges" << std::endl;
         }
 
         if (flag)
             break;
     }
 
-    graph_linear_edges.write_graph(output + "/graph_linear_edges.final", 1000000, false, true);
-    // graph_linear_edges.get_annotation(output + "/graph_linear_edges.final");
     graph_linear_edges.write_graph_L(output + "/graph_linear_edges.final", 1000000, false, true, std::unordered_set<std::string>(), kmer2bc);
     graph_linear_edges.write_graph_contracted_L(output + "/graph_linear_edges.final.contracted.600", 600, false, kmer2bc);
 
@@ -1767,7 +1725,7 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
     std::string out_bam_prefix = output + "/align.prefix_suffix.all";;
 
     if (!fs::is_regular_file(out_bam_prefix + ".bam")) {
-        execute_command(("minimap2 -ax asm20 --eqx -Y -p 0.1 " + output_all + " " + output_prefix_suffix + " -t " + std::to_string(threads) + " | grep -v '^@' > " + out_bam_prefix + ".sam").c_str());
+        execute_command(("minimap2 -ax asm20 --eqx -Y -p 0.1 " + output_all + " " + output_prefix_suffix + " -t " + std::to_string(threads) + " 2>/dev/null | grep -v '^@' > " + out_bam_prefix + ".sam").c_str());
         if (!std::filesystem::exists(output_all + ".fai")) {
             execute_command(("samtools faidx " + output_all).c_str());
         }

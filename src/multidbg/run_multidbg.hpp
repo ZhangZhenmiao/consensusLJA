@@ -31,7 +31,9 @@ public:
         srand(2025);
         this->threads = threads;
         this->reads = reads;
+        std::cout << "==========[MDB Graph]==========" << std::endl;
         fs::path mdbg_dir = output_all / "3_multiplex_DBG";
+        std::cout << "[MDB] Construct multiplex DBG using LJA" << std::endl;
         if (!fs::is_directory(mdbg_dir)) {
             bool flag = true;
             int cnt = 0;
@@ -63,11 +65,14 @@ public:
 
         fs::path gfa_path = fs::path(output) / "graph.final.gfa";
         fs::path corrected_reads_path = output_all / "0_condensed_dbg" / "01_TopologyBasedCorrection" / "corrected_reads.paths";
+        std::cout << "==========[Graph Simplification]==========" << std::endl;
         if (!fs::is_regular_file(gfa_path))
             simplifyMDBG();
+        else
+            std::cout << "[Simplification] Simplified graph directory already exists. Skipping graph simplification and scaffolding." << std::endl;
 
         // polishing
-        std::cout << "==========[LJAPolishing]==========" << std::endl;
+        std::cout << "==========[LJA Polishing]==========" << std::endl;
         std::ofstream corrected_reads(corrected_reads_path);
         corrected_reads << (output_all / "0_condensed_dbg" / "01_TopologyBasedCorrection" / "final_dbg.gfa").string() << std::endl;
         corrected_reads << (output_all / "0_condensed_dbg" / "01_TopologyBasedCorrection" / "corrected_reads.aln").string() << std::endl;
@@ -77,6 +82,7 @@ public:
         fs::path polisher_out = output_all / "5_polishing";
 
         execute_command(polisher + " --output-dir " + polisher_out.string() + " --graph " + gfa_path.string() + " --corrected_reads " + corrected_reads_path.string() + " --reads " + reads + " -t " + std::to_string(this->threads));
+        std::cout << "[Polishing] Polishing finished. Final contigs are in " << (polisher_out / "assembly.fasta") << ". \nThanks for using cLJA!" << std::endl;
     }
     void simplifyMDBG();
 };

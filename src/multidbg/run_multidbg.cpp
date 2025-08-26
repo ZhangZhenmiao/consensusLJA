@@ -21,8 +21,6 @@ void MDBGRunner::simplifyMDBG() {
     unsigned removed_edges = 1;
     unsigned removed_tips = 1;
 
-    std::cout << "==========[GraphSimplification]==========" << std::endl;
-
     // Step 1 Read graph
     dbg::Graph g;
     std::string initial_fasta = initial_dbg.substr(0, initial_dbg.rfind(".")) + ".fasta";
@@ -42,7 +40,6 @@ void MDBGRunner::simplifyMDBG() {
     removed_edges = 1;
     while (removed_edges) {
         graph.remove_low_coverage_edges(removed_edges, g.first_minima, true);
-        std::cout << "[RemoveLow] Removed " << removed_edges << " low-coverage tips" << std::endl;
     }
     // removed_edges = 1;
     // while (removed_edges) {
@@ -139,8 +136,6 @@ void MDBGRunner::simplifyMDBG() {
     graph.write_graph(output + "/graph.decoupling");
     // graph.get_annotation(output + "/graph.decoupling");
     graph.write_graph_contracted(output + "/graph.decoupling.contracted.20k", 20000);
-
-
 
     total_removed = 0;
     removed_tips = 1;

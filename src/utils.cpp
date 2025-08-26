@@ -9,7 +9,15 @@
 #include <iostream>
 #include <limits.h>
 
-int execute_command(const std::string& command, bool exit_when_fail) {
+int execute_command(const std::string& command, bool exit_when_fail, bool mute_output) {
+    std::string actual_command = command;
+    if (mute_output) {
+        if (actual_command.find(">") == std::string::npos)
+            actual_command += " > /dev/null 2>&1";
+        else
+            actual_command += " 2>/dev/null";
+    }
+    // std::cout << "[CMD] Executing command: " << command << (mute_output ? " (output muted)" : ", logs are below:") << std::endl;
     struct CommandResult {
         bool success;
         int exit_code;
@@ -18,7 +26,7 @@ int execute_command(const std::string& command, bool exit_when_fail) {
     result.success = false;
     result.exit_code = -1;
 
-    result.exit_code = system(command.c_str());
+    result.exit_code = system(actual_command.c_str());
 
     // Check if command executed successfully
     if (WIFEXITED(result.exit_code)) {
@@ -28,12 +36,14 @@ int execute_command(const std::string& command, bool exit_when_fail) {
 
     std::string status;
 
-    status += "Command " + command + " " + std::string(result.success ? "succeeded" : "failed");
+    // status += "Command " + command + " " + std::string(result.success ? "succeeded" : "failed");
     status += " with exit code " + std::to_string(result.exit_code) + "\n";
     // std::cout << status << std::endl;
 
     if (!result.success && exit_when_fail)
         throw std::runtime_error("Failed to execute " + command);
+
+    // std::cout << "[CMD] " << command << " " << (result.success ? "succeeded" : "failed") << std::endl;
 
     return result.exit_code;
 }
