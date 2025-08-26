@@ -114,7 +114,6 @@ namespace multidbg {
         void write_graph_colored_from_bam(const std::string& prefix, const std::string& bam_processed);
         void write_graph_gfa(const std::string& prefix);
         void write_prefix_siffux_linear_edges(std::string output_dir, std::string jumbodbg, int threads, int k_mer, unsigned& num_glued);
-        void decoupling(std::string multidbg, std::string output);
         void remove_contained_contigs_minimap(std::string output, int threads, unsigned& num_contained);
         void connect_linear_and_tips_using_spanning_reads(std::string output, int threads, std::string reads, double identity = 0.9);
         int get_num_nodes();
@@ -174,4 +173,21 @@ namespace multidbg {
         void remove_items_from_vector(std::vector<int>& vec, const std::vector<int>& discontinued_indices);
         void remove_items_from_vector(std::vector<Edge>& vec, const std::vector<int>& discontinued_indices);
     };
+
+    template<typename T>
+    void Node::mergeMaps(std::unordered_map<std::string, std::vector<T>>& map1, const std::unordered_map<std::string, std::vector<T>>& map2) {
+        for (const auto& pair : map2) {
+            if (map1.find(pair.first) != map1.end()) {
+                map1[pair.first].insert(map1[pair.first].end(), pair.second.begin(), pair.second.end());
+            }
+            else {
+                map1[pair.first] = pair.second;
+            }
+        }
+    }
+
+    template<typename T>
+    void Graph::merge_vecs(std::vector<T>& e1, std::vector<T>& e2) {
+        e1.insert(e1.end(), e2.begin(), e2.end());
+    }
 }

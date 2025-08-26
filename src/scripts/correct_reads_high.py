@@ -1,61 +1,87 @@
 #!/usr/bin/env python
+import argparse
+from pathlib import Path
+import subprocess
+import os
 import pysam
 from Bio import SeqIO
 from Bio.Seq import Seq
-import argparse
 
-def main(input_bam, contigs_fasta, original_fasta, corrected_fasta, output_fasta):
-    print("Loading original read lengths...", flush=True)
-    read_lengths = {record.id: len(record.seq) for record in SeqIO.parse(original_fasta, "fasta")}
-    print(f"Loaded {len(read_lengths)} reads from original FASTA", flush=True)
+def correct_reads_pipeline(
+    reads_ori: str,
+    reads_corr: str,
+    high_contig: str,
+    outprefix: str,
+    compress: str,
+    threads: int = 50
+):
+    """Integrated read correction pipeline: compress, align, and correct reads."""
+    ori_fasta = f"{outprefix}.ori.fasta"
+    bam_file = f"{outprefix}.bam"
+    corrected_fasta = f"{outprefix}.corrected.fasta"
 
-    print("Processing BAM alignments...", flush=True)
-    # print(f"Read Read_length Aligned_length Mismatches Insertions Deletions PID Aligned_fraction Ref Ref_start Ref_end")
-    bam = pysam.AlignmentFile(input_bam, "rb")
-    ref = pysam.FastaFile(contigs_fasta)
+    # Step 1: Compress reads if needed
+    if not Path(ori_fasta).exists():
+        subprocess.run(
+            [compress, "--dimer-compress", "32,32,1", "--reads", reads_ori],
+            stdout=open(ori_fasta, "w"),
+            check=True
+        )
+
+    # Step 2: Align reads and sort BAM if needed
+    if not Path(bam_file).exists():
+        minimap2_cmd = [
+            "minimap2", "-t", str(threads), "-ax", "map-hifi", "--eqx",
+            high_contig, ori_fasta
+        ]
+        samtools_sort_cmd = ["samtools", "sort", "-@", str(threads), "-o", bam_file]
+
+        p1 = subprocess.Popen(minimap2_cmd, stdout=subprocess.PIPE)
+        p2 = subprocess.Popen(samtools_sort_cmd, stdin=p1.stdout)
+        p1.stdout.close()
+        p2.communicate()
+        subprocess.run(["samtools", "index", bam_file], check=True)
+
+    # Step 3: Run read correction logic
+    print("[CorrectHigh] Loading original read lengths...", flush=True)
+    read_lengths = {record.id: len(record.seq) for record in SeqIO.parse(ori_fasta, "fasta")}
+    print(f"[CorrectHigh] Loaded {len(read_lengths)} reads from original FASTA", flush=True)
+
+    print("[CorrectHigh] Processing BAM alignments...", flush=True)
+    bam = pysam.AlignmentFile(bam_file, "rb")
+    ref = pysam.FastaFile(high_contig)
     valid_alignments = {}
     valid_alignments_cov = {}
-
-    total_reads = 0
-    valid_count = 0
-    multi_count = 0
-    rejected_count = 0
-
     all_aligned_reads = set()
+    total_reads = valid_count = multi_count = rejected_count = 0
+
     for read in bam:
         if read.is_unmapped:
             continue
-
         read_id = read.query_name
         cigar = read.cigartuples
         all_aligned_reads.add(read_id)
-
         if not cigar:
             continue
 
         original_len = read_lengths.get(read_id, 0)
-        matches = sum(length for op, length in cigar if op == 7)  # '='
-        mismatches = sum(length for op, length in cigar if op == 8)  # 'X'
+        matches = sum(length for op, length in cigar if op == 7)
+        mismatches = sum(length for op, length in cigar if op == 8)
         insertions = sum(length for op, length in cigar if op == 1)
         deletions = sum(length for op, length in cigar if op == 2)
 
-        aligned_len = matches + mismatches # query_alignment_length is aligned_len + insertions
+        aligned_len = matches + mismatches
         total_bases = aligned_len + insertions + deletions
         pid = matches / total_bases if total_bases > 0 else 0.0
         coverage = read.query_alignment_length / original_len if original_len > 0 else 0.0
         assert(read.query_alignment_length == read.query_alignment_end - read.query_alignment_start)
 
         total_reads += 1
-        # print(f"{read_id} {original_len} {read.query_alignment_length} {mismatches} {insertions} {deletions} {pid:.4f} {coverage:.3f} {read.reference_name} {read.reference_start} {read.reference_end}", flush=True)
-
         if pid > 0.99 and coverage > 0.95:
             if read_id in valid_alignments:
                 if coverage > valid_alignments_cov[read_id]:
                     valid_alignments[read_id] = read
                     valid_alignments_cov[read_id] = coverage
-                    # print(f"[{read_id}] -> Multi-mapped: repalced (cov {coverage})", flush=True)
-                # else:
-                #     print(f"[{read_id}] -> Multi-mapped: discard (cov {coverage})", flush=True)
                 multi_count += 1
             else:
                 valid_alignments[read_id] = read
@@ -64,69 +90,46 @@ def main(input_bam, contigs_fasta, original_fasta, corrected_fasta, output_fasta
         else:
             rejected_count += 1
 
-    low_quality_aligned_reads = set()
-    for r in all_aligned_reads:
-        if r not in valid_alignments:
-            low_quality_aligned_reads.add(r)
-    
-    print(f"Low quality aligned reads: {len(low_quality_aligned_reads)}", flush=True)
+    low_quality_aligned_reads = {r for r in all_aligned_reads if r not in valid_alignments}
+    print(f"[CorrectHigh] Low quality aligned reads: {len(low_quality_aligned_reads)}", flush=True)
 
-    print("Writing corrected reads to output FASTA...", flush=True)
+    # Write corrected reads
+    print("[CorrectHigh] Writing corrected reads to output FASTA...", flush=True)
     written = 0
-    with open(output_fasta, "w") as f_out:
+    with open(corrected_fasta, "w") as f_out:
         written_reads = set()
-        for record in SeqIO.parse(corrected_fasta, "fasta"):
+        for record in SeqIO.parse(reads_corr, "fasta"):
             read_id = record.id
-            # if read_id in multi_mapped:
-            #     print(f"[{read_id}] -> Multi-mapped: writing original", flush=True)
-            #     SeqIO.write(record, f_out, "fasta")
             if read_id in valid_alignments:
                 read = valid_alignments[read_id]
                 ref_seq = ref.fetch(read.reference_name, read.reference_start, read.reference_end)
                 record.seq = Seq(ref_seq)
-                # print(f"[{read_id}] -> Corrected from reference", flush=True)
-                SeqIO.write(record, f_out, "fasta")
-                written += 1
-                written_reads.add(read_id)
-            else:
-                # print(f"[{read_id}] -> No valid alignment: writing original", flush=True)
-                SeqIO.write(record, f_out, "fasta")
-                written += 1
-                written_reads.add(read_id)
-
-        # for read_id in valid_alignments:
-        #     if read_id not in written_reads:
-        #         read = valid_alignments[read_id]
-        #         ref_seq = ref.fetch(read.reference_name, read.reference_start, read.reference_end)
-        #         # print(f"[{read_id}] -> Corrected from reference", flush=True)
-        #         f_out.write(f">{read_id}\n{ref_seq}\n")
-        #         written += 1
-        #         written_reads.add(read_id)
-        
-        # for record in SeqIO.parse(original_fasta, "fasta"):
-        #     read_id = record.id
-        #     if read_id not in written_reads:
-        #         SeqIO.write(record, f_out, "fasta")
-        #         written += 1
-        #         written_reads.add(read_id)
+            SeqIO.write(record, f_out, "fasta")
+            written += 1
+            written_reads.add(read_id)
 
     bam.close()
     ref.close()
 
-    print("\nSummary:", flush=True)
-    print(f"  Total alignments: {total_reads}", flush=True)
-    print(f"  Valid alignments: {valid_count}", flush=True)
-    print(f"  Multi-mapped alignments: {multi_count}", flush=True)
-    print(f"  Rejected alignments: {rejected_count}", flush=True)
-    print(f"  Total reads written to output: {written}", flush=True)
+    # Step 4: Cleanup
+    if Path(ori_fasta).exists():
+        os.remove(ori_fasta)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Correct reads based on high-identity alignments using only CIGAR (with =/X).")
-    parser.add_argument("-b", "--bam", required=True, help="Input BAM file with --eqx CIGAR format")
-    parser.add_argument("-c", "--contigs", required=True, help="FASTA file of reference contigs")
-    parser.add_argument("-i", "--input_fasta", required=True, help="Original reads in FASTA format")
-    parser.add_argument("-l", "--corrected_fasta", required=True, help="Corrected LJA reads in FASTA format")
-    parser.add_argument("-o", "--output_fasta", required=True, help="Output corrected reads in FASTA format")
+    parser = argparse.ArgumentParser(description="Integrated read correction pipeline")
+    parser.add_argument("reads_ori", help="Original reads FASTA")
+    parser.add_argument("reads_corr", help="Corrected LJA reads FASTA (input to correction step)")
+    parser.add_argument("high_contig", help="High-coverage contigs FASTA")
+    parser.add_argument("outprefix", help="Output prefix for intermediate and final files")
+    parser.add_argument("compress", help="Compression program path")
+    parser.add_argument("--threads", type=int, default=50, help="Number of threads for minimap2 and samtools")
     args = parser.parse_args()
 
-    main(args.bam, args.contigs, args.input_fasta, args.corrected_fasta, args.output_fasta)
+    correct_reads_pipeline(
+        args.reads_ori,
+        args.reads_corr,
+        args.high_contig,
+        args.outprefix,
+        args.compress,
+        threads=args.threads
+    )

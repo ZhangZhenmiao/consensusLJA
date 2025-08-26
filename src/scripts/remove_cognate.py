@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 import pysam
 import argparse
-import sys
 import re
-from collections import defaultdict
 import copy
 
 def true_query_start_end(cigar):
@@ -256,70 +254,6 @@ def merge_and_filter_alignments_query(alns, overlap_thresh=0.9):
 
 def find_contained_contigs(high_identity_alignments):
     contained_contigs = set()
-    # for ref in high_identity_alignments:
-    #     for edge in high_identity_alignments[ref]:
-    #         data = high_identity_alignments[ref][edge]
-    #         entire_forward, entire_reverse = merge_and_filter_alignments_ref(data["entire"])
-    #         start_forward, start_reverse = merge_and_filter_alignments_ref(data["start"])
-    #         end_forward, end_reverse = merge_and_filter_alignments_ref(data["end"])
-            
-    #         flag = False
-    #         # process entire alignment
-    #         if len(entire_forward) == 1:
-    #             aln = entire_forward[0]
-    #             span_ref = aln["ref_end"] - aln["ref_start"]
-    #             ratio = min(aln["length_entire_query"], span_ref) / max(aln["length_entire_query"], span_ref)
-    #             if ratio >= 0.8:
-    #                 if aln["length_entire_query"] < aln["length_ref"]:
-    #                     print(f'Edge {edge} is contained in {ref}, identity {aln["identity"]}, lengths {aln["length_entire_query"]} and {aln["length_ref"]}')
-    #                     contained_contigs.add(edge)
-    #                 else:
-    #                     print(f'Edge {ref} is contained in {edge}, identity {aln["identity"]}, lengths {aln["length_ref"]} and {aln["length_entire_query"]}')
-    #                     contained_contigs.add(ref)
-    #                 flag = True
-            
-    #         if flag: continue
-            
-    #         if len(entire_reverse) == 1:
-    #             aln = entire_reverse[0]
-    #             span_ref = max(aln["ref_end"], aln["ref_end"]) - min(aln["ref_start"], aln["ref_start"])
-    #             ratio = min(aln["length_entire_query"], span_ref) / max(aln["length_entire_query"], span_ref)
-    #             if ratio >= 0.8:
-    #                 if aln["length_entire_query"] <= aln["length_ref"]:
-    #                     print(f'Edge {edge} is contained in {ref}, identity {aln["identity"]}, lengths {aln["length_entire_query"]} and {aln["length_ref"]}')
-    #                     contained_contigs.add(edge)
-    #                 else:
-    #                     print(f'Edge {ref} is contained in {edge}, identity {aln["identity"]}, lengths {aln["length_ref"]} and {aln["length_entire_query"]}')
-    #                     contained_contigs.add(ref)
-    #                 flag = True
-            
-    #         if flag: continue
-            
-    #         if len(start_reverse) == 1 and len(end_reverse) == 1:
-    #             aln_start = start_reverse[0]
-    #             aln_end = end_reverse[0]
-
-    #             span_ref = max(aln_start["ref_end"], aln_end["ref_end"]) - min(aln_start["ref_start"], aln_end["ref_start"])
-    #             ratio = min(aln_start["length_entire_query"], span_ref) / max(aln_start["length_entire_query"], span_ref)
-    #             if ratio >= 0.8:
-    #                 if aln_start["length_entire_query"] <= aln_start["length_ref"]:
-    #                     print(f'Edge {edge} is contained in {ref}, lengths edge {aln_start["length_entire_query"]} and ref span {span_ref}')
-    #                     contained_contigs.add(edge)
-    #                     flag = True
-            
-    #         if flag: continue
-            
-    #         if len(start_forward) == 1 and len(end_forward) == 1:
-    #             aln_start = start_forward[0]
-    #             aln_end = end_forward[0]
-
-    #             span_ref = max(aln_start["ref_end"], aln_end["ref_end"]) - min(aln_start["ref_start"], aln_end["ref_start"])
-    #             ratio = min(aln_start["length_entire_query"], span_ref) / max(aln_start["length_entire_query"], span_ref)
-    #             if ratio >= 0.8:
-    #                 if aln_start["length_entire_query"] <= aln_start["length_ref"]:
-    #                     print(f'Edge {edge} is contained in {ref}, lengths edge {aln_start["length_entire_query"]} and ref span {span_ref}')
-    #                     contained_contigs.add(edge)
-    
     for ref in high_identity_alignments:
         for edge in high_identity_alignments[ref]:
             data = high_identity_alignments[ref][edge]
@@ -335,10 +269,10 @@ def find_contained_contigs(high_identity_alignments):
                 ratio = min(aln["length_entire_query"], span_ref) / max(aln["length_entire_query"], span_ref)
                 if ratio >= 0.8:
                     if aln["length_entire_query"] < aln["length_ref"]:
-                        print(f'Edge {edge} is contained in {ref}, identity {aln["identity"]}, lengths {aln["length_entire_query"]} and {aln["length_ref"]}')
+                        print(f'[Deduplicate] Edge {edge} is contained in {ref}, identity {aln["identity"]}, lengths {aln["length_entire_query"]} and {aln["length_ref"]}')
                         contained_contigs.add(edge)
                     else:
-                        print(f'Edge {ref} is contained in {edge}, identity {aln["identity"]}, lengths {aln["length_ref"]} and {aln["length_entire_query"]}')
+                        print(f'[Deduplicate] Edge {ref} is contained in {edge}, identity {aln["identity"]}, lengths {aln["length_ref"]} and {aln["length_entire_query"]}')
                         contained_contigs.add(ref)
                     flag = True
             
@@ -350,10 +284,10 @@ def find_contained_contigs(high_identity_alignments):
                 ratio = min(aln["length_entire_query"], span_ref) / max(aln["length_entire_query"], span_ref)
                 if ratio >= 0.8:
                     if aln["length_entire_query"] <= aln["length_ref"]:
-                        print(f'Edge {edge} is contained in {ref}, identity {aln["identity"]}, lengths {aln["length_entire_query"]} and {aln["length_ref"]}')
+                        print(f'[Deduplicate] Edge {edge} is contained in {ref}, identity {aln["identity"]}, lengths {aln["length_entire_query"]} and {aln["length_ref"]}')
                         contained_contigs.add(edge)
                     else:
-                        print(f'Edge {ref} is contained in {edge}, identity {aln["identity"]}, lengths {aln["length_ref"]} and {aln["length_entire_query"]}')
+                        print(f'[Deduplicate] Edge {ref} is contained in {edge}, identity {aln["identity"]}, lengths {aln["length_ref"]} and {aln["length_entire_query"]}')
                         contained_contigs.add(ref)
                     flag = True
             
@@ -367,7 +301,7 @@ def find_contained_contigs(high_identity_alignments):
                 ratio = min(aln_start["length_entire_query"], span_ref) / max(aln_start["length_entire_query"], span_ref)
                 if ratio >= 0.8:
                     if aln_start["length_entire_query"] <= aln_start["length_ref"]:
-                        print(f'Edge {edge} is contained in {ref}, lengths edge {aln_start["length_entire_query"]} and ref span {span_ref}')
+                        print(f'[Deduplicate] Edge {edge} is contained in {ref}, lengths edge {aln_start["length_entire_query"]} and ref span {span_ref}')
                         contained_contigs.add(edge)
                         flag = True
             
@@ -381,7 +315,7 @@ def find_contained_contigs(high_identity_alignments):
                 ratio = min(aln_start["length_entire_query"], span_ref) / max(aln_start["length_entire_query"], span_ref)
                 if ratio >= 0.8:
                     if aln_start["length_entire_query"] <= aln_start["length_ref"]:
-                        print(f'Edge {edge} is contained in {ref}, lengths edge {aln_start["length_entire_query"]} and ref span {span_ref}')
+                        print(f'[Deduplicate] Edge {edge} is contained in {ref}, lengths edge {aln_start["length_entire_query"]} and ref span {span_ref}')
                         contained_contigs.add(edge)
 
     return contained_contigs

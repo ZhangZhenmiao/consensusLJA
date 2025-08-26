@@ -60,7 +60,7 @@ void Graph::merge_tips_L(unsigned& num_tips, std::unordered_map<std::string, std
                 std::string prefix_tip_target = graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).sequence.substr(0, prefix_size);
                 std::string prefix_tip_to_merge = graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).sequence.substr(0, prefix_size);
                 double sim = matches_by_edlib(prefix_tip_target, prefix_tip_to_merge);
-                std::cout << "Check tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
+                std::cout << "[MergeTip] Check tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
 
                 if (sim < 0.2)
                     continue;
@@ -70,7 +70,7 @@ void Graph::merge_tips_L(unsigned& num_tips, std::unordered_map<std::string, std
                 //     if (sim_len < 0.8)
                 //         continue;
                 // }
-                std::cout << "Merge tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
+                std::cout << "[MergeTip] Merge tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
                 merge_vecs(graph[node.first].outgoing_edges[outgoing_tips[max_index]], graph[node.first].outgoing_edges[outgoing_tips[i]]);
                 merge_vecs(graph[outgoing_tips[max_index]].incoming_edges[node.first], graph[outgoing_tips[i]].incoming_edges[node.first]);
                 merge_vecs(graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(outgoing_tips[max_index])], graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(outgoing_tips[i])]);
@@ -198,7 +198,7 @@ void Graph::merge_tips_into_edges_L(unsigned& num_tips, double ratio, bool only_
             if (max_edge.empty())
                 continue;
 
-            std::cout << "Check tip " << node.first << "->" << t << " multi " << graph[node.first].outgoing_edges[t].at(0).multiplicity << " len " << graph[node.first].outgoing_edges[t].at(0).length << " to edge " << node.first << "->" << max_edge << " multi " << graph[node.first].outgoing_edges[max_edge].at(0).multiplicity << " len " << graph[node.first].outgoing_edges[max_edge].at(0).length << " with sim " << max_sim << std::endl;
+            std::cout << "[RepairTip] Check tip " << node.first << "->" << t << " multi " << graph[node.first].outgoing_edges[t].at(0).multiplicity << " len " << graph[node.first].outgoing_edges[t].at(0).length << " to edge " << node.first << "->" << max_edge << " multi " << graph[node.first].outgoing_edges[max_edge].at(0).multiplicity << " len " << graph[node.first].outgoing_edges[max_edge].at(0).length << " with sim " << max_sim << std::endl;
 
             if (max_sim < 0.8)
                 continue;
@@ -215,8 +215,8 @@ void Graph::merge_tips_into_edges_L(unsigned& num_tips, double ratio, bool only_
             nodes_to_remove.insert(t);
             nodes_to_remove.insert(reverse_complementary_node(t));
             num_tips += 2;
-            std::cout << "Tip " << node.first << "->" << t << " multi " << graph[node.first].outgoing_edges[t].at(0).multiplicity << " is merged to edge " << node.first << "->" << max_edge << " with sim " << max_sim << std::endl;
-            std::cout << "Tip " << reverse_complementary_node(t) << "->" << reverse_complementary_node(node.first) << " multi " << graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(t)].at(0).multiplicity << " is merged to edge " << reverse_complementary_node(max_edge) << "->" << reverse_complementary_node(node.first) << " with sim " << max_sim << " multi " << graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(max_edge)].at(0).multiplicity << std::endl;
+            std::cout << "[RepairTip] Tip " << node.first << "->" << t << " multi " << graph[node.first].outgoing_edges[t].at(0).multiplicity << " is merged to edge " << node.first << "->" << max_edge << " with sim " << max_sim << std::endl;
+            std::cout << "[RepairTip] Tip " << reverse_complementary_node(t) << "->" << reverse_complementary_node(node.first) << " multi " << graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(t)].at(0).multiplicity << " is merged to edge " << reverse_complementary_node(max_edge) << "->" << reverse_complementary_node(node.first) << " with sim " << max_sim << " multi " << graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(max_edge)].at(0).multiplicity << std::endl;
             graph[node.first].outgoing_edges.erase(t);
             graph[t].incoming_edges.erase(node.first);
             graph[reverse_complementary_node(node.first)].incoming_edges.erase(reverse_complementary_node(t));
@@ -278,7 +278,7 @@ void Graph::merge_tips_into_edges_further_L(unsigned& num_tips, double ratio, st
         add_node_to_path(path, non_tip);
         add_node_to_path(path, out_node_non_tip);
 
-        std::cout << "Check tip " << node.first << "->" << tip << " len " << tip_edge.sequence.size() << " and " << node.first << "->" << non_tip << "->" << out_node_non_tip << " len " << path.sequence.size() << std::endl;
+        std::cout << "[RepairTip] Check tip " << node.first << "->" << tip << " len " << tip_edge.sequence.size() << " and " << node.first << "->" << non_tip << "->" << out_node_non_tip << " len " << path.sequence.size() << std::endl;
 
         // if the path length is shorter than the tip length, do not merge
         if (tip_edge.length * 0.6 > path.length)
@@ -294,15 +294,15 @@ void Graph::merge_tips_into_edges_further_L(unsigned& num_tips, double ratio, st
         std::string prefix_edge = path.sequence.substr(0, prefix_size);
 
         double sim = matches_by_edlib(prefix_tip, prefix_edge);
-        std::cout << "Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " len " << tip_edge.length << " to " << node.first << "->" << non_tip << "->" << out_node_non_tip << " multi " << path.multiplicity << " len " << path.length << ": sim " << sim << std::endl;
+        std::cout << "[RepairTip] Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " len " << tip_edge.length << " to " << node.first << "->" << non_tip << "->" << out_node_non_tip << " multi " << path.multiplicity << " len " << path.length << ": sim " << sim << std::endl;
         if (sim < ratio)
             continue;
 
         nodes_to_remove.insert(tip);
         nodes_to_remove.insert(reverse_complementary_node(tip));
         num_tips += 2;
-        std::cout << "Tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " is merged to path " << node.first << "->" << non_tip << "->" << out_node_non_tip << " with sim " << sim << std::endl;
-        std::cout << "Tip " << reverse_complementary_node(tip) << "->" << reverse_complementary_node(node.first) << " multi " << tip_edge.multiplicity << " is merged to path " << reverse_complementary_node(out_node_non_tip) << "->" << reverse_complementary_node(non_tip) << "->" << reverse_complementary_node(node.first) << " with sim " << sim << std::endl;
+        std::cout << "[RepairTip] Tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " is merged to path " << node.first << "->" << non_tip << "->" << out_node_non_tip << " with sim " << sim << std::endl;
+        std::cout << "[RepairTip] Tip " << reverse_complementary_node(tip) << "->" << reverse_complementary_node(node.first) << " multi " << tip_edge.multiplicity << " is merged to path " << reverse_complementary_node(out_node_non_tip) << "->" << reverse_complementary_node(non_tip) << "->" << reverse_complementary_node(node.first) << " with sim " << sim << std::endl;
         graph[node.first].outgoing_edges.erase(tip);
         graph[tip].incoming_edges.erase(node.first);
         graph[reverse_complementary_node(node.first)].incoming_edges.erase(reverse_complementary_node(tip));
@@ -340,8 +340,8 @@ void Graph::remove_deadend_edges_L(unsigned& removed_edges, std::unordered_map<s
             }
         }
         if (remove) {
-            std::cout << "Deadend edge " << node.first << " -> " << deadend_out << " is removed (sim=" << sim << ")" << std::endl;
-            std::cout << "Deadend edge " << reverse_complementary_node(deadend_out) << " -> " << reverse_complementary_node(node.first) << " is removed (sim=" << sim << ")" << std::endl;
+            std::cout << "[RepairTip] Deadend edge " << node.first << " -> " << deadend_out << " is removed (sim=" << sim << ")" << std::endl;
+            std::cout << "[RepairTip] Deadend edge " << reverse_complementary_node(deadend_out) << " -> " << reverse_complementary_node(node.first) << " is removed (sim=" << sim << ")" << std::endl;
             graph[node.first].outgoing_edges.erase(deadend_out);
             graph[deadend_out].incoming_edges.erase(node.first);
             graph[reverse_complementary_node(deadend_out)].outgoing_edges.erase(reverse_complementary_node(node.first));
@@ -373,7 +373,7 @@ void Graph::write_graph_L(const std::string& prefix, int thick, bool contracted,
     std::string graph_fasta = prefix + ".fasta";
     std::string graph_path = prefix + ".path";
 
-    std::cout << "Write graph " << graph_dot << ", fasta " << graph_fasta << std::endl;
+    std::cout << "[WriteGraph] Write graph " << graph_dot << ", fasta " << graph_fasta << std::endl;
     std::ofstream file_dot(graph_dot);
     std::ofstream file_fasta(graph_fasta);
     std::ofstream file_path(graph_path);
@@ -441,7 +441,7 @@ void Graph::write_graph_L(const std::string& prefix, int thick, bool contracted,
         }
     }
     if (max_contracted > 0)
-        std::cout << "Max contracted node: " << max_contracted_node << " has " << max_contracted << " edges." << std::endl;
+        std::cout << "[WriteGraph] Max contracted node: " << max_contracted_node << " has " << max_contracted << " edges." << std::endl;
 
     // construct labels for vertices
     std::unordered_map<std::string, std::unordered_set<std::string>> vertice2labels;
@@ -691,8 +691,8 @@ void Graph::write_graph_L(const std::string& prefix, int thick, bool contracted,
     file_dot.close();
     file_fasta.close();
     file_path.close();
-    std::cout << "Total number of nodes: " << this->get_num_nodes() << std::endl;
-    std::cout << "Total number of edges: " << num_edges << std::endl;
+    std::cout << "[WriteGraph] Total number of nodes: " << this->get_num_nodes() << std::endl;
+    std::cout << "[WriteGraph] Total number of edges: " << num_edges << std::endl;
 }
 
 void Graph::write_graph_contracted_L(const std::string& prefix, int min_length, bool simplify, std::unordered_map<std::string, std::vector<std::string>> nodes2bc) {
@@ -1123,7 +1123,7 @@ void Graph::write_graph_contracted_L(const std::string& prefix, int min_length, 
                             assert(e_in.sequence.substr(0, graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
                         }
                     }
-                    std::cout << "Modify contracted node sequence for " << node.first << ", new length " << graph_vis[node.first].sequence.size() << std::endl;
+                    std::cout << "[WriteGraph] Modify contracted node sequence for " << node.first << ", new length " << graph_vis[node.first].sequence.size() << std::endl;
                 }
             }
 
@@ -1190,7 +1190,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
         throw std::runtime_error("Failed to open file: " + output_prefix_suffix);
     }
 
-    std::cout << "Write prefixes (and suffixes) of linear edges (and tips) to fasta" << std::endl;
+    std::cout << "[Connect] Write prefixes (and suffixes) of linear edges (and tips) to fasta" << std::endl;
     int bc_id = 1;
     std::unordered_map<std::string, std::vector<std::string>> kmer2bc;
     std::unordered_map<std::string, std::vector<std::string>> kmer2nodes;
@@ -1297,7 +1297,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
         graph_linear_edges.multi_bulge_removal(removed_bulges);
         total_removed += removed_bulges;
     }
-    std::cout << "Removed " << total_removed << " simple bulges" << std::endl;
+    std::cout << "[Connect] Removed " << total_removed << " simple bulges" << std::endl;
     graph_linear_edges.write_graph(output + "/graph_linear_edges.bulge_removel");
 
     removed_whirls = 1;
@@ -1306,7 +1306,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
         graph_linear_edges.general_whirl_removal(removed_whirls);
         total_removed += removed_whirls;
     }
-    std::cout << "Removed " << total_removed << " general whirls" << std::endl;
+    std::cout << "[Connect] Removed " << total_removed << " general whirls" << std::endl;
 
     removed_paths = 1;
     total_removed = 0;
@@ -1330,7 +1330,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
         graph_linear_edges.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.6, true, 2);
         total_removed += removed_paths;
     }
-    std::cout << "Removed complex bulges: " << total_removed << std::endl;
+    std::cout << "[Connect] Removed complex bulges: " << total_removed << std::endl;
     graph_linear_edges.write_graph(output + "/graph_linear_edges.complex_bulge");
 
     // ensure all below outputting graph_linear_edges have no simple bulges, or the program will fail
@@ -1351,7 +1351,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
     }
 
-    std::cout << "Removed tips: " << total_removed << std::endl;
+    std::cout << "[Connect] Removed tips: " << total_removed << std::endl;
     graph_linear_edges.write_graph(output + "/graph_linear_edges.remove_tips");
 
 
@@ -1363,7 +1363,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_paths)
                 flag = false;
             if (removed_paths > 0)
-                std::cout << "Detoured " << removed_paths << " paths" << std::endl;
+                std::cout << "[Connect] Detoured " << removed_paths << " paths" << std::endl;
         }
 
         decoupled = 1;
@@ -1372,7 +1372,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (decoupled)
                 flag = false;
             if (decoupled > 0)
-                std::cout << "Decoupled " << decoupled << " strands" << std::endl;
+                std::cout << "[Connect] Decoupled " << decoupled << " strands" << std::endl;
         }
 
         removed_tips = 1;
@@ -1381,7 +1381,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_tips)
                 flag = false;
             if (removed_tips > 0)
-                std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
+                std::cout << "[Connect] Merged " << removed_tips << " tips to edges" << std::endl;
         }
 
         removed_whirls = 1;
@@ -1391,7 +1391,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_whirls)
                 flag = false;
             if (removed_whirls > 0)
-                std::cout << "Removed " << removed_whirls << " whirls" << std::endl;
+                std::cout << "[Connect] Removed " << removed_whirls << " whirls" << std::endl;
         }
 
         removed_bulges = 1;
@@ -1401,7 +1401,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_bulges)
                 flag = false;
             if (removed_bulges > 0)
-                std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
+                std::cout << "[Connect] Removed " << removed_bulges << " bulges" << std::endl;
         }
 
         if (flag)
@@ -1410,7 +1410,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
 
     graph_linear_edges.write_graph(output + "/graph_linear_edges.complex_comp");
 
-    std::cout << "----------Stage 7: decoupling further----------" << std::endl;
     while (true)
     {
         bool flag = true;
@@ -1420,7 +1419,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_paths)
                 flag = false;
             if (removed_paths > 0)
-                std::cout << "Detoured " << removed_paths << " paths" << std::endl;
+                std::cout << "[Connect] Detoured " << removed_paths << " paths" << std::endl;
         }
 
         decoupled = 1;
@@ -1429,7 +1428,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (decoupled)
                 flag = false;
             if (decoupled > 0)
-                std::cout << "Decoupled " << decoupled << " strands" << std::endl;
+                std::cout << "[Connect] Decoupled " << decoupled << " strands" << std::endl;
         }
 
         if (flag)
@@ -1446,7 +1445,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_paths)
                 flag = false;
             if (removed_paths > 0)
-                std::cout << "Removed " << removed_paths << " paths" << std::endl;
+                std::cout << "[Connect] Removed " << removed_paths << " paths" << std::endl;
         }
         decoupled = 1;
         while (decoupled) {
@@ -1454,7 +1453,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (decoupled)
                 flag = false;
             if (decoupled > 0)
-                std::cout << "Decoupled " << decoupled << " strands" << std::endl;
+                std::cout << "[Connect] Decoupled " << decoupled << " strands" << std::endl;
         }
 
         removed_tips = 1;
@@ -1463,7 +1462,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_tips)
                 flag = false;
             if (removed_tips > 0)
-                std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
+                std::cout << "[Connect] Merged " << removed_tips << " tips to edges" << std::endl;
         }
 
         removed_whirls = 1;
@@ -1473,7 +1472,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_whirls)
                 flag = false;
             if (removed_whirls > 0)
-                std::cout << "Removed " << removed_whirls << " whirls" << std::endl;
+                std::cout << "[Connect] Removed " << removed_whirls << " whirls" << std::endl;
         }
 
         removed_bulges = 1;
@@ -1483,7 +1482,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_bulges)
                 flag = false;
             if (removed_bulges > 0)
-                std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
+                std::cout << "[Connect] Removed " << removed_bulges << " bulges" << std::endl;
         }
 
         if (flag)
@@ -1501,7 +1500,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_paths)
                 flag = false;
             if (removed_paths > 0)
-                std::cout << "Removed " << removed_paths << " paths" << std::endl;
+                std::cout << "[Connect] Removed " << removed_paths << " paths" << std::endl;
         }
 
         decoupled = 1;
@@ -1510,7 +1509,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (decoupled)
                 flag = false;
             if (decoupled > 0)
-                std::cout << "Decoupled " << decoupled << " strands" << std::endl;
+                std::cout << "[Connect] Decoupled " << decoupled << " strands" << std::endl;
         }
 
         removed_tips = 1;
@@ -1519,7 +1518,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_tips)
                 flag = false;
             if (removed_tips > 0)
-                std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
+                std::cout << "[Connect] Merged " << removed_tips << " tips to edges" << std::endl;
         }
 
         removed_tips = 1;
@@ -1528,7 +1527,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_tips)
                 flag = false;
             if (removed_tips > 0)
-                std::cout << "Merged " << removed_tips << " tips to tips" << std::endl;
+                std::cout << "[Connect] Merged " << removed_tips << " tips to tips" << std::endl;
         }
 
         removed_tips = 1;
@@ -1537,7 +1536,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_tips)
                 flag = false;
             if (removed_tips > 0)
-                std::cout << "Merged " << removed_tips << " tips to paths" << std::endl;
+                std::cout << "[Connect] Merged " << removed_tips << " tips to paths" << std::endl;
         }
 
         removed_whirls = 1;
@@ -1547,7 +1546,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_whirls)
                 flag = false;
             if (removed_whirls > 0)
-                std::cout << "Removed " << removed_whirls << " whirls" << std::endl;
+                std::cout << "[Connect] Removed " << removed_whirls << " whirls" << std::endl;
         }
 
         removed_bulges = 1;
@@ -1557,7 +1556,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_bulges)
                 flag = false;
             if (removed_bulges > 0)
-                std::cout << "Removed " << removed_bulges << " bulges" << std::endl;
+                std::cout << "[Connect] Removed " << removed_bulges << " bulges" << std::endl;
         }
 
         removed_edges = 1;
@@ -1566,7 +1565,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (removed_edges)
                 flag = false;
             if (removed_edges > 0)
-                std::cout << "Merged " << removed_edges << " deadend edges" << std::endl;
+                std::cout << "[Connect] Merged " << removed_edges << " deadend edges" << std::endl;
         }
 
         if (flag)
@@ -1574,9 +1573,9 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
     }
 
     graph_linear_edges.write_graph(output + "/graph_linear_edges.final", 1000000, false, true);
-    graph_linear_edges.get_annotation(output + "/graph_linear_edges.final");
-    graph_linear_edges.write_graph_L(output + "/graph_linear_edges.final.color", 1000000, false, true, std::unordered_set<std::string>(), kmer2bc);
-    graph_linear_edges.write_graph_contracted_L(output + "/graph_linear_edges.final.color.contracted.600", 600, false, kmer2bc);
+    // graph_linear_edges.get_annotation(output + "/graph_linear_edges.final");
+    graph_linear_edges.write_graph_L(output + "/graph_linear_edges.final", 1000000, false, true, std::unordered_set<std::string>(), kmer2bc);
+    graph_linear_edges.write_graph_contracted_L(output + "/graph_linear_edges.final.contracted.600", 600, false, kmer2bc);
 
     for (auto&& n : graph_linear_edges.graph) {
         if (n.second.incoming_edges.empty() && n.second.outgoing_edges.size() == 1) {
@@ -1651,7 +1650,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
                 if (node1 == reverse_complementary_node(node2_out) || node2 == reverse_complementary_node(node1_in))
                     continue;
 
-                std::cout << "Glue node " << node1 << " and " << node2 << " based on edge " << n.first << " -> " << n_out << std::endl;
+                std::cout << "[Connect] Glue node " << node1 << " and " << node2 << " based on edge " << n.first << " -> " << n_out << std::endl;
 
                 // delete last 5000 bp for node1 and first 5000 bp for node2
                 graph[node1].sequence = graph[node1].sequence.substr(0, graph[node1].sequence.size() - 5000);
@@ -1705,7 +1704,7 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
     std::unordered_map<std::string, std::string> print2node;
 
     std::unordered_set<std::string> traversed_nodes;
-    std::cout << "Write prefixes and suffixes of linear edges to fasta" << std::endl;
+    std::cout << "[Deduplicate] Write prefixes and suffixes of linear edges to fasta" << std::endl;
     int extract_length = 1000000;
     for (auto&& node : graph) {
         print2node[get_contracted_name(node.first)] = node.first;
@@ -1768,30 +1767,21 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
     std::string out_bam_prefix = output + "/align.prefix_suffix.all";;
 
     if (!fs::is_regular_file(out_bam_prefix + ".bam")) {
-        if (execute_command(("minimap2 -ax asm20 --eqx -Y -p 0.1 " + output_all + " " + output_prefix_suffix + " -t " + std::to_string(threads) + " | grep -v '^@' > " + out_bam_prefix + ".sam").c_str()) != 0) {
-            exit(1);
-        }
+        execute_command(("minimap2 -ax asm20 --eqx -Y -p 0.1 " + output_all + " " + output_prefix_suffix + " -t " + std::to_string(threads) + " | grep -v '^@' > " + out_bam_prefix + ".sam").c_str());
         if (!std::filesystem::exists(output_all + ".fai")) {
-            if (execute_command(("samtools faidx " + output_all).c_str()) != 0)
-                exit(1);
+            execute_command(("samtools faidx " + output_all).c_str());
         }
-        if (execute_command(("cut -f1,2 " + output_all + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + out_bam_prefix + ".header.sam").c_str()) != 0)
-            exit(1);
-        if (execute_command(("cat " + out_bam_prefix + ".header.sam " + out_bam_prefix + ".sam | samtools sort -@ " + std::to_string(threads) + " -o " + out_bam_prefix + ".bam").c_str()) != 0) {
-            exit(1);
-        }
+        execute_command(("cut -f1,2 " + output_all + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + out_bam_prefix + ".header.sam").c_str());
+        execute_command(("cat " + out_bam_prefix + ".header.sam " + out_bam_prefix + ".sam | samtools sort -@ " + std::to_string(threads) + " -o " + out_bam_prefix + ".bam").c_str());
     }
 
     std::string exeDir = getExecutablePath();
-    if (execute_command((exeDir + "/../src/scripts/remove_contained_from_alignments.py -o " + out_bam_prefix + ".results " + out_bam_prefix + ".bam").c_str()) != 0)
-        exit(1);
-
+    execute_command((exeDir + "/../src/scripts/remove_cognate.py -o " + out_bam_prefix + ".results " + out_bam_prefix + ".bam").c_str());
     std::ifstream infile(out_bam_prefix + ".results");
 
     // Check if file opened successfully
     if (!infile.is_open()) {
-        std::cerr << "Error opening file: " << out_bam_prefix + ".results" << std::endl;
-        exit(1);
+        throw std::runtime_error("Error opening file: " + out_bam_prefix + ".results");
     }
 
     std::string line;
@@ -1800,8 +1790,8 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
         if (underscore_pos != std::string::npos) {
             std::string node1 = print2node.at(line.substr(0, underscore_pos));
             std::string node2 = print2node.at(line.substr(underscore_pos + 1));
-            std::cout << "Remove contained edge " << node1 << " -> " << node2 << std::endl;
-            std::cout << "Remove contained edge " << reverse_complementary_node(node2) << " -> " << reverse_complementary_node(node1) << std::endl;
+            std::cout << "[Deduplicate] Remove contained edge " << node1 << " -> " << node2 << std::endl;
+            std::cout << "[Deduplicate] Remove contained edge " << reverse_complementary_node(node2) << " -> " << reverse_complementary_node(node1) << std::endl;
 
             graph.erase(node1);
             graph.erase(node2);
@@ -1869,7 +1859,7 @@ void Graph::connect_linear_and_tips_using_spanning_reads(std::string output, int
 
     std::string exeDir = getExecutablePath();
     std::string compress = exeDir + "/../lib/LJA/bin/compress";
-    std::string spanning_reads_script = exeDir + "/../src/scripts/investigate_spanning_reads.py";
+    std::string spanning_reads_script = exeDir + "/../src/scripts/spanning_reads.py";
 
     if (!fs::is_regular_file(out_result)) {
         if (execute_command((spanning_reads_script + " " + output_all + " " + reads + " " + out_bam + " " + out_result + " -c " + compress + " -t " + std::to_string(threads) + " -i " + std::to_string(identity)).c_str()) != 0)
@@ -1968,7 +1958,7 @@ void Graph::connect_linear_and_tips_using_spanning_reads(std::string output, int
         std::string edge_out_unique = edge_out.sequence.size() >= 20000 ? edge_out.sequence.substr(20000) : "";
 
         // for forward strand
-        std::cout << "Connect " << node1 << " and " << node2 << " using spanning reads" << std::endl;
+        std::cout << "[Connect] Connect " << node1 << " and " << node2 << " using spanning reads" << std::endl;
         std::string new_edge_seq = edge_in_unique + connecting_seq + edge_out_unique;
         Edge new_edge(new_edge_seq.at(graph[node1_in].sequence.size()), new_edge_seq.size(), new_edge_seq, std::max(edge_in.multiplicity, edge_out.multiplicity));
         new_edge.path_edges_in_original_graph.push_back(node1 + "_" + node2);
@@ -1984,7 +1974,7 @@ void Graph::connect_linear_and_tips_using_spanning_reads(std::string output, int
         graph.erase(node2);
 
         // for reverse strand
-        std::cout << "Connect " << reverse_complementary_node(node2) << " and " << reverse_complementary_node(node1) << " using spanning reads" << std::endl;
+        std::cout << "[Connect] Connect " << reverse_complementary_node(node2) << " and " << reverse_complementary_node(node1) << " using spanning reads" << std::endl;
         std::string new_edge_seq_rc = reverse_complementary(new_edge_seq);
         Edge new_edge_rc(new_edge_seq_rc.at(graph[node2_out].sequence.size()), new_edge_seq_rc.size(), new_edge_seq_rc, std::max(edge_in.multiplicity, edge_out.multiplicity));
         new_edge_rc.path_edges_in_original_graph.push_back(reverse_complementary_node(node2) + "_" + reverse_complementary_node(node1));

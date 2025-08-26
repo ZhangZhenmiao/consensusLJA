@@ -116,7 +116,6 @@ namespace dbg {
         void write_graph_colored_from_bam(const std::string& prefix, const std::string& bam_processed);
         int write_reads(const std::string& prefix);
         void append_linear_to_circular_genome(const std::string& prefix, int len_read);
-        void decoupling(std::string multidbg, std::string output);
         int get_num_nodes();
         void detect_chimeric_reads();
         void get_annotation(std::string prefix);
@@ -152,7 +151,6 @@ namespace dbg {
         void remove_whirl(Path& unambiguous_path, std::vector<std::string>& nodes_to_remove);
 
         std::string collapse_complex_bulge_two_multi_edge_paths(Path p1, Path p2, bool p1_2_in_2_out, bool p2_2_in_2_out, double max_identity, std::vector<std::string>& nodes_to_remove);
-        bool process_palindromic_bulges(Path& p1, Path& p2, std::vector<std::string>& nodes_to_remove, bool verbose = false, std::string output = "");
         void find_2_in_2_out(Bulge& bulge);
         bool check_2_in_2_out(Path& leg1);
 

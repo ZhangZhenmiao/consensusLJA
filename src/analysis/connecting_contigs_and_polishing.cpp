@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
     std::string align_and_print = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "align_and_print";
     std::string compress = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "compress";
     std::string remove_chimeric = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "remove_chimeric.sh";
-    std::string analyze_chimeric = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "analyze_chimeric.py";
+    std::string analyze_chimeric = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "remove_chimeric.py";
     std::string jumbodbg = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "jumboDBG";
     std::string polisher = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "run_polishing";
 

@@ -324,12 +324,12 @@ void Graph::analyze_histogram(const std::map<int, int>& hist, int window_size) {
 
     // Output results
     if (!peaks.empty()) {
-        std::cout << "First peak at multiplicity: " << peaks[0].first
+        std::cout << "[CovHistogram] First peak at multiplicity: " << peaks[0].first
             << " (count: " << peaks[0].second << ")\n";
 
         error_peak = peaks[0].first;
 
-        std::cout << "Subsequent local minima: ";
+        std::cout << "[CovHistogram] Subsequent local minima: ";
         for (const auto& [valley, count] : valleys) {
             if (valley > peaks[0].first) {
                 std::cout << valley << " (count: " << count << ")\n";
@@ -338,14 +338,14 @@ void Graph::analyze_histogram(const std::map<int, int>& hist, int window_size) {
             }
         }
         if (first_minima >= mean_cov) {
-            std::cout << "No error peak detected" << std::endl;
+            std::cout << "[CovHistogram] No error peak detected" << std::endl;
             error_peak = 0;
             first_minima = 0;
         }
-        std::cout << "Average coverage: " << mean_cov << std::endl;
+        std::cout << "[CovHistogram] Average coverage: " << mean_cov << std::endl;
     }
     else {
-        std::cout << "No peaks found in histogram" << std::endl;
+        std::cout << "[CovHistogram] No peaks found in histogram" << std::endl;
     }
 }
 
@@ -452,7 +452,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
     dot_file.close();
     auto histogram = create_histogram(edge_multis);
     analyze_histogram(histogram);
-    std::cout << "Read " << get_num_nodes() << " vertices, " << cnt_edge << " edges (k=" << this->k << ")." << std::endl;
+    std::cout << "[ReadGraph] Read " << get_num_nodes() << " vertices, " << cnt_edge << " edges (k=" << this->k << ")." << std::endl;
 }
 
 std::string Graph::get_unique_label(std::unordered_set<std::string>& labels) {
@@ -476,7 +476,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
     std::string graph_fasta = prefix + ".fasta";
     std::string graph_path = prefix + ".path";
 
-    std::cout << "Write graph " << graph_dot << ", fasta " << graph_fasta << std::endl;
+    std::cout << "[WriteGraph] Write graph " << graph_dot << ", fasta " << graph_fasta << std::endl;
     std::ofstream file_dot(graph_dot);
     std::ofstream file_fasta(graph_fasta);
     std::ofstream file_path(graph_path);
@@ -498,7 +498,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
         }
     }
     if (max_contracted > 0)
-        std::cout << "Max contracted node: " << max_contracted_node << " has " << max_contracted << " edges." << std::endl;
+        std::cout << "[WriteGraph] Max contracted node: " << max_contracted_node << " has " << max_contracted << " edges." << std::endl;
 
     // construct labels for vertices
     std::unordered_map<std::string, std::unordered_set<std::string>> vertice2labels;
@@ -750,14 +750,14 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
     file_dot.close();
     file_fasta.close();
     file_path.close();
-    std::cout << "Total number of nodes: " << this->get_num_nodes() << std::endl;
-    std::cout << "Total number of edges: " << num_edges << std::endl;
+    std::cout << "[WriteGraph] Total number of nodes: " << this->get_num_nodes() << std::endl;
+    std::cout << "[WriteGraph] Total number of edges: " << num_edges << std::endl;
 }
 
 void Graph::append_linear_to_circular_genome(const std::string& prefix, int len_read) {
     std::string graph_fasta = prefix + ".fasta";
 
-    std::cout << "Write linear segment to fasta " << graph_fasta << std::endl;
+    std::cout << "[WriteGraph] Write linear segment to fasta " << graph_fasta << std::endl;
     std::ofstream file_fasta(graph_fasta, std::ios_base::app);
 
     std::unordered_set<std::string> traversed_labels;
@@ -786,7 +786,7 @@ void Graph::write_graph_gfa(const std::string& prefix) {
     std::string graph_gfa = prefix + ".gfa";
     std::string graph_aln = prefix + ".aln";
 
-    std::cout << "Write graph " << graph_gfa << ", alignments " << graph_aln << std::endl;
+    std::cout << "[WriteGraph] Write graph " << graph_gfa << ", alignments " << graph_aln << std::endl;
     std::ofstream file_gfa(graph_gfa);
     std::ofstream file_aln(graph_aln);
 
@@ -1158,7 +1158,7 @@ void Graph::write_graph_colored(const std::string& prefix, const std::string& ge
     for (auto&& node : graph) {
         cnt += 1;
         if (cnt % 100 == 0)
-            std::cout << "Aligned " << cnt << " nodes, " << cnt_aligned << " edges aligned" << std::endl;
+            std::cout << "[WriteGraph] Aligned " << cnt << " nodes, " << cnt_aligned << " edges aligned" << std::endl;
         for (auto&& edge : node.second.outgoing_edges) {
             for (auto&& e : edge.second) {
 #pragma omp parallel for

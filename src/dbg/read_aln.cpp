@@ -80,7 +80,7 @@ void Graph::load_read_path(const std::string& graph_aln) {
         if (items[1] != "0")
             assert(pseudo2aln[items[0]].start_base_path.size() + 1 == pseudo2aln[items[0]].nodes_path.size());
     }
-    std::cout << "Load " << cnt_corrected << " corrected reads, " << cnt_pseudo << " pseudo reads." << std::endl;
+    std::cout << "[ReadGraph] Load " << cnt_corrected << " corrected reads, " << cnt_pseudo << " pseudo reads." << std::endl;
 }
 
 std::string Graph::find_path_from_start_bases(std::string start_node, std::string start_bases, std::string read_name, std::vector<std::string>& nodes_path, int prefix, int suffix) {
@@ -89,7 +89,7 @@ std::string Graph::find_path_from_start_bases(std::string start_node, std::strin
 
     std::string seq = "";
     if (graph.find(start_node) == graph.end()) {
-        std::cout << "No start node found on graph for " << start_node << ", P:" << start_bases << std::endl;
+        std::cout << "[ReadGraph] No start node found on graph for " << start_node << ", P:" << start_bases << std::endl;
     }
     assert(graph.find(start_node) != graph.end());
 
@@ -102,7 +102,7 @@ std::string Graph::find_path_from_start_bases(std::string start_node, std::strin
             for (auto&& e : node_next.second) {
                 if (e.start_base == start_bases[index]) {
                     if (flag == true) {
-                        std::cout << "Multiple paths found for " << start_node << ", P:" << start_bases << " at index " << index << std::endl;
+                        std::cout << "[ReadGraph] Multiple paths found for " << start_node << ", P:" << start_bases << " at index " << index << std::endl;
                         continue;
                     }
                     e.reads.insert(read_name);
@@ -129,8 +129,7 @@ std::string Graph::find_path_from_start_bases(std::string start_node, std::strin
             }
         }
         if (flag == false) {
-            std::cout << "No path found for " << start_node << ", P:" << start_bases << " at index " << index << std::endl;
-            exit(1);
+            throw std::runtime_error("No path found for " + start_node + ", P:" + start_bases + " at index " + std::to_string(index));
         }
         index += 1;
         start_node = selected_next;
@@ -354,8 +353,8 @@ void Graph::add_virtual_reads(unsigned& removed_paths, int x, double identity, b
 
                     // check reverse paths
                     Path p1_reverse, p2_reverse;
-                    assert(get_reverse_path(paths[i], p1_reverse));
-                    assert(get_reverse_path(paths[j], p2_reverse));
+                    get_reverse_path(paths[i], p1_reverse);
+                    get_reverse_path(paths[j], p2_reverse);
 
                     // calculate identity
                     double alignment_identity = 0;
@@ -511,7 +510,7 @@ void Graph::add_complementary_virtual_reads(unsigned& added_reads) {
             }
         }
 
-        std::cout << "Virtual read traversing 2-in-2-out: " << starts.size() << "(" << node1 << " -> " << node2 << ")" << std::endl;
+        std::cout << "[VirtualRead] Virtual read traversing 2-in-2-out: " << starts.size() << "(" << node1 << " -> " << node2 << ")" << std::endl;
 
         if (starts.size() == 1) {
             std::string virtual_start, virtual_end;
@@ -551,7 +550,7 @@ void Graph::add_complementary_virtual_reads(unsigned& added_reads) {
             graph[node1].outgoing_edges[node2][0].reads.insert(read_name);
             graph[node2].outgoing_edges[virtual_end][0].reads.insert(read_name);
 
-            std::cout << "Virtual read add: " << virtual_start << " -> " << node1 << " -> " << node2 << " -> " << virtual_end << " " << pseudo2aln[read_name].start_base_path << std::endl;
+            std::cout << "[VirtualRead] Virtual read add: " << virtual_start << " -> " << node1 << " -> " << node2 << " -> " << virtual_end << " " << pseudo2aln[read_name].start_base_path << std::endl;
             added_reads += 1;
         }
     }
@@ -643,14 +642,14 @@ void Graph::detect_chimeric_reads() {
 
                         auto inters = get_intersection(e1_all, e2_all);
 
-                        if (node1.first == "-33853")
-                            std::cout << node1.first << " -> (" << e1.length << " " << e1.multiplicity << ") -> " << node2.first << " -> (" << e2.length << " " << e2.multiplicity << ") -> " << node3.first << " reads1 " << e1_all.size() << " reads2 " << e2_all.size() << " shared " << inters.size() << ":" << std::endl;
+                        // if (node1.first == "-33853")
+                        //     std::cout << node1.first << " -> (" << e1.length << " " << e1.multiplicity << ") -> " << node2.first << " -> (" << e2.length << " " << e2.multiplicity << ") -> " << node3.first << " reads1 " << e1_all.size() << " reads2 " << e2_all.size() << " shared " << inters.size() << ":" << std::endl;
 
                         // if (inters.size() <= 1 && (e1_all.size() >= 10 || e2_all.size() >= 10)) {
                         if (inters.size() <= 1) {
                             erroneous_edges.emplace_back(ErrorEdge(node1.first, node2.first, inters, i, p_reverse.bulge_legs[1]));
 
-                            std::cout << "Find erroneuous edge " << node1.first << " -> (" << e1.length << " " << e1.multiplicity << ") -> " << node2.first << " -> (" << e2.length << " " << e2.multiplicity << ") -> " << node3.first << " reads1 " << e1_all.size() << " reads2 " << e2_all.size() << " shared " << inters.size() << ":" << std::endl;
+                            std::cout << "[RemoveChimeric] Find erroneuous edge " << node1.first << " -> (" << e1.length << " " << e1.multiplicity << ") -> " << node2.first << " -> (" << e2.length << " " << e2.multiplicity << ") -> " << node3.first << " reads1 " << e1_all.size() << " reads2 " << e2_all.size() << " shared " << inters.size() << ":" << std::endl;
                             for (auto r : inters) {
                                 if (chimeric_reads.find(r) == chimeric_reads.end())
                                     std::cout << "    Find chimeric read " << r << ", " << node1.first << " (" << e1.length << " " << e1.multiplicity << ") " << node2.first << " (" << e2.length << " " << e2.multiplicity << ") " << node3.first << std::endl;
@@ -740,11 +739,11 @@ void Graph::detect_chimeric_reads() {
 
             graph[error_edge.node1].outgoing_edges[new_node].push_back(out_forward);
             graph[new_node].incoming_edges[error_edge.node1].push_back(in_forward);
-            std::cout << "Add new edge: " << error_edge.node1 << " -> " << new_node << std::endl;
+            std::cout << "[RemoveChimeric] Add new edge: " << error_edge.node1 << " -> " << new_node << std::endl;
             graph[reverse_complementary_node(new_node)].outgoing_edges[reverse_complementary_node(error_edge.node1)].push_back(out_reverse);
             graph[reverse_complementary_node(error_edge.node1)].incoming_edges[reverse_complementary_node(new_node)].push_back(in_reverse);
 
-            std::cout << "Add new edge: " << reverse_complementary_node(new_node) << " -> " << reverse_complementary_node(error_edge.node1) << std::endl;
+            std::cout << "[RemoveChimeric] Add new edge: " << reverse_complementary_node(new_node) << " -> " << reverse_complementary_node(error_edge.node1) << std::endl;
         }
 
         out_forward.multiplicity = 0;

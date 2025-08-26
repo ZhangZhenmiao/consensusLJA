@@ -4,7 +4,37 @@ import argparse
 import sys
 import re
 from collections import defaultdict
-from determine_component import classify_dot_edges
+
+def classify_dot_edges(dot_file):
+    with open(dot_file, 'r') as f:
+        dot_text = f.read()
+    # Pattern to extract edge info
+    edge_pattern = re.compile(r'"?([^"]+)"?\s*->\s*"?(.*?)"?\s*\[label="([^"]+)"')
+
+    edges = []
+    node_counts = defaultdict(int)
+
+    # First pass: parse all edges and count node usage
+    for line in dot_text.strip().splitlines():
+        match = edge_pattern.search(line)
+        if match:
+            src, tgt, label = match.groups()
+            label = label[:label.find(" ")]
+            edges.append((src, tgt, label))
+            node_counts[src] += 1
+            if tgt != src:
+                node_counts[tgt] += 1
+
+    # Second pass: classify edges
+    results = defaultdict(str)
+    for src, tgt, label in edges:
+        if node_counts[src] > 1 or node_counts[tgt] > 1:
+            classification = "multi-edge"
+        else:
+            classification = "isolated"
+        results[label] = classification
+
+    return results
 
 def merge_two_alignments(aln1, aln2):
     """
@@ -355,8 +385,8 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     'alignment': alignment
                 })
 
-                query_name = "*" + alignment.query_name.split('_')[0]
-                # query_name = alignment.query_name.split('_')[1]
+                # query_name = "*" + alignment.query_name.split('_')[0]
+                query_name = alignment.query_name.split('_')[1]
                 if query_name not in high_identity_alignments:
                     high_identity_alignments[query_name] = []
                 

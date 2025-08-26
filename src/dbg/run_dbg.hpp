@@ -16,8 +16,7 @@ public:
     std::string lja = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "lja";
     std::string lja_cdb = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "lja_cdb";
     std::string compress = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "compress";
-    std::string correct_reads_script = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "correct_reads_high.sh";
-    std::string correct_reads_py = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "correct_reads_high.py";
+    std::string correct_reads = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "correct_reads_high.py";
 
     DBGRunner(std::string reads, fs::path output_all, int threads) {
         this->threads = threads;
@@ -26,8 +25,9 @@ public:
         fs::path dbg_dir = output_all / "0_condensed_dbg";
         this->dbg_dir = dbg_dir;
 
+        std::cout << "[RunLJAInitial] Construct condensed DBG using LJA" << std::endl;
         if (!fs::is_directory(dbg_dir)) {
-            execute_command(lja + " -t " + std::to_string(threads) + " --reads " + reads + " --output-dir " + dbg_dir.string() + " --diploid");
+            execute_command(lja_cdb + " -t " + std::to_string(threads) + " --reads " + reads + " --output-dir " + dbg_dir.string() + " --diploid");
         }
 
         graph_dot = dbg_dir / "01_TopologyBasedCorrection" / "final_dbg.dot";
@@ -39,6 +39,8 @@ public:
         std::string correct_reads_lja = output + "/corrected_reads.fasta";
         std::string correct_reads_high = output + "/reads_all.corrected.fasta";
 
+        std::cout << "==========[GraphCleaning]==========" << std::endl;
+
         bool correct_high = false;
         if (!fs::is_regular_file(high_contigs))
             correct_high = correctHigh();
@@ -47,12 +49,11 @@ public:
         this->dbg_dir = dbg_dir;
         if (correct_high) {
             if (!fs::is_regular_file(correct_reads_high)) {
-                if (execute_command(correct_reads_script + " " + reads + " " + correct_reads_lja + " " + high_contigs + " " + output + "/reads_all" + " " + compress + " " + correct_reads_py) != 0) {
-                    throw std::runtime_error("Failed to execute " + correct_reads_script);
-                }
+                execute_command(correct_reads + " " + reads + " " + correct_reads_lja + " " + high_contigs + " " + output + "/reads_all" + " " + compress + " --threads " + std::to_string(threads));
             }
 
             if (!fs::is_directory(dbg_dir)) {
+                std::cout << "[RunLJACorrected] Construct condensed DBG using LJA" << std::endl;
                 execute_command(lja_cdb + " -t " + std::to_string(threads) + " --reads " + correct_reads_high + " --output-dir " + dbg_dir.string() + " --diploid");
             }
         }

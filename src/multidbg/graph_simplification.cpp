@@ -65,22 +65,14 @@ void Graph::get_annotation(std::string prefix) {
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Mytilus_gallo/genome/GCA_037788925.1_MytGallo_primary_0.1_genomic.compressed.fa";
     if (fs::is_regular_file(prefix + ".fasta.fai"))
-        system(("rm " + prefix + ".fasta.fai").c_str());
-    if (system(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -p 0.1 -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str()) != 0) {
-        exit(1);
-    }
-    if (!std::filesystem::exists(ref_seq + ".fai")) {
-        if (system(("samtools faidx " + ref_seq).c_str()) != 0)
-            exit(1);
-    }
-    if (system(("cut -f1,2 " + ref_seq + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + prefix + ".ref.header.sam").c_str()) != 0)
-        exit(1);
-    if (system(("cat " + prefix + ".ref.header.sam " + prefix + ".ref.sam | samtools sort -@ 50 -o " + prefix + ".ref.bam").c_str()) != 0) {
-        exit(1);
-    }
+        execute_command(("rm " + prefix + ".fasta.fai").c_str());
+    execute_command(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -p 0.1 -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str());
+    if (!std::filesystem::exists(ref_seq + ".fai"))
+        execute_command(("samtools faidx " + ref_seq).c_str());
+    execute_command(("cut -f1,2 " + ref_seq + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + prefix + ".ref.header.sam").c_str());
+    execute_command(("cat " + prefix + ".ref.header.sam " + prefix + ".ref.sam | samtools sort -@ 50 -o " + prefix + ".ref.bam").c_str());
     std::string exeDir = getExecutablePath();
-    if (system((exeDir + "/../src/scripts/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str()) != 0)
-        exit(1);
+    execute_command((exeDir + "/../src/scripts/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str());
     write_graph_colored_from_bam(prefix + ".color", prefix + ".ref.bam.stats");
 }
 
@@ -412,7 +404,7 @@ std::string Graph::collapse_bulge(std::string node1, std::string node2, unsigned
             edges_in.at(leg1).add_multi_from_edge_or_path(edges_in.at(leg2));
             edges_in.erase(edges_in.begin() + leg2);
         }
-        std::cout << "Simple bulge: " << node1 << "->" << node2 << ", sim (length) " << sim << ", muti " << graph[node1].outgoing_edges[node2].at(0).multiplicity << std::endl;
+        std::cout << "[Detour] Simple bulge: " << node1 << "->" << node2 << ", sim (length) " << sim << ", muti " << graph[node1].outgoing_edges[node2].at(0).multiplicity << std::endl;
         removed_bulges += 1;
     }
     return edges.at(0).sequence;
@@ -460,7 +452,7 @@ void Graph::merge_tips(unsigned& num_tips) {
                 std::string prefix_tip_target = graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).sequence.substr(0, prefix_size);
                 std::string prefix_tip_to_merge = graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).sequence.substr(0, prefix_size);
                 double sim = matches_by_edlib(prefix_tip_target, prefix_tip_to_merge);
-                std::cout << "Check tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
+                std::cout << "[MergeTip] Check tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
 
                 if (sim < 0.6)
                     continue;
@@ -472,7 +464,7 @@ void Graph::merge_tips(unsigned& num_tips) {
                         continue;
                 }
 
-                std::cout << "Merge tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
+                std::cout << "[MergeTip] Merge tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
                 merge_vecs(graph[node.first].outgoing_edges[outgoing_tips[max_index]], graph[node.first].outgoing_edges[outgoing_tips[i]]);
                 merge_vecs(graph[outgoing_tips[max_index]].incoming_edges[node.first], graph[outgoing_tips[i]].incoming_edges[node.first]);
                 merge_vecs(graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(outgoing_tips[max_index])], graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(outgoing_tips[i])]);
@@ -560,7 +552,7 @@ void Graph::gluing_broken_bulges(unsigned& removed_bulges) {
                 double similarity = 1.0 * std::min(outgoing_edge.length + incoming_edge.length, node2.second.at(0).length) / std::max(outgoing_edge.length + incoming_edge.length, node2.second.at(0).length);
                 if (similarity < 0.9)
                     continue;
-                std::cout << "Broken bulge (and reverse complementary): " << node.first << "->" << node2.first << ", " << node.first << "->" << outgoing_tip << " " << incoming_tip << "->" << node2.first << ", sim " << similarity << std::endl;
+                std::cout << "[RepairTip] Broken bulge (and reverse complementary): " << node.first << "->" << node2.first << ", " << node.first << "->" << outgoing_tip << " " << incoming_tip << "->" << node2.first << ", sim " << similarity << std::endl;
                 std::vector<std::string> nodes;
                 std::string out_tip_seq = outgoing_edge.sequence.substr(outgoing_edge.sequence.size() - graph[outgoing_tip].sequence.size());
                 for (auto&& n : graph[incoming_tip].outgoing_edges) {
@@ -653,8 +645,8 @@ void Graph::merge_secondary_edges(unsigned& num_edges) {
             }
         }
         if (find_similar) {
-            std::cout << "Deadend edge " << node.first << " -> " << deadend_out << " is removed (sim=" << sim << ")" << std::endl;
-            std::cout << "Deadend edge " << reverse_complementary_node(deadend_out) << " -> " << reverse_complementary_node(node.first) << " is removed (sim=" << sim << ")" << std::endl;
+            std::cout << "[RepairTip] Deadend edge " << node.first << " -> " << deadend_out << " is removed (sim=" << sim << ")" << std::endl;
+            std::cout << "[RepairTip] Deadend edge " << reverse_complementary_node(deadend_out) << " -> " << reverse_complementary_node(node.first) << " is removed (sim=" << sim << ")" << std::endl;
             graph[node.first].outgoing_edges.erase(deadend_out);
             graph[deadend_out].incoming_edges.erase(node.first);
             graph[reverse_complementary_node(deadend_out)].outgoing_edges.erase(reverse_complementary_node(node.first));
@@ -779,7 +771,7 @@ void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_ti
             if (max_edge.empty())
                 continue;
 
-            std::cout << "Check tip " << node.first << "->" << t << " multi " << graph[node.first].outgoing_edges[t].at(0).multiplicity << " len " << graph[node.first].outgoing_edges[t].at(0).length << " to edge " << node.first << "->" << max_edge << " multi " << graph[node.first].outgoing_edges[max_edge].at(0).multiplicity << " len " << graph[node.first].outgoing_edges[max_edge].at(0).length << " with sim " << max_sim << std::endl;
+            std::cout << "[RepairTip] Check tip " << node.first << "->" << t << " multi " << graph[node.first].outgoing_edges[t].at(0).multiplicity << " len " << graph[node.first].outgoing_edges[t].at(0).length << " to edge " << node.first << "->" << max_edge << " multi " << graph[node.first].outgoing_edges[max_edge].at(0).multiplicity << " len " << graph[node.first].outgoing_edges[max_edge].at(0).length << " with sim " << max_sim << std::endl;
 
             if (max_sim < 0.8)
                 continue;
@@ -796,8 +788,8 @@ void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_ti
             nodes_to_remove.insert(t);
             nodes_to_remove.insert(reverse_complementary_node(t));
             num_tips += 2;
-            std::cout << "Tip " << node.first << "->" << t << " multi " << graph[node.first].outgoing_edges[t].at(0).multiplicity << " is merged to edge " << node.first << "->" << max_edge << " with sim " << max_sim << std::endl;
-            std::cout << "Tip " << reverse_complementary_node(t) << "->" << reverse_complementary_node(node.first) << " multi " << graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(t)].at(0).multiplicity << " is merged to edge " << reverse_complementary_node(max_edge) << "->" << reverse_complementary_node(node.first) << " with sim " << max_sim << " multi " << graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(max_edge)].at(0).multiplicity << std::endl;
+            std::cout << "[RepairTip] Tip " << node.first << "->" << t << " multi " << graph[node.first].outgoing_edges[t].at(0).multiplicity << " is merged to edge " << node.first << "->" << max_edge << " with sim " << max_sim << std::endl;
+            std::cout << "[RepairTip] Tip " << reverse_complementary_node(t) << "->" << reverse_complementary_node(node.first) << " multi " << graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(t)].at(0).multiplicity << " is merged to edge " << reverse_complementary_node(max_edge) << "->" << reverse_complementary_node(node.first) << " with sim " << max_sim << " multi " << graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(max_edge)].at(0).multiplicity << std::endl;
             graph[node.first].outgoing_edges.erase(t);
             graph[t].incoming_edges.erase(node.first);
             graph[reverse_complementary_node(node.first)].incoming_edges.erase(reverse_complementary_node(t));
@@ -859,7 +851,7 @@ void Graph::merge_tips_into_edges_further(unsigned& num_tips, double ratio) {
         add_node_to_path(path, non_tip);
         add_node_to_path(path, out_node_non_tip);
 
-        std::cout << "Check tip " << node.first << "->" << tip << " len " << tip_edge.sequence.size() << " and " << node.first << "->" << non_tip << "->" << out_node_non_tip << " len " << path.sequence.size() << std::endl;
+        std::cout << "[RepairTip] Check tip " << node.first << "->" << tip << " len " << tip_edge.sequence.size() << " and " << node.first << "->" << non_tip << "->" << out_node_non_tip << " len " << path.sequence.size() << std::endl;
 
         // if the path length is shorter than the tip length, do not merge
         if (tip_edge.length * 0.8 > path.length)
@@ -876,15 +868,15 @@ void Graph::merge_tips_into_edges_further(unsigned& num_tips, double ratio) {
 
         if (graph[out_node_non_tip].outgoing_edges.size() != 0) {
             double sim = matches_by_edlib(prefix_tip, prefix_edge);
-            std::cout << "Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " len " << tip_edge.length << " to " << node.first << "->" << non_tip << "->" << out_node_non_tip << " multi " << path.multiplicity << " len " << path.length << ": sim " << sim << std::endl;
+            std::cout << "[RepairTip] Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " len " << tip_edge.length << " to " << node.first << "->" << non_tip << "->" << out_node_non_tip << " multi " << path.multiplicity << " len " << path.length << ": sim " << sim << std::endl;
             if (sim < ratio)
                 continue;
 
             nodes_to_remove.insert(tip);
             nodes_to_remove.insert(reverse_complementary_node(tip));
             num_tips += 2;
-            std::cout << "Tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " is merged to path " << node.first << "->" << non_tip << "->" << out_node_non_tip << " with sim " << sim << std::endl;
-            std::cout << "Tip " << reverse_complementary_node(tip) << "->" << reverse_complementary_node(node.first) << " multi " << tip_edge.multiplicity << " is merged to path " << reverse_complementary_node(out_node_non_tip) << "->" << reverse_complementary_node(non_tip) << "->" << reverse_complementary_node(node.first) << " with sim " << sim << std::endl;
+            std::cout << "[RepairTip] Tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " is merged to path " << node.first << "->" << non_tip << "->" << out_node_non_tip << " with sim " << sim << std::endl;
+            std::cout << "[RepairTip] Tip " << reverse_complementary_node(tip) << "->" << reverse_complementary_node(node.first) << " multi " << tip_edge.multiplicity << " is merged to path " << reverse_complementary_node(out_node_non_tip) << "->" << reverse_complementary_node(non_tip) << "->" << reverse_complementary_node(node.first) << " with sim " << sim << std::endl;
             graph[node.first].outgoing_edges.erase(tip);
             graph[tip].incoming_edges.erase(node.first);
             graph[reverse_complementary_node(node.first)].incoming_edges.erase(reverse_complementary_node(tip));
@@ -892,7 +884,7 @@ void Graph::merge_tips_into_edges_further(unsigned& num_tips, double ratio) {
         }
         else {
             double sim = matches_by_edlib(prefix_tip, prefix_edge);
-            std::cout << "Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " len " << tip_edge.length << " to " << node.first << "->" << non_tip << "->" << out_node_non_tip << " multi " << path.multiplicity << " len " << path.length << ": sim " << sim << std::endl;
+            std::cout << "[RepairTip] Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " len " << tip_edge.length << " to " << node.first << "->" << non_tip << "->" << out_node_non_tip << " multi " << path.multiplicity << " len " << path.length << ": sim " << sim << std::endl;
             if (sim < 0.6)
                 continue;
 
@@ -900,8 +892,8 @@ void Graph::merge_tips_into_edges_further(unsigned& num_tips, double ratio) {
                 nodes_to_remove.insert(tip);
                 nodes_to_remove.insert(reverse_complementary_node(tip));
                 num_tips += 2;
-                std::cout << "Tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " is merged to path " << node.first << "->" << non_tip << "->" << out_node_non_tip << " with sim " << sim << std::endl;
-                std::cout << "Tip " << reverse_complementary_node(tip) << "->" << reverse_complementary_node(node.first) << " multi " << tip_edge.multiplicity << " is merged to path " << reverse_complementary_node(out_node_non_tip) << "->" << reverse_complementary_node(non_tip) << "->" << reverse_complementary_node(node.first) << " with sim " << sim << std::endl;
+                std::cout << "[RepairTip] Tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " is merged to path " << node.first << "->" << non_tip << "->" << out_node_non_tip << " with sim " << sim << std::endl;
+                std::cout << "[RepairTip] Tip " << reverse_complementary_node(tip) << "->" << reverse_complementary_node(node.first) << " multi " << tip_edge.multiplicity << " is merged to path " << reverse_complementary_node(out_node_non_tip) << "->" << reverse_complementary_node(non_tip) << "->" << reverse_complementary_node(node.first) << " with sim " << sim << std::endl;
                 graph[node.first].outgoing_edges.erase(tip);
                 graph[tip].incoming_edges.erase(node.first);
                 graph[reverse_complementary_node(node.first)].incoming_edges.erase(reverse_complementary_node(tip));
@@ -923,88 +915,6 @@ std::string Graph::getExecutablePath() {
     }
     return "";
 }
-
-void Graph::decoupling(std::string multidbg, std::string output) {
-    unsigned removed_bulges = 1;
-    while (removed_bulges) {
-        this->multi_bulge_removal(removed_bulges);
-    }
-    std::vector<std::string> nodes_to_remove;
-    std::vector<std::string> source_nodes, sink_nodes;
-    std::unordered_set<std::string> retained_nodes;
-    //search for 2-in-2-out edge
-    for (auto&& node : graph) {
-        if (node.second.incoming_edges.size() >= 2 && node.second.outgoing_edges.size() == 1 && node.second.incoming_edges.find(node.first) == node.second.incoming_edges.end()) {
-            std::string node_sink = node.first;
-            bool flag = false;
-            for (auto&& n : graph[node_sink].outgoing_edges) {
-                if (n.first != node_sink) {
-                    node_sink = n.first;
-                    flag = true;
-                }
-            }
-            if (flag == false)
-                continue;
-
-            // find a 2-in-2-out component
-            if (this->graph[node_sink].incoming_edges.size() == 1 && this->graph[node_sink].outgoing_edges.size() >= 2 && graph[node_sink].outgoing_edges.find(node_sink) == graph[node_sink].outgoing_edges.end() && std::find(source_nodes.begin(), source_nodes.end(), node.first) == source_nodes.end()) {
-                source_nodes.push_back(node.first);
-                sink_nodes.push_back(node_sink);
-                source_nodes.push_back(reverse_complementary_node(node_sink));
-                sink_nodes.push_back(reverse_complementary_node(node.first));
-                retained_nodes.insert(node.first);
-                retained_nodes.insert(reverse_complementary_node(node.first));
-                retained_nodes.insert(node_sink);
-                retained_nodes.insert(reverse_complementary_node(node_sink));
-            }
-        }
-        else if (node.second.incoming_edges.size() == 2 && node.second.outgoing_edges.size() == 2 && node.second.outgoing_edges.find(node.first) == node.second.outgoing_edges.end() && std::find(source_nodes.begin(), source_nodes.end(), node.first) == source_nodes.end()) {
-            source_nodes.push_back(node.first);
-            sink_nodes.push_back(node.first);
-            source_nodes.push_back(reverse_complementary_node(node.first));
-            sink_nodes.push_back(reverse_complementary_node(node.first));
-            retained_nodes.insert(node.first);
-            retained_nodes.insert(reverse_complementary_node(node.first));
-        }
-    }
-
-    std::cout << "Nodes in 2-in-2-out: " << retained_nodes.size() << " " << source_nodes.size() << std::endl;
-
-    write_graph(output + ".2in_2out", 10000, false, false, retained_nodes);
-    // write_graph(output + ".2in_2out", 10000, false, false);
-    // if (system(("get_prefix_suffix.py " + output + ".2in_2out.fasta " + output + ".2in_2out.pre.fasta").c_str()) != 0) {
-    //     exit(1);
-    // }
-    if (system(("minimap2 -ax map-pb " + multidbg + " " + output + ".2in_2out.fasta -t 100 | grep -v '^@' > " + output + ".2in_2out.sam").c_str()) != 0) {
-        exit(1);
-    }
-    if (!std::filesystem::exists(multidbg + ".fai")) {
-        if (system(("samtools faidx " + multidbg).c_str()) != 0)
-            exit(1);
-    }
-    if (system(("cut -f1,2 " + multidbg + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + output + ".2in_2out.header.sam").c_str()) != 0)
-        exit(1);
-    if (system(("cat " + output + ".2in_2out.header.sam " + output + ".2in_2out.sam | samtools sort -@ 50 -o " + output + ".2in_2out.bam").c_str()) != 0) {
-        exit(1);
-    }
-    // if (system(("minimap2 -ax map-pb " + multidbg + " " + output + ".2in_2out.fasta -t 100 | samtools sort -@ 50 -o " + output + ".2in_2out.bam").c_str()) != 0) {
-    //     exit(1);
-    // }
-    std::string exeDir = getExecutablePath();
-    if (system((exeDir + "/../src/scripts/get_reference.py -o " + output + ".2in_2out.bam.stats " + output + ".2in_2out.bam " + output + ".2in_2out.fasta").c_str()) != 0)
-        exit(1);
-    write_graph_colored_from_bam(output + ".2in_2out.multi", output + ".2in_2out.bam.stats");
-
-    for (int i = 0; i < source_nodes.size();++i)
-        this->resolve_2_in_2_out(source_nodes[i], sink_nodes[i], nodes_to_remove);
-
-    for (auto&& node : nodes_to_remove) {
-        this->graph.erase(node);
-    }
-    nodes_to_remove.clear();
-    this->merge_non_branching_paths(true);
-}
-
 void Graph::resolve_2_in_2_out(std::string node1, std::string node2, std::vector<std::string>& nodes_to_remove) {
     std::vector<std::string> incoming_nodes, outgoing_nodes;
 
@@ -1088,10 +998,10 @@ void Graph::resolve_2_in_2_out(std::string node1, std::string node2, std::vector
         if (std::abs(graph[incoming_nodes[id3]].outgoing_edges[node1].at(0).multiplicity - graph[node2].outgoing_edges[outgoing_nodes[id4]].at(0).multiplicity) / std::min(graph[incoming_nodes[id3]].outgoing_edges[node1].at(0).multiplicity, graph[node2].outgoing_edges[outgoing_nodes[id4]].at(0).multiplicity) > 0.5)
             return;
         if (flag11) {
-            std::cout << "Resolving 2-in-2-out edge: path1: " << incoming_nodes[0] << " -> " << node2 << " -> " << outgoing_nodes[0] << ", #supporting ids " << supporting11.size() << "; path2: " << incoming_nodes[1] << "->" << node2 << " -> " << outgoing_nodes[1] << ", #supporting ids " << supporting22.size() << std::endl;
+            std::cout << "[Decouple] Resolving 2-in-2-out edge: path1: " << incoming_nodes[0] << " -> " << node2 << " -> " << outgoing_nodes[0] << ", #supporting ids " << supporting11.size() << "; path2: " << incoming_nodes[1] << "->" << node2 << " -> " << outgoing_nodes[1] << ", #supporting ids " << supporting22.size() << std::endl;
         }
         else {
-            std::cout << "Resolving 2-in-2-out edge: path1: " << incoming_nodes[0] << " -> " << node2 << " -> " << outgoing_nodes[1] << ", #supporting ids " << supporting12.size() << "; path2: " << incoming_nodes[1] << "->" << node2 << " -> " << outgoing_nodes[0] << ", #supporting ids " << supporting21.size() << std::endl;
+            std::cout << "[Decouple] Resolving 2-in-2-out edge: path1: " << incoming_nodes[0] << " -> " << node2 << " -> " << outgoing_nodes[1] << ", #supporting ids " << supporting12.size() << "; path2: " << incoming_nodes[1] << "->" << node2 << " -> " << outgoing_nodes[0] << ", #supporting ids " << supporting21.size() << std::endl;
         }
         Path path1, path2;
         this->add_node_to_path(path1, incoming_nodes[id1]);
@@ -1216,10 +1126,10 @@ void Graph::resolve_2_in_2_out(std::string node1, std::string node2, std::vector
             if (std::abs(graph[incoming_nodes[id3]].outgoing_edges[node1].at(0).multiplicity - graph[node2].outgoing_edges[outgoing_nodes[id4]].at(0).multiplicity) / std::min(graph[incoming_nodes[id3]].outgoing_edges[node1].at(0).multiplicity, graph[node2].outgoing_edges[outgoing_nodes[id4]].at(0).multiplicity) > 0.5)
                 return;
             if (flag11) {
-                std::cout << "Resolving 2-in-2-out edge: path1: " << incoming_nodes[0] << " -> " << node1 << " -> " << node2 << " -> " << outgoing_nodes[0] << ", #supporting ids " << supporting11.size() << "; path2: " << incoming_nodes[1] << " -> " << node1 << "->" << node2 << " -> " << outgoing_nodes[1] << ", #supporting ids " << supporting22.size() << std::endl;
+                std::cout << "[Decouple] Resolving 2-in-2-out edge: path1: " << incoming_nodes[0] << " -> " << node1 << " -> " << node2 << " -> " << outgoing_nodes[0] << ", #supporting ids " << supporting11.size() << "; path2: " << incoming_nodes[1] << " -> " << node1 << "->" << node2 << " -> " << outgoing_nodes[1] << ", #supporting ids " << supporting22.size() << std::endl;
             }
             else {
-                std::cout << "Resolving 2-in-2-out edge: path1: " << incoming_nodes[0] << " -> " << node1 << " -> " << node2 << " -> " << outgoing_nodes[1] << ", #supporting ids " << supporting12.size() << "; path2: " << incoming_nodes[1] << " -> " << node1 << "->" << node2 << " -> " << outgoing_nodes[0] << ", #supporting ids " << supporting21.size() << std::endl;
+                std::cout << "[Decouple] Resolving 2-in-2-out edge: path1: " << incoming_nodes[0] << " -> " << node1 << " -> " << node2 << " -> " << outgoing_nodes[1] << ", #supporting ids " << supporting12.size() << "; path2: " << incoming_nodes[1] << " -> " << node1 << "->" << node2 << " -> " << outgoing_nodes[0] << ", #supporting ids " << supporting21.size() << std::endl;
             }
             Path path1, path2;
             this->add_node_to_path(path1, incoming_nodes[id1]);
@@ -1370,7 +1280,7 @@ void Graph::resolve_2_in_2_out(std::string node1, std::string node2, std::vector
                     return;
             }
 
-            std::cout << "Resolving m-in-n-out edge: " << "... -> " << node1 << " -> " << node2 << " -> ..." << std::endl;
+            std::cout << "[Decouple] Resolving m-in-n-out edge: " << "... -> " << node1 << " -> " << node2 << " -> ..." << std::endl;
 
             for (int i = 0; i < incoming_nodes.size(); ++i) {
                 for (int j = 0; j < outgoing_nodes.size(); ++j) {
@@ -1424,7 +1334,7 @@ void Graph::resolve_2_in_2_out(std::string node1, std::string node2, std::vector
 }
 
 void Graph::remove_whirl(Path& unambiguous_path, std::vector<std::string>& nodes_to_remove) {
-    std::cout << "General whirl (min multi " << unambiguous_path.min_multi << ", len " << unambiguous_path.length << "): " << unambiguous_path.nodes.at(0);
+    std::cout << "[Dewhirl] General whirl (min multi " << unambiguous_path.min_multi << ", len " << unambiguous_path.length << "): " << unambiguous_path.nodes.at(0);
 
     if (unambiguous_path.safe_to_extract) {
         // change multiplicity of cyclic unambiguous path
@@ -1496,8 +1406,8 @@ void Graph::remove_whirl(Path& unambiguous_path, std::vector<std::string>& nodes
         graph[unambiguous_path.nodes[0]].incoming_edges[unambiguous_path.nodes[0]].push_back(edge);
 
         Path unambiguous_path_r;
-        assert(get_reverse_path(unambiguous_path, unambiguous_path_r));
-        std::cout << "General whirl (min multi " << unambiguous_path_r.min_multi << ", len " << unambiguous_path_r.length << "): " << unambiguous_path_r.nodes.at(0) << "->" << unambiguous_path_r.nodes[1] << "->" << unambiguous_path_r.nodes[2] << std::endl;
+        get_reverse_path(unambiguous_path, unambiguous_path_r);
+        std::cout << "[Dewhirl] General whirl (min multi " << unambiguous_path_r.min_multi << ", len " << unambiguous_path_r.length << "): " << unambiguous_path_r.nodes.at(0) << "->" << unambiguous_path_r.nodes[1] << "->" << unambiguous_path_r.nodes[2] << std::endl;
         graph[unambiguous_path_r.nodes[1]].outgoing_edges[unambiguous_path_r.nodes[2]].erase(graph[unambiguous_path_r.nodes[1]].outgoing_edges[unambiguous_path_r.nodes[2]].begin() + unambiguous_path_r.bulge_legs[1]);
         graph[unambiguous_path_r.nodes[2]].incoming_edges[unambiguous_path_r.nodes[1]].erase(graph[unambiguous_path_r.nodes[2]].incoming_edges[unambiguous_path_r.nodes[1]].begin() + unambiguous_path_r.bulge_legs[1]);
         if (graph[unambiguous_path_r.nodes[1]].outgoing_edges[unambiguous_path_r.nodes[2]].empty()) {
@@ -1524,8 +1434,8 @@ void Graph::remove_whirl(Path& unambiguous_path, std::vector<std::string>& nodes
             }
         }
         if (multi_r != multi) {
-            write_graph("debug");
             std::cout << multi_r << " " << multi << std::endl;
+            throw std::runtime_error("Error: inconsistent multiplicity in reverse complementary whirl removal");
         }
         assert(multi_r == multi);
         graph[unambiguous_path_r.nodes[0]].outgoing_edges[unambiguous_path_r.nodes[1]].at(unambiguous_path_r.bulge_legs[0]).multiplicity = multi_r;
@@ -1601,7 +1511,7 @@ void Graph::general_whirl_removal(unsigned& removed_whirls, bool simple_whirl, b
                         break;
                     // process the reverse complementary whirl
                     Path unambiguous_path_reverse;
-                    assert(get_reverse_path(unambiguous_path, unambiguous_path_reverse));
+                    get_reverse_path(unambiguous_path, unambiguous_path_reverse);
 
                     // assert(unambiguous_path.color == unambiguous_path_reverse.color && unambiguous_path.multiplicity == unambiguous_path_reverse.multiplicity);
                     if (simple_whirl && unambiguous_path.nodes.size() > 3)
@@ -1650,8 +1560,7 @@ double Graph::matches_by_edlib(std::string sequence1, std::string sequence2, boo
         // return calculate_identities_from_cigar(cigar).second;
     }
     else {
-        std::cout << "edlib failed" << std::endl;
-        return 0;
+        throw std::runtime_error("Error: edlib failed");
     }
 }
 
@@ -1688,7 +1597,7 @@ std::string Graph::collapse_complex_bulge_two_multi_edge_paths(Path p1, Path p2,
     else {
         return "";
     }
-    std::cout << "Complex bulge: path1 (length " << p1.length << ", min multi " << p1.min_multi << "): " << p1.nodes[0];
+    std::cout << "[Detour] Complex bulge: path1 (length " << p1.length << ", min multi " << p1.min_multi << "): " << p1.nodes[0];
     for (int i = 1; i < p1.nodes.size();++i)
         std::cout << "->" << p1.nodes[i];
     std::cout << "; path2 (length " << p2.length << ", min multi " << p2.min_multi << "): " << p2.nodes[0];
@@ -1713,9 +1622,9 @@ std::string Graph::collapse_complex_bulge_two_multi_edge_paths(Path p1, Path p2,
                     nodes_to_remove.emplace_back(p1.nodes.at(i - 1));
             }
             if (p1.nodes.at(i - 1) != p1.nodes.at(0) && graph[p1.nodes.at(i - 1)].incoming_edges.size() == 0 && graph[p1.nodes.at(i - 1)].outgoing_edges.size() != 0)
-                std::cout << "Tip induced: " << p1.nodes.at(i - 1) << std::endl;
+                std::cout << "[Detour] Tip induced: " << p1.nodes.at(i - 1) << std::endl;
             if (p1.nodes.at(i - 1) != p1.nodes.at(0) && graph[p1.nodes.at(i - 1)].incoming_edges.size() != 0 && graph[p1.nodes.at(i - 1)].outgoing_edges.size() == 0)
-                std::cout << "Tip induced: " << p1.nodes.at(i - 1) << std::endl;
+                std::cout << "[Detour] Tip induced: " << p1.nodes.at(i - 1) << std::endl;
         }
 
         // decrease multiplicity for p2
@@ -1841,64 +1750,6 @@ std::string Graph::collapse_complex_bulge_two_multi_edge_paths(Path p1, Path p2,
         return "";
 }
 
-bool Graph::process_palindromic_bulges(Path& p1, Path& p2, std::vector<std::string>& nodes_to_remove) {
-    std::cout << "Palindromic bulge: path1 (length " << p1.length << ", min multi " << p1.multiplicity << "): " << p1.nodes[0];
-    for (int i = 1; i < p1.nodes.size();++i)
-        std::cout << "->" << p1.nodes[i];
-    std::cout << "; path2 (length " << p2.length << ", min multi " << p2.multiplicity << ", color " << "): " << p2.nodes[0];
-    for (int i = 1; i < p2.nodes.size();++i)
-        std::cout << "->" << p2.nodes[i];
-    std::cout << std::endl;
-
-    // decrease multiplicity for p1
-    for (int i = 1; i < p1.nodes.size();++i) {
-        int bulge_leg = p1.bulge_legs.at(i - 1);
-        if (graph[p1.nodes.at(i - 1)].outgoing_edges[p1.nodes.at(i)].size() == 1)
-            bulge_leg = 0;
-        graph[p1.nodes.at(i - 1)].outgoing_edges[p1.nodes.at(i)].at(bulge_leg).remove_multi_from_path(p1);
-        graph[p1.nodes.at(i)].incoming_edges[p1.nodes.at(i - 1)].at(bulge_leg).remove_multi_from_path(p1);
-        if (graph[p1.nodes.at(i - 1)].outgoing_edges[p1.nodes.at(i)].at(bulge_leg).multiplicity == 0) {
-            graph[p1.nodes.at(i - 1)].outgoing_edges[p1.nodes.at(i)].erase(graph[p1.nodes.at(i - 1)].outgoing_edges[p1.nodes.at(i)].begin() + bulge_leg);
-            graph[p1.nodes.at(i)].incoming_edges[p1.nodes.at(i - 1)].erase(graph[p1.nodes.at(i)].incoming_edges[p1.nodes.at(i - 1)].begin() + bulge_leg);
-        }
-        if (graph[p1.nodes.at(i - 1)].outgoing_edges[p1.nodes.at(i)].empty()) {
-            graph[p1.nodes.at(i - 1)].outgoing_edges.erase(p1.nodes.at(i));
-            graph[p1.nodes.at(i)].incoming_edges.erase(p1.nodes.at(i - 1));
-            if (p1.nodes.at(i - 1) != p1.nodes.at(0) && graph[p1.nodes.at(i - 1)].incoming_edges.size() == 0 && graph[p1.nodes.at(i - 1)].outgoing_edges.size() == 0)
-                nodes_to_remove.emplace_back(p1.nodes.at(i - 1));
-        }
-    }
-
-    // decrease multiplicity for p2
-    for (int i = 1; i < p2.nodes.size();++i) {
-        int bulge_leg = p2.bulge_legs.at(i - 1);
-        if (graph[p2.nodes.at(i - 1)].outgoing_edges[p2.nodes.at(i)].size() == 1)
-            bulge_leg = 0;
-        graph[p2.nodes.at(i - 1)].outgoing_edges[p2.nodes.at(i)].at(bulge_leg).remove_multi_from_path(p2);
-        graph[p2.nodes.at(i)].incoming_edges[p2.nodes.at(i - 1)].at(bulge_leg).remove_multi_from_path(p2);
-        if (graph[p2.nodes.at(i - 1)].outgoing_edges[p2.nodes.at(i)].at(bulge_leg).multiplicity == 0) {
-            graph[p2.nodes.at(i - 1)].outgoing_edges[p2.nodes.at(i)].erase(graph[p2.nodes.at(i - 1)].outgoing_edges[p2.nodes.at(i)].begin() + bulge_leg);
-            graph[p2.nodes.at(i)].incoming_edges[p2.nodes.at(i - 1)].erase(graph[p2.nodes.at(i)].incoming_edges[p2.nodes.at(i - 1)].begin() + bulge_leg);
-        }
-        if (graph[p2.nodes.at(i - 1)].outgoing_edges[p2.nodes.at(i)].empty()) {
-            graph[p2.nodes.at(i - 1)].outgoing_edges.erase(p2.nodes.at(i));
-            graph[p2.nodes.at(i)].incoming_edges.erase(p2.nodes.at(i - 1));
-            if (p2.nodes.at(i - 1) != p2.nodes.at(0) && graph[p2.nodes.at(i - 1)].incoming_edges.size() == 0 && graph[p2.nodes.at(i - 1)].outgoing_edges.size() == 0)
-                nodes_to_remove.emplace_back(p2.nodes.at(i - 1));
-        }
-    }
-
-    Edge edge1(p1.sequence.at(graph[p1.nodes.at(0)].sequence.size()), p1.length, p1.sequence, p1.multiplicity);
-    graph[p1.nodes.at(0)].outgoing_edges[p1.nodes.at(p1.nodes.size() - 1)].emplace_back(edge1);
-    graph[p1.nodes.at(p1.nodes.size() - 1)].incoming_edges[p1.nodes.at(0)].emplace_back(edge1);
-
-    Edge edge2(p2.sequence.at(graph[p2.nodes.at(0)].sequence.size()), p2.length, p2.sequence, p2.multiplicity);
-    graph[p1.nodes.at(0)].outgoing_edges[p1.nodes.at(p1.nodes.size() - 1)].emplace_back(edge2);
-    graph[p1.nodes.at(p1.nodes.size() - 1)].incoming_edges[p1.nodes.at(0)].emplace_back(edge2);
-
-    return true;
-}
-
 bool Graph::get_reverse_path(Path& path, Path& path_reverse) {
     bool flag = true;
     this->add_node_to_path(path_reverse, reverse_complementary_node(path.nodes[path.nodes.size() - 1]));
@@ -1922,8 +1773,7 @@ bool Graph::get_reverse_path(Path& path, Path& path_reverse) {
             }
             if (!find_reverse) {
                 flag = false;
-                std::cout << "Error: reverse edge does not exist" << std::endl;
-                break;
+                throw std::runtime_error("Error: reverse edge does not exist");
             }
 
             if (!this->add_node_to_path(path_reverse, reverse_complementary_node(path.nodes[i]), bulge_leg)) {
@@ -1942,7 +1792,6 @@ bool Graph::get_reverse_path(Path& path, Path& path_reverse) {
         return false;
 
     if (path.min_multi - path_reverse.min_multi > MIN_MULTI) {
-        write_graph("debug");
         std::cout << "p_f" << std::endl;
         for (auto&& n : path.nodes) {
             std::cout << n << std::endl;
@@ -1952,6 +1801,7 @@ bool Graph::get_reverse_path(Path& path, Path& path_reverse) {
             std::cout << n << std::endl;
         }
         std::cout << path.min_multi << ' ' << path_reverse.min_multi << std::endl;
+        throw std::runtime_error("Error: inconsistent multiplicity in reverse complementary path");
     }
     assert(path.min_multi - path_reverse.min_multi <= MIN_MULTI);
     path_reverse.min_multi = path.min_multi;
@@ -2076,8 +1926,8 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
 
                     // check reverse paths
                     Path p1_reverse, p2_reverse;
-                    assert(get_reverse_path(paths[i], p1_reverse));
-                    assert(get_reverse_path(paths[j], p2_reverse));
+                    get_reverse_path(paths[i], p1_reverse);
+                    get_reverse_path(paths[j], p2_reverse);
 
                     // calculate identity
                     int lcs_len = use_length ? std::min(sequence1.size(), sequence2.size()) : matches_by_edlib(sequence1, sequence2, true);
@@ -2175,8 +2025,8 @@ void Graph::resolving_bulge_with_two_multi_edge_paths(unsigned& removed_paths, i
 
         // check reverse paths
         Path p1_reverse, p2_reverse;
-        assert(get_reverse_path(p1, p1_reverse));
-        assert(get_reverse_path(p2, p2_reverse));
+        get_reverse_path(p1, p1_reverse);
+        get_reverse_path(p2, p2_reverse);
 
         if (!allow_tip && !p1.safe_to_extract && !p2.safe_to_extract)
             continue;
@@ -2556,8 +2406,8 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
 
                     // check reverse paths
                     Path p1_reverse, p2_reverse;
-                    assert(get_reverse_path(paths[i], p1_reverse));
-                    assert(get_reverse_path(paths[j], p2_reverse));
+                    get_reverse_path(paths[i], p1_reverse);
+                    get_reverse_path(paths[j], p2_reverse);
 
                     // calculate identity
                     int lcs_len = std::min(sequence1.size(), sequence2.size());
@@ -2640,8 +2490,8 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
 
         // check reverse paths
         Path p1_reverse, p2_reverse;
-        assert(get_reverse_path(p1, p1_reverse));
-        assert(get_reverse_path(p2, p2_reverse));
+        get_reverse_path(p1, p1_reverse);
+        get_reverse_path(p2, p2_reverse);
 
         bool p1_2_in_2_out = check_2_in_2_out(p1);
         bool p2_2_in_2_out = check_2_in_2_out(p2);
@@ -2679,7 +2529,7 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
                     continue;
                 }
                 else {
-                    std::cout << "Palindromic bulge: path1 (length " << p1.length << ", min multi " << p1.min_multi << "): " << p1.nodes[0];
+                    std::cout << "[Decouple] Palindromic bulge: path1 (length " << p1.length << ", min multi " << p1.min_multi << "): " << p1.nodes[0];
                     for (int i = 1; i < p1.nodes.size();++i)
                         std::cout << "->" << p1.nodes[i];
                     std::cout << "; path2 (length " << p2.length << ", min multi " << p2.min_multi << "): " << p2.nodes[0];
@@ -2694,7 +2544,7 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
                 }
             }
             else {
-                std::cout << "Palindromic bulge: path1 (length " << p1.length << ", min multi " << p1.min_multi << "): " << p1.nodes[0];
+                std::cout << "[Decouple] Palindromic bulge: path1 (length " << p1.length << ", min multi " << p1.min_multi << "): " << p1.nodes[0];
                 for (int i = 1; i < p1.nodes.size();++i)
                     std::cout << "->" << p1.nodes[i];
                 std::cout << "; path2 (length " << p2.length << ", min multi " << p2.min_multi << "): " << p2.nodes[0];
@@ -2801,14 +2651,14 @@ void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved
         / (graph[incoming_nodes.at(1)].outgoing_edges[node1].at(0).length + graph[node2].outgoing_edges[outgoing_nodes.at(0)].at(0).length);
 
     if (node1 != node2)
-        std::cout << "Decouple strands: " << "path1: " << incoming_nodes[0] << "->" << node1 << "->...->" << node2 << "->" << outgoing_nodes[1] << " multi " << path1.multiplicity << "; path2: " << incoming_nodes[1] << "->" << node1 << "->...->" << node2 << "->" << outgoing_nodes[0] << " multi " << path2.multiplicity << std::endl;
+        std::cout << "[Decouple] Decouple strands: " << "path1: " << incoming_nodes[0] << "->" << node1 << "->...->" << node2 << "->" << outgoing_nodes[1] << " multi " << path1.multiplicity << "; path2: " << incoming_nodes[1] << "->" << node1 << "->...->" << node2 << "->" << outgoing_nodes[0] << " multi " << path2.multiplicity << std::endl;
     else {
-        std::cout << "Decouple strands: " << "path1: " << incoming_nodes[0] << "->" << node1 << "->" << outgoing_nodes[1] << " multi " << path1.multiplicity << "; path2: " << incoming_nodes[1] << "->" << node1 << "->" << outgoing_nodes[0] << " multi " << path2.multiplicity << std::endl;
+        std::cout << "[Decouple] Decouple strands: " << "path1: " << incoming_nodes[0] << "->" << node1 << "->" << outgoing_nodes[1] << " multi " << path1.multiplicity << "; path2: " << incoming_nodes[1] << "->" << node1 << "->" << outgoing_nodes[0] << " multi " << path2.multiplicity << std::endl;
     }
 
     Path path_1_r, path_2_r;
-    assert(get_reverse_path(path1, path_1_r));
-    assert(get_reverse_path(path2, path_2_r));
+    get_reverse_path(path1, path_1_r);
+    get_reverse_path(path2, path_2_r);
     path_1_r.multiplicity = path1.multiplicity;
     path_2_r.multiplicity = path2.multiplicity;
 
@@ -2855,9 +2705,9 @@ void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved
         out_rev.push_back(reverse_complementary_node(incoming_nodes.at(0)));
         out_rev.push_back(reverse_complementary_node(incoming_nodes.at(1)));
         if (node1 != node2)
-            std::cout << "Decouple strands: " << "path1: " << in_rev[0] << "->" << reverse_complementary_node(node2) << "->...->" << reverse_complementary_node(node1) << "->" << out_rev[0] << " multi " << path_1_r.multiplicity << "; path2: " << in_rev[1] << "->" << reverse_complementary_node(node2) << "->...->" << reverse_complementary_node(node1) << "->" << out_rev[1] << " multi " << path_2_r.multiplicity << std::endl;
+            std::cout << "[Decouple] Decouple strands: " << "path1: " << in_rev[0] << "->" << reverse_complementary_node(node2) << "->...->" << reverse_complementary_node(node1) << "->" << out_rev[0] << " multi " << path_1_r.multiplicity << "; path2: " << in_rev[1] << "->" << reverse_complementary_node(node2) << "->...->" << reverse_complementary_node(node1) << "->" << out_rev[1] << " multi " << path_2_r.multiplicity << std::endl;
         else {
-            std::cout << "Decouple strands: " << "path1: " << in_rev[0] << "->" << reverse_complementary_node(node2) << "->" << out_rev[0] << " multi " << path_1_r.multiplicity << "; path2: " << in_rev[1] << "->" << reverse_complementary_node(node2) << "->" << out_rev[1] << " multi " << path_2_r.multiplicity << std::endl;
+            std::cout << "[Decouple] Decouple strands: " << "path1: " << in_rev[0] << "->" << reverse_complementary_node(node2) << "->" << out_rev[0] << " multi " << path_1_r.multiplicity << "; path2: " << in_rev[1] << "->" << reverse_complementary_node(node2) << "->" << out_rev[1] << " multi " << path_2_r.multiplicity << std::endl;
         }
 
 
@@ -3047,9 +2897,9 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
                     indices1.push_back(i);
                     removed_edges += 1;
                     if (is_in_high_multi_bulge(n2.second))
-                        std::cout << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is in bulge" << std::endl;
+                        std::cout << "[RemoveLow] " << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is in bulge" << std::endl;
                     else if (is_connected_to_high_muilti_edge(node, n2.first))
-                        std::cout << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is low-high connector" << std::endl;
+                        std::cout << "[RemoveLow] " << node << " -> " << n2.first << " cov " << n2.second.at(i).multiplicity << " is low-high connector" << std::endl;
                 }
             }
         }
@@ -3093,9 +2943,9 @@ void Graph::remove_low_cov_on_node(std::string node, unsigned& removed_edges, do
                     indices2.push_back(i);
                     removed_edges += 1;
                     if (is_in_high_multi_bulge(n2.second))
-                        std::cout << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is in bulge" << std::endl;
+                        std::cout << "[RemoveLow] " << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is in bulge" << std::endl;
                     else if (is_connected_to_high_muilti_edge(node, n2.first))
-                        std::cout << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is low-high connector" << std::endl;
+                        std::cout << "[RemoveLow] " << n2.first << " -> " << node << " cov " << graph[n2.first].outgoing_edges[node].at(i).multiplicity << " is low-high connector" << std::endl;
                 }
             }
         }
@@ -3127,7 +2977,7 @@ void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, 
         coverage = 0;
 
     if (avoid_chromosome) {
-        std::cout << "Avoid chromosome is triggered, will only remove edges of coverage <= " << coverage << " in components of mean coverage >= " << mean_cov * 10 << " and long edge length <= 1 Mbp" << std::endl;
+        std::cout << "[RemoveLow] " << "Avoid chromosome is triggered, will only remove edges of coverage <= " << coverage << " in components of mean coverage >= " << mean_cov * 10 << " and long edge length <= 1 Mbp" << std::endl;
     }
     // if (avoid_chromosome) {
     std::unordered_map<std::string, int> node_to_comp;
@@ -3183,7 +3033,7 @@ void Graph::remove_low_coverage_edges(unsigned& removed_edges, double coverage, 
     for (auto&& c : comp_to_cov) {
         comp_to_avgcov[c.first] = comp_to_cnt[c.first] != 0 ? comp_to_cov[c.first] / comp_to_cnt[c.first] : 0;
         if (avoid_chromosome)
-            std::cout << "Comp " << c.first << " has average coverage " << comp_to_avgcov[c.first] << ", long edge length " << comp_to_len[c.first] << ", high-cov edges " << comp_to_high_cov_edges[c.first] << std::endl;
+            std::cout << "[RemoveLow] Comp " << c.first << " has average coverage " << comp_to_avgcov[c.first] << ", long edge length " << comp_to_len[c.first] << ", high-cov edges " << comp_to_high_cov_edges[c.first] << std::endl;
     }
     // }
     // std::cout << "Remove low-coverage threshold: " << coverage << std::endl;
@@ -3255,7 +3105,7 @@ void Graph::remove_chimeric_edge(std::string chimeric_path) {
     std::string line;
     std::unordered_set<std::string> chimeric_edges;
     while (getline(fin, line)) {
-        std::cout << "Chimeric edge to remove: " << line << std::endl;
+        std::cout << "[RemoveChimeric] Chimeric edge to remove: " << line << std::endl;
         chimeric_edges.insert(line);
     }
 
@@ -3396,6 +3246,6 @@ void Graph::remove_chimeric_edge(std::string chimeric_path) {
         graph[s_name].outgoing_edges[e_name].push_back(tip.E);
         graph[e_name].incoming_edges[s_name].push_back(tip.E);
 
-        std::cout << "Add linear edge (chimeric tip) " << s_name << " -> " << e_name << std::endl;
+        std::cout << "[RemoveChimeric] Add linear edge (chimeric tip) " << s_name << " -> " << e_name << std::endl;
     }
 }

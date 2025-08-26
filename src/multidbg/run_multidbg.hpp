@@ -22,8 +22,7 @@ public:
     std::string mdbg = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "multiDBG";
     std::string align_and_print = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "align_and_print";
     std::string compress = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "compress";
-    std::string remove_chimeric = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "remove_chimeric.sh";
-    std::string analyze_chimeric = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "analyze_chimeric.py";
+    std::string remove_chimeric = fs::path(getExecutablePath()).parent_path() / "src" / "scripts" / "remove_chimeric.py";
     std::string jumbodbg = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "jumboDBG";
     std::string polisher = fs::path(getExecutablePath()).parent_path() / "lib" / "LJA" / "bin" / "run_polishing";
 
@@ -37,7 +36,7 @@ public:
             bool flag = true;
             int cnt = 0;
             while (flag) {
-                if (execute_command(mdbg + " -g " + (output_all / "2_clean_DBG" / "graph.cleaned.gfa").string() + " -a " + (output_all / "2_clean_DBG" / "graph.cleaned.aln").string() + " -t " + std::to_string(threads) + " -k 5001 -o " + mdbg_dir.string() + " --diploid") == 0)
+                if (execute_command(mdbg + " -g " + (output_all / "2_clean_DBG" / "graph.cleaned.gfa").string() + " -a " + (output_all / "2_clean_DBG" / "graph.cleaned.aln").string() + " -t " + std::to_string(threads) + " -k 5001 -o " + mdbg_dir.string() + " --diploid", false) == 0)
                     flag = false;
                 if (++cnt == 10)
                     throw std::runtime_error("Failed to execute multidbg");
@@ -48,7 +47,7 @@ public:
             bool flag = true;
             int cnt = 0;
             while (flag) {
-                if (execute_command(align_and_print + " --dbg " + (output_all / "2_clean_DBG" / "graph.cleaned.gfa").string() + " --paths " + (mdbg_dir / "mdbg_edge_seqs.fasta").string() + " --k-mer-size 5001 --output-dir " + align_dbg.string()) == 0)
+                if (execute_command(align_and_print + " --dbg " + (output_all / "2_clean_DBG" / "graph.cleaned.gfa").string() + " --paths " + (mdbg_dir / "mdbg_edge_seqs.fasta").string() + " --k-mer-size 5001 --output-dir " + align_dbg.string(), false) == 0)
                     flag = false;
                 if (++cnt == 10)
                     throw std::runtime_error("Failed to execute align_and_print");
@@ -68,6 +67,7 @@ public:
             simplifyMDBG();
 
         // polishing
+        std::cout << "==========[LJAPolishing]==========" << std::endl;
         std::ofstream corrected_reads(corrected_reads_path);
         corrected_reads << (output_all / "0_condensed_dbg" / "01_TopologyBasedCorrection" / "final_dbg.gfa").string() << std::endl;
         corrected_reads << (output_all / "0_condensed_dbg" / "01_TopologyBasedCorrection" / "corrected_reads.aln").string() << std::endl;
@@ -76,8 +76,7 @@ public:
 
         fs::path polisher_out = output_all / "5_polishing";
 
-        if (execute_command(polisher + " --output-dir " + polisher_out.string() + " --graph " + gfa_path.string() + " --corrected_reads " + corrected_reads_path.string() + " --reads " + reads + " -t " + std::to_string(this->threads)) != 0)
-            throw std::runtime_error("Failed to execute polisher: " + polisher + " --output-dir " + polisher_out.string() + " --graph " + gfa_path.string() + " --corrected_reads " + corrected_reads_path.string() + " --reads " + reads + " -t " + std::to_string(this->threads));
+        execute_command(polisher + " --output-dir " + polisher_out.string() + " --graph " + gfa_path.string() + " --corrected_reads " + corrected_reads_path.string() + " --reads " + reads + " -t " + std::to_string(this->threads));
     }
     void simplifyMDBG();
 };

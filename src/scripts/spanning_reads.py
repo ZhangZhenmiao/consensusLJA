@@ -59,14 +59,14 @@ def extract_flanks(input_fasta, output_fasta, flank_size=20000):
             right = record.seq[-flank_size:] if seq_len >= flank_size else record.seq
             out_f.write(f">{record.id}_head\n{left}\n")
             out_f.write(f">{record.id}_tail\n{right}\n")
-    print(f"[INFO] Flanks written to: {output_fasta}")
+    print(f"[Connect] Flanks written to: {output_fasta}")
 
 def run_minimap2_to_bam(flank_fasta, hifi_reads, output_bam, compress, threads):
     cmd = f"{compress} --dimer-compress 32,32,1 --reads {hifi_reads} | minimap2 -ax map-hifi -Y --eqx --sam-hit-only --secondary=no -t {threads} {flank_fasta} - | samtools sort -@ {threads} -o {output_bam}"
     
     os.system(cmd)
     subprocess.run(f"samtools index {output_bam}", shell=True, check=True)
-    print(f"[INFO] Sorted BAM + index written: {output_bam}, {output_bam}.bai")
+    print(f"[Connect] Sorted BAM + index written: {output_bam}, {output_bam}.bai")
 
 def filter_alignments_with_identity(bam_file_path, threshold=0.9):
     high_identity_alignments = defaultdict(list)
@@ -263,7 +263,7 @@ def summarize_full_connected_sequences(high_identity_alignments, ref_fasta, outp
     with open(output_result, 'w') as out_f:
         for _, ref_pair in ref2ref_pairs.items():
             entries = ref_pair_connections[ref_pair]
-            print(f"Ref pair: {ref_pair[0]} <--> {ref_pair[1]} ({len(entries)} supporting reads)")
+            print(f"[Connect] Ref pair: {ref_pair[0]} <--> {ref_pair[1]} ({len(entries)} supporting reads)")
 
             connected_seq = ""
             max_idt = 0
@@ -319,7 +319,7 @@ def summarize_full_connected_sequences(high_identity_alignments, ref_fasta, outp
                 print(f"    Connected sequence length: {ent['connected_len']}")
                 print(f"    Identities: {ent['idt']}")
                 sum_gaps += ent["gap"]
-            print (f"-- Average gap {sum_gaps/len(entries):.0f} --")
+            print (f"[Connect] -- Average gap {sum_gaps/len(entries):.0f} --")
  
 def main():
     parser = argparse.ArgumentParser(description="Extract 20kb flanks and align HiFi reads")

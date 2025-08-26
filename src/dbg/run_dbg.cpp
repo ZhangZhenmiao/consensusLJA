@@ -9,14 +9,13 @@
 using namespace dbg;
 
 bool DBGRunner::correctHigh() {
-    std::cout << "----------Correct reads in high-coverage regions----------" << std::endl;
     Graph graph;
     std::string restart_from = "";
     unsigned removed_edges = 1;
 
     graph.read_graph(output, restart_from, graph_dot, graph_fasta, graph_aln);
     int max_read_length = graph.write_reads(output + "/corrected_reads");
-    std::cout << "Max compressed read: " << max_read_length << std::endl;
+    std::cout << "[ReadGraph] Max compressed read: " << max_read_length << std::endl;
     this->mean_cov = graph.mean_cov;
     graph.pause_rerouting_reads = true;
 
@@ -73,7 +72,6 @@ void DBGRunner::cleanDBG() {
     unsigned removed_bulges = 1;
     unsigned removed_tips = 1;
 
-    std::cout << "----------Clean DBG----------" << std::endl;
     Graph graph;
     graph.read_graph(output, restart_from, graph_dot, graph_fasta, graph_aln);
     this->first_peak = graph.error_peak;
@@ -83,30 +81,28 @@ void DBGRunner::cleanDBG() {
     graph.write_graph(output + "/graph.ori");
     // graph.get_annotation(output + "/graph.ori");
 
-    std::cout << "----------Stage 1: Remove low-coverage edges ----------" << std::endl;
     removed_edges = 1;
     while (removed_edges) {
         graph.remove_low_coverage_edges(removed_edges, graph.first_minima, true);
-        std::cout << "Removed " << removed_edges << " low-coverage tips" << std::endl;
+        std::cout << "[RemoveLow] Removed " << removed_edges << " low-coverage tips" << std::endl;
     }
     graph.write_graph(output + "/graph.remove_tips");
     graph.write_graph_gfa(output + "/graph.remove_tips");
     removed_edges = 1;
     while (removed_edges) {
         graph.remove_low_coverage_edges(removed_edges, graph.first_minima, false);
-        std::cout << "Removed " << removed_edges << " low-coverage edges" << std::endl;
+        std::cout << "[RemoveLow] Removed " << removed_edges << " low-coverage edges" << std::endl;
     }
     this->first_peak = graph.error_peak;
     this->first_minima = graph.first_minima;
     graph.write_graph(output + "/graph.remove_low");
     graph.write_graph_gfa(output + "/graph.remove_low");
 
-    std::cout << "----------Stage 2: Remove chimeric edges ----------" << std::endl;
     graph.detect_chimeric_reads();
     removed_edges = 1;
     while (removed_edges) {
         graph.remove_low_coverage_edges(removed_edges, 0, false, true);
-        std::cout << "Removed " << removed_edges << " 0-coverage edges" << std::endl;
+        std::cout << "[RemoveChimeric] Removed " << removed_edges << " 0-coverage edges" << std::endl;
     }
 
     graph.write_graph(output + "/graph.remove_chimeric");
@@ -118,6 +114,4 @@ void DBGRunner::cleanDBG() {
     graph.write_graph(output + "/graph.cleaned");
     // graph.get_annotation(output + "/graph.cleaned");
     graph.write_graph_gfa(output + "/graph.cleaned");
-
-    std::cout << "----------Clean DBG finished----------" << std::endl;
 }

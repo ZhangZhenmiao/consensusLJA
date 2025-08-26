@@ -16,25 +16,6 @@ namespace fs = std::filesystem;
 
 using namespace multidbg;
 
-template<typename T>
-void Node::mergeMaps(std::unordered_map<std::string, std::vector<T>>& map1, const std::unordered_map<std::string, std::vector<T>>& map2) {
-    for (const auto& pair : map2) {
-        if (map1.find(pair.first) != map1.end()) {
-            map1[pair.first].insert(map1[pair.first].end(), pair.second.begin(), pair.second.end());
-        }
-        else {
-            map1[pair.first] = pair.second;
-        }
-    }
-}
-
-template void Graph::merge_vecs<std::string>(std::vector<std::string>&, std::vector<std::string>&);
-template void Graph::merge_vecs<Edge>(std::vector<Edge>&, std::vector<Edge>&);
-template<typename T>
-void Graph::merge_vecs(std::vector<T>& e1, std::vector<T>& e2) {
-    e1.insert(e1.end(), e2.begin(), e2.end());
-}
-
 void Graph::read_graph(std::string& output, std::string& graph_dot, const std::string& graph_fasta, const std::string& nodes_fasta, const std::string& graph_dbg, const std::string& paths_dbg) {
     fs::create_directory(output);
     if (graph.empty())
@@ -217,8 +198,8 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
             nodenew2sequence[currentId] = sequence;
             nodenew2sequence["-" + currentId] = revComp;
 
-            std::cout << "Node mapping: " << currentId << " to " << currentId << std::endl;
-            std::cout << "Node mapping: " << revIt->first << " to " << "-" + currentId << std::endl;
+            // std::cout << "Node mapping: " << currentId << " to " << currentId << std::endl;
+            // std::cout << "Node mapping: " << revIt->first << " to " << "-" + currentId << std::endl;
 
             // Remove reverse complement from map
             node2sequence.erase(revIt);
@@ -226,7 +207,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         else {
             // If no reverse complement is found, keep the ID as is
             if (revIt == node2sequence.end()) {
-                std::cout << "Node cannot find reverse complement: " << currentId << std::endl;
+                std::cout << "[ReadGraph] Node cannot find reverse complement: " << currentId << std::endl;
                 idMapping[currentId] = currentId;
                 nodeid2Rev[currentId] = "-" + currentId;
                 nodeid2Rev["-" + currentId] = currentId;
@@ -236,7 +217,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
                 nodes_without_rc.insert(currentId);
             }
             else {
-                std::cout << "Node is self-reverse: " << currentId << std::endl;
+                std::cout << "[ReadGraph] Node is self-reverse: " << currentId << std::endl;
                 idMapping[currentId] = currentId;
                 nodeid2Rev[currentId] = currentId;
                 nodenew2sequence[currentId] = sequence;
@@ -385,7 +366,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
                 this->graph[start_r].outgoing_edges[end_r].push_back(edge);
                 this->graph[end_r].incoming_edges[start_r].push_back(edge);
 
-                std::cout << "Add complementary edge " << start_r << " -> " << end_r << std::endl;
+                std::cout << "[ReadGraph] Add complementary edge " << start_r << " -> " << end_r << std::endl;
 
                 cnt_edge += 1;
             }
@@ -403,7 +384,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
                 Node node;
                 node.sequence = nodenew2sequence.at(reverse_complementary_node(idMapping.at(node_name)));
                 this->graph[reverse_complementary_node(idMapping.at(node_name))] = node;
-                std::cout << "Add complementary node " << reverse_complementary_node(idMapping.at(node_name)) << std::endl;
+                std::cout << "[ReadGraph] Add complementary node " << reverse_complementary_node(idMapping.at(node_name)) << std::endl;
             }
         }
     }
@@ -442,8 +423,8 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         nodeid2Rev[new_node1_r] = new_node1;
         nodeid2Rev[new_node2_r] = new_node2;
 
-        std::cout << "Add linear edge " << new_node1 << " -> " << new_node2 << " for single node " << n << std::endl;
-        std::cout << "Add linear edge " << new_node2_r << " -> " << new_node1_r << " for single node " << reverse_complementary_node(n) << std::endl;
+        std::cout << "[ReadGraph] Add linear edge " << new_node1 << " -> " << new_node2 << " for single node " << n << std::endl;
+        std::cout << "[ReadGraph] Add linear edge " << new_node2_r << " -> " << new_node1_r << " for single node " << reverse_complementary_node(n) << std::endl;
 
         graph[new_node1].sequence = graph[n].sequence.substr(0, 5001);
         graph[new_node2].sequence = graph[n].sequence.substr(graph[n].sequence.size() - 5001);
@@ -471,7 +452,7 @@ void Graph::read_from_dot(const std::string& graph_dot, const std::string& graph
         graph.erase(n);
     }
 
-    std::cout << "Read " << get_num_nodes() << " vertices, " << cnt_edge << " edges." << std::endl;
+    std::cout << "[ReadGraph] Read " << get_num_nodes() << " vertices, " << cnt_edge << " edges." << std::endl;
 }
 
 void Graph::restart_from_dot(const std::string& graph_dot, const std::string& graph_fasta, int default_k) {
@@ -502,7 +483,7 @@ void Graph::restart_from_dot(const std::string& graph_dot, const std::string& gr
             edge2sequence[node2] = edge_sequence_r;
             this->label2rc[node1] = node2;
             this->label2rc[node2] = node1;
-            std::cout << "Read " << node1 << " and " << node2 << " from " << graph_fasta << std::endl;
+            // std::cout << "Read " << node1 << " and " << node2 << " from " << graph_fasta << std::endl;
         }
     }
     fasta_file.close();
@@ -597,17 +578,17 @@ void Graph::restart_from_dot(const std::string& graph_dot, const std::string& gr
                     std::string len_str = line.substr(len_start, len_end - len_start);
                     int length = std::stoi(len_str);
                     graph[node_name].node_length = length;
-                    std::cout << "Node " << node_name << " has length " << length << std::endl;
+                    // std::cout << "Node " << node_name << " has length " << length << std::endl;
                 }
             }
             else {
                 graph[node_name].node_length = default_k;
-                std::cout << "Node " << node_name << " has length " << default_k << std::endl;
+                // std::cout << "Node " << node_name << " has length " << default_k << std::endl;
             }
         }
     }
     dot_file.close();
-    std::cout << "Read " << get_num_nodes() << " vertices, " << cnt_edge << " edges" << std::endl;
+    std::cout << "[ReadGraph] Read " << get_num_nodes() << " vertices, " << cnt_edge << " edges" << std::endl;
 }
 
 std::string Graph::get_unique_label(std::unordered_set<std::string>& labels) {
@@ -643,7 +624,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
     std::string graph_fasta = prefix + ".fasta";
     std::string graph_path = prefix + ".path";
 
-    std::cout << "Write graph " << graph_dot << ", fasta " << graph_fasta << std::endl;
+    std::cout << "[WriteGraph] Write graph " << graph_dot << ", fasta " << graph_fasta << std::endl;
     std::ofstream file_dot(graph_dot);
     std::ofstream file_fasta(graph_fasta);
     std::ofstream file_path(graph_path);
@@ -680,7 +661,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
         }
     }
     if (max_contracted > 0)
-        std::cout << "Max contracted node: " << max_contracted_node << " has " << max_contracted << " edges." << std::endl;
+        std::cout << "[WriteGraph] Max contracted node: " << max_contracted_node << " has " << max_contracted << " edges." << std::endl;
 
     // construct labels for vertices
     std::unordered_map<std::string, std::unordered_set<std::string>> vertice2labels;
@@ -930,8 +911,8 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
     file_dot.close();
     file_fasta.close();
     file_path.close();
-    std::cout << "Total number of nodes: " << this->get_num_nodes() << std::endl;
-    std::cout << "Total number of edges: " << num_edges << std::endl;
+    std::cout << "[WriteGraph] Total number of nodes: " << this->get_num_nodes() << std::endl;
+    std::cout << "[WriteGraph] Total number of edges: " << num_edges << std::endl;
 }
 
 void Graph::write_graph_final_formatting(const std::string& prefix, int thick, bool contracted, bool colored, std::unordered_set<std::string> nodes_retain, std::unordered_map<std::string, std::vector<std::string>> nodes2bc) {
@@ -939,7 +920,7 @@ void Graph::write_graph_final_formatting(const std::string& prefix, int thick, b
     std::string graph_fasta = prefix + ".fasta";
     std::string graph_path = prefix + ".path";
 
-    std::cout << "Write graph " << graph_dot << ", fasta " << graph_fasta << std::endl;
+    std::cout << "[WriteGraph] Write graph " << graph_dot << ", fasta " << graph_fasta << std::endl;
     std::ofstream file_dot(graph_dot);
     std::ofstream file_fasta(graph_fasta);
     std::ofstream file_path(graph_path);
@@ -976,7 +957,7 @@ void Graph::write_graph_final_formatting(const std::string& prefix, int thick, b
         }
     }
     if (max_contracted > 0)
-        std::cout << "Max contracted node: " << max_contracted_node << " has " << max_contracted << " edges." << std::endl;
+        std::cout << "[WriteGraph] Max contracted node: " << max_contracted_node << " has " << max_contracted << " edges." << std::endl;
 
     // construct labels for vertices
     std::unordered_map<std::string, std::unordered_set<std::string>> vertice2labels;
@@ -1226,8 +1207,8 @@ void Graph::write_graph_final_formatting(const std::string& prefix, int thick, b
     file_dot.close();
     file_fasta.close();
     file_path.close();
-    std::cout << "Total number of nodes: " << this->get_num_nodes() << std::endl;
-    std::cout << "Total number of edges: " << num_edges << std::endl;
+    std::cout << "[WriteGraph] Total number of nodes: " << this->get_num_nodes() << std::endl;
+    std::cout << "[WriteGraph] Total number of edges: " << num_edges << std::endl;
 }
 
 // assume no simple bubbles
@@ -1644,7 +1625,7 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
                             assert(e_in.sequence.substr(0, graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
                         }
                     }
-                    std::cout << "Modify contracted node sequence for " << node.first << ", new length " << graph_vis[node.first].sequence.size() << std::endl;
+                    std::cout << "[WriteGraph] Modify contracted node sequence for " << node.first << ", new length " << graph_vis[node.first].sequence.size() << std::endl;
                 }
             }
 
@@ -1742,7 +1723,7 @@ void Graph::write_graph_colored(const std::string& prefix, const std::string& ge
     for (auto&& node : graph) {
         cnt += 1;
         if (cnt % 100 == 0)
-            std::cout << "Aligned " << cnt << " nodes, " << cnt_aligned << " edges aligned" << std::endl;
+            std::cout << "[WriteGraph] Aligned " << cnt << " nodes, " << cnt_aligned << " edges aligned" << std::endl;
         for (auto&& edge : node.second.outgoing_edges) {
             for (auto&& e : edge.second) {
 #pragma omp parallel for
@@ -1827,7 +1808,7 @@ void Graph::write_graph_colored_from_bam(const std::string& prefix, const std::s
 
 void Graph::write_graph_gfa(const std::string& prefix) {
     std::string graph_gfa = prefix + ".gfa";
-    std::cout << "Write graph " << graph_gfa << std::endl;
+    std::cout << "[WriteGraph] Write graph " << graph_gfa << std::endl;
     std::ofstream file_gfa(graph_gfa);
 
     std::unordered_map<std::string, std::pair<std::string, char>> edgeid2gfa_node;

@@ -9,7 +9,7 @@
 #include <iostream>
 #include <limits.h>
 
-int execute_command(const std::string& command) {
+int execute_command(const std::string& command, bool exit_when_fail) {
     struct CommandResult {
         bool success;
         int exit_code;
@@ -32,8 +32,8 @@ int execute_command(const std::string& command) {
     status += " with exit code " + std::to_string(result.exit_code) + "\n";
     // std::cout << status << std::endl;
 
-    if (!result.success)
-        std::cout << "Failed to execute " + command << std::endl;
+    if (!result.success && exit_when_fail)
+        throw std::runtime_error("Failed to execute " + command);
 
     return result.exit_code;
 }

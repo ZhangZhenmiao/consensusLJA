@@ -1,83 +1,111 @@
 #!/usr/bin/env python
-from Bio import SeqIO
-import pysam
-import argparse
-import numpy as np
-import sys
+import subprocess
 import os
+from pathlib import Path
+import pysam
+import numpy as np
 from itertools import groupby
+import argparse
 
 def calculate_identity(alignment):
+    """Calculate percent identity of a read from its CIGAR."""
     cigar = alignment.cigartuples
     if not cigar:
         return 0
-
-    matches = sum(length for op, length in cigar if op == 7)  # '='
-    mismatches = sum(length for op, length in cigar if op == 8)  # 'X'
+    matches = sum(length for op, length in cigar if op == 7)
+    mismatches = sum(length for op, length in cigar if op == 8)
     insertions = sum(length for op, length in cigar if op == 1)
     deletions = sum(length for op, length in cigar if op == 2)
+    total_bases = matches + mismatches + insertions + deletions
+    return matches / total_bases if total_bases > 0 else 0.0
 
-    aligned_len = matches + mismatches # query_alignment_length is aligned_len + insertions
-    total_bases = aligned_len + insertions + deletions
-    pid = matches / total_bases if total_bases > 0 else 0.0
-    return pid
+def align_reads_and_detect_chimeric(
+    reads: str,
+    inprefix: str,
+    outprefix: str,
+    compress: str,
+    dot_file: str,
+    threads: int = 80
+):
+    """
+    Full pipeline: compress reads, align with minimap2, sort BAM, detect chimeric reads.
+    """
+    fasta_file = f"{inprefix}.fasta"
+    bam_file = f"{outprefix}.bam"
+    sam_file = f"{outprefix}.sam"
+    mmi_file = f"{inprefix}.mmi"
 
-# def read_bam(bam_file_path, reads_file_path):
-def read_bam(bam_file_path, dot_file_path):
-    # if (reads != ""):
-    #     print(reads, flush=True)
-    #     if reads == "-":
-    #         handle = sys.stdin
-    #     else:
-    #         handle = open(reads, "r")
+    # Step 1: Align if BAM doesn't exist
+    if not Path(bam_file).exists():
+        # Remove existing FASTA index if any
+        fai_file = f"{fasta_file}.fai"
+        if Path(fai_file).exists():
+            os.remove(fai_file)
 
-    #     read_lengths = {}
-    #     for record in SeqIO.parse(handle, "fasta"):
-    #         read_lengths[record.id] = len(record.seq)
+        # Index reference FASTA
+        subprocess.run(["samtools", "faidx", fasta_file], check=True)
 
-    #     print("read", len(read_lengths), "read lengths", flush=True)
+        # Create SAM header
+        with open(sam_file, "w") as f_sam:
+            subprocess.run(
+                f"cut -f1,2 {fai_file} | awk '{{print \"@SQ\\tSN:\"$1\"\\tLN:\"$2}}'",
+                shell=True,
+                stdout=f_sam,
+                check=True
+            )
 
+        # Build minimap2 index
+        subprocess.run(["minimap2", "-d", mmi_file, "--split-prefix", "refsplit", fasta_file], check=True)
+
+        # Compress reads and align
+        compress_proc = subprocess.Popen(
+            [compress, "--dimer-compress", "32,32,1", "--reads", reads],
+            stdout=subprocess.PIPE
+        )
+
+        minimap2_proc = subprocess.Popen(
+            ["minimap2", "-t", str(threads), "-ax", "map-hifi", "--eqx", mmi_file, "-"],
+            stdin=compress_proc.stdout,
+            stdout=subprocess.PIPE
+        )
+        compress_proc.stdout.close()
+
+        # Filter SAM lines (exclude headers) and append
+        with open(sam_file, "a") as f_sam:
+            subprocess.run(["grep", "-v", "^@"], stdin=minimap2_proc.stdout, stdout=f_sam, check=True)
+        minimap2_proc.wait()
+
+        # Sort SAM to BAM
+        subprocess.run(["samtools", "sort", "-@", str(threads), sam_file, "-o", bam_file], check=True)
+        os.remove(sam_file)
+
+    # Step 2: Detect chimeric reads
     node2len = {}
-    with open(dot_file_path) as dot_file:
-        line = dot_file.readline()
-        while(line):
-            if "label" not in line:
-                line = dot_file.readline()
-                continue
-            if "->" in line:
-                line = dot_file.readline()
-                continue
-            node = line.split()[0]
-            if "+" not in node:
+    with open(dot_file) as df:
+        for line in df:
+            if "label" in line and "->" not in line and "+" not in line:
+                node = line.split()[0]
                 node_len = line[line.find('L')+1: line.find('"', line.find('L')+1)]
                 node2len[node] = int(node_len)
-                # print("Length of " + node, node_len, flush=True)
-            line = dot_file.readline()
 
-    # Open the BAM file
-    alignments = {}
     chimeric_edges = []
-    with pysam.AlignmentFile(bam_file_path, "rb") as bam_file:
-        # store alignments for each edge in the dict alignments
-        for read in bam_file:
+    with pysam.AlignmentFile(bam_file, "rb") as bam:
+        alignments = {}
+        # Collect high-identity alignments
+        for read in bam:
             if read.is_unmapped:
                 continue
-            # if read.reference_name != "84021.66_-85034.68":
-            #     continue
             if calculate_identity(read) > 0.99:
-                if read.reference_name not in alignments:
-                    alignments[read.reference_name] = []
-                alignments[read.reference_name].append({
+                alignments.setdefault(read.reference_name, []).append({
                     "name": read.query_name,
                     "start": read.reference_start,
                     "end": read.reference_end,
-                    "ref_length": bam_file.get_reference_length(read.reference_name),
+                    "ref_length": bam.get_reference_length(read.reference_name),
                     "aligned": read.query_alignment_length,
-                    "idt": calculate_identity(read),
-                    # "aligned_fraction": read.query_alignment_length/read_lengths[read.query_name]
+                    "idt": calculate_identity(read)
                 })
 
-        # detect chimeric at nodes
+        # Detect chimeric edges
         tolerant_size = 1000
         # print("Contig", "Contig_len", "Node_start", "Node_end", "Read", "Aln_start", "Aln_end", "Aligned_len", "PI", sep="\t", flush=True)
         for r in alignments:
@@ -85,7 +113,7 @@ def read_bam(bam_file_path, dot_file_path):
             node1, node2 = r.split('_')
             node1 = node1[:node1.find('.')]
             node2 = node2[:node2.find('.')]
-            contig_len = bam_file.get_reference_length(r)
+            contig_len = bam.get_reference_length(r)
 
             # for aln in alignments[r]:
             #     print(r, contig_len, node2len[node1], node2len[node2], aln["name"], aln["start"], aln["end"], aln["aligned"], aln["idt"], sep="\t", flush=True)
@@ -117,17 +145,17 @@ def read_bam(bam_file_path, dot_file_path):
             has_internal_pileup = any(count >= pileup_threshold for count in end_counts.values())
 
             if (cnt_f <= 0 or cnt_r <= 0) and has_internal_pileup:
-                print("contig name", r, "contig len", contig_len, "len 1", node2len[node1], "len 2", node2len[node2], "supporting reads", cnt_f, cnt_r, cnt_all, "is chimeric", flush=True)
+                print("[RemoveChimeric]", "contig name", r, "contig len", contig_len, "len 1", node2len[node1], "len 2", node2len[node2], "supporting reads", cnt_f, cnt_r, cnt_all, "is chimeric", flush=True)
                 chimeric_edges.extend(r.split('_'))
 
-        # detect internal chimeric
+        # Detect internal chimeric (low coverage regions)
         tolerant_size = 100
         for r in alignments:
             end_counts = {}
-            contig_len = bam_file.get_reference_length(r)
+            contig_len = bam.get_reference_length(r)
             min_internal = 1000
             max_internal = contig_len - 1000
-            coverages = np.zeros(bam_file.get_reference_length(r), dtype=int)
+            coverages = np.zeros(bam.get_reference_length(r), dtype=int)
             for i in alignments[r]:
                 if i["end"]-tolerant_size > i["start"]:
                     coverages[i["start"]:i["end"]-tolerant_size] += 1
@@ -141,7 +169,7 @@ def read_bam(bam_file_path, dot_file_path):
             if np.average(coverages) >= 5:
                 window_size = 20000
                 half_window = window_size // 2
-                ref_len = bam_file.get_reference_length(r)
+                ref_len = bam.get_reference_length(r)
                 for i in range(ref_len):
                     if coverages[i] <= 1 and i >= 5001 - 10 and i <= ref_len - 5001 + 10:
                         # Calculate window boundaries
@@ -172,27 +200,31 @@ def read_bam(bam_file_path, dot_file_path):
             
             # print IDs of chimeric reads
             if len(reads) != 0:
-                print(r, "is chimeric (internal)", flush=True)
+                print("[RemoveChimeric]", r, "is chimeric (internal)", flush=True)
                 chimeric_edges.extend(r.split('_'))
+
     return chimeric_edges
-            
+
 if __name__ == "__main__":
-    # Set up argument parsing
-    parser = argparse.ArgumentParser(description="Read a BAM file and print alignment details.")
-    parser.add_argument("bam_file", help="Path to the input BAM file")
-    parser.add_argument("dot_file", help="Path to the input dot file (for node sizes)")
-    parser.add_argument("output", help="Path to the output file")
-    # parser.add_argument("reads", help="Path to reads", default="", required=False)
-    
-    # Parse the command-line arguments
+    parser = argparse.ArgumentParser(description="Align reads and remove chimeric contigs.")
+    parser.add_argument("reads", help="Reads FASTA file")
+    parser.add_argument("inprefix", help="Input prefix for reference FASTA")
+    parser.add_argument("outprefix", help="Output prefix for BAM and results")
+    parser.add_argument("compress", help="Path to compress program")
+    parser.add_argument("dot_file", help="DOT file for node lengths")
+    parser.add_argument("--threads", type=int, default=50, help="Threads for minimap2 and samtools")
+    parser.add_argument("output", help="Output file for chimeric edges")
     args = parser.parse_args()
 
-    # Call the function with the BAM file path provided by the user
-    # read_bam(args.bam_file, args.reads_file)
-    # chimeric_edges = read_bam(args.bam_file, args.dot_file, args.reads)
     if not os.path.isfile(args.output):
-        chimeric_edges = read_bam(args.bam_file, args.dot_file)
+        chimeric_edges = align_reads_and_detect_chimeric(
+            args.reads,
+            args.inprefix,
+            args.outprefix,
+            args.compress,
+            args.dot_file,
+            threads=args.threads
+        )
         with open(args.output, "w") as fout:
             for e in chimeric_edges:
                 fout.write(e + '\n')
-

@@ -3,7 +3,7 @@
 
 #include <string>
 
-int execute_command(const std::string& command);
+int execute_command(const std::string& command, bool exit_when_fail = true);
 
 double unialigner_identity(const std::string& seq1, const std::string& seq2, int prefix = 1000000);
 
