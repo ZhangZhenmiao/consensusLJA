@@ -5,53 +5,43 @@ import subprocess
 import re
 from multiprocessing import Pool
 
-def parse_cigar(cigar, ref_start=1):
+def parse_cigar(cigar):
     # Regular expression to extract the operations and lengths from the CIGAR string
     cigar_operations = re.findall(r'(\d+)([MIDNSHP=X])', cigar)
     
-    alignment_start = ref_start
-    alignment_end = ref_start
-    matches = 0
     total_aligned_bases = 0
     exact_matches = 0
-    ref_length = 0  # Length on the reference
-    query_length = 0  # Length on the query
+    total_aligned_bases_no_gap = 0
 
     for length, operation in cigar_operations:
         length = int(length)
         
         if operation in ['M', '=', 'X']:  # Matches/mismatches (affect both ref and query)
-            alignment_end += length
-            ref_length += length
-            query_length += length
             if operation == '=' or operation == 'M':
                 exact_matches += length  # Exact matches
             total_aligned_bases += length
+            total_aligned_bases_no_gap += length
         elif operation == 'D':  # Deletions (affect only the reference)
-            alignment_end += length
-            ref_length += length
             total_aligned_bases += length
+            if length >= 10:
+                total_aligned_bases_no_gap += length
         elif operation == 'I':  # Insertions (affect only the query)
-            query_length += length
             total_aligned_bases += length
-        elif operation == 'N':  # Skipped regions (affect only the reference)
-            alignment_end += length
-            ref_length += length
-        elif operation == 'S':  # Soft clipping (affects query length only)
-            query_length += length
-            if total_aligned_bases == 0:  # Only adjust the start if clipping is at the beginning
-                alignment_start += length
-        elif operation == 'H':  # Hard clipping (ignored, does not affect lengths)
-            if total_aligned_bases == 0:  # Only adjust the start if clipping is at the beginning
-                alignment_start += length
+            if length >= 10:
+                total_aligned_bases_no_gap += length
 
     # Calculate identity as the ratio of exact matches to total aligned bases
     if total_aligned_bases > 0:
         identity = exact_matches / total_aligned_bases
     else:
         identity = 0
+    
+    if total_aligned_bases_no_gap > 0:
+        identity_no_gap = exact_matches / total_aligned_bases_no_gap
+    else:
+        identity_no_gap = 0
 
-    return alignment_start, alignment_end, ref_length, query_length, identity
+    return identity, identity_no_gap
 
 # Function to read sequences from a FASTA-like file
 def read_fasta(file_path):

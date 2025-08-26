@@ -54,6 +54,7 @@ void MDBGRunner::simplifyMDBG() {
     graph.write_graph_contracted(output + "/graph.cleaned.contracted.20k", 20000);
 
     std::string prefix = output + "/graph.cleaned";
+    std::cout << "[RemoveChimeric] Identify chimeric edges" << std::endl;
     execute_command(remove_chimeric + " " + reads + " " + prefix + " " + prefix + " " + compress + " " + prefix + ".dot" + " --threads " + std::to_string(threads) + " " + prefix + ".chimeric.txt");
     graph.remove_chimeric_edge(prefix + ".chimeric.txt");
 

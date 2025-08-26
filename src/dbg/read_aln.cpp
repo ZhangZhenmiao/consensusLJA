@@ -739,11 +739,11 @@ void Graph::detect_chimeric_reads() {
 
             graph[error_edge.node1].outgoing_edges[new_node].push_back(out_forward);
             graph[new_node].incoming_edges[error_edge.node1].push_back(in_forward);
-            std::cout << "[RemoveChimeric] Add new edge: " << error_edge.node1 << " -> " << new_node << std::endl;
+            // std::cout << "[RemoveChimeric] Add new edge: " << error_edge.node1 << " -> " << new_node << std::endl;
             graph[reverse_complementary_node(new_node)].outgoing_edges[reverse_complementary_node(error_edge.node1)].push_back(out_reverse);
             graph[reverse_complementary_node(error_edge.node1)].incoming_edges[reverse_complementary_node(new_node)].push_back(in_reverse);
 
-            std::cout << "[RemoveChimeric] Add new edge: " << reverse_complementary_node(new_node) << " -> " << reverse_complementary_node(error_edge.node1) << std::endl;
+            // std::cout << "[RemoveChimeric] Add new edge: " << reverse_complementary_node(new_node) << " -> " << reverse_complementary_node(error_edge.node1) << std::endl;
         }
 
         out_forward.multiplicity = 0;

@@ -1341,8 +1341,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
     while (removed_tips) {
         graph_linear_edges.merge_tips_into_edges_L(removed_tips, 0.8, false, false, kmer2bc);
         total_removed += removed_tips;
-        if (removed_tips > 0)
-            std::cout << "Merged " << removed_tips << " tips to edges" << std::endl;
     }
 
     while (true) {

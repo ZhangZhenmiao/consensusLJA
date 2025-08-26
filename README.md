@@ -16,10 +16,10 @@ git clone https://github.com/ZhangZhenmiao/consensusLJA.git
 Ensure the following dependencies are installed:
 
 - C++ (C++20 support)
-- minimap2 (v2.21+)
-- samtools (v1.11+)
-- pysam (v0.22.1+)
-- CMake (v3.16+)
+- minimap2 (tested v2.21+)
+- samtools (tested v1.11+)
+- pysam (tested v0.22.1+)
+- CMake (tested v3.16+)
 - GNU Make
 - zlib
 
