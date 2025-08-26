@@ -1473,8 +1473,6 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             graph_linear_edges.resolving_bulge_with_two_multi_edge_paths(removed_paths, 8, 0, true, 2, true);
             if (removed_paths)
                 flag = false;
-            if (removed_paths > 0)
-                std::cout << "[Connect] Removed " << removed_paths << " paths" << std::endl;
         }
 
         decoupled = 1;

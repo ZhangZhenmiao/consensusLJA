@@ -81,6 +81,7 @@ public:
 
         fs::path polisher_out = output_all / "5_polishing";
 
+        std::cout << "[Polishing] Polishing contigs using LJA polisher" << std::endl;
         execute_command(polisher + " --output-dir " + polisher_out.string() + " --graph " + gfa_path.string() + " --corrected_reads " + corrected_reads_path.string() + " --reads " + reads + " -t " + std::to_string(this->threads));
         std::cout << "[Polishing] Polishing finished. Final contigs are in " << (polisher_out / "assembly.fasta") << ". \nThanks for using cLJA!" << std::endl;
     }

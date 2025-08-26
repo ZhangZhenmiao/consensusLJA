@@ -5,10 +5,10 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - minimap2=2.21=h5bf99c6_0
-  - samtools=1.11=h6270b1f_0
+  - minimap2=2.21
+  - samtools>1.11
   - cmake=3.22.1
   - gxx=11.4.0
-  - pip
-  - pip:
-      - pysam==0.22.1
+  - pysam=0.22.1
+  - python=3.10.0
+  - zlib=1.2.13

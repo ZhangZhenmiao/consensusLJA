@@ -645,8 +645,8 @@ void Graph::merge_secondary_edges(unsigned& num_edges) {
             }
         }
         if (find_similar) {
-            std::cout << "[RepairTip] Deadend edge " << node.first << " -> " << deadend_out << " is removed (sim=" << sim << ")" << std::endl;
-            std::cout << "[RepairTip] Deadend edge " << reverse_complementary_node(deadend_out) << " -> " << reverse_complementary_node(node.first) << " is removed (sim=" << sim << ")" << std::endl;
+            std::cout << "[RepairTip] Deadend edge " << node.first << " -> " << deadend_out << " is removed" << std::endl;
+            std::cout << "[RepairTip] Deadend edge " << reverse_complementary_node(deadend_out) << " -> " << reverse_complementary_node(node.first) << " is removed" << std::endl;
             graph[node.first].outgoing_edges.erase(deadend_out);
             graph[deadend_out].incoming_edges.erase(node.first);
             graph[reverse_complementary_node(deadend_out)].outgoing_edges.erase(reverse_complementary_node(node.first));

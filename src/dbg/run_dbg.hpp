@@ -53,11 +53,12 @@ public:
         this->dbg_dir = dbg_dir;
         if (correct_high) {
             if (!fs::is_regular_file(correct_reads_high)) {
+                std::cout << "[CorrectHigh] Correct high-freq reads" << std::endl;
                 execute_command(correct_reads + " " + reads + " " + correct_reads_lja + " " + high_contigs + " " + output + "/reads_all" + " " + compress + " --threads " + std::to_string(threads));
             }
 
             if (!fs::is_directory(dbg_dir)) {
-                std::cout << "[Cleaning] Construct condensed DBG using LJA" << std::endl;
+                std::cout << "[CDB] Construct condensed DBG using corrected reads" << std::endl;
                 execute_command(lja_cdb + " -t " + std::to_string(threads) + " --reads " + correct_reads_high + " --output-dir " + dbg_dir.string() + " --diploid");
             }
         }
