@@ -19,7 +19,7 @@ Ensure the following dependencies are installed:
 - minimap2 (tested v2.21)
 - samtools (tested v1.11)
 - pysam (tested v0.22.1)
-- CMake (tested v3.16)
+- CMake (tested v3.22.1)
 - GNU Make
 - zlib
 
@@ -33,7 +33,7 @@ conda env create -f requirements.yml
 Build cLJA:
 
 ```bash
-cd consensusLJA && cmake . && make
+cd consensusLJA && cmake . && make -j 8
 ```
 
 ## Usage
