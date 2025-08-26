@@ -308,10 +308,6 @@ void MDBGRunner::simplifyMDBG() {
     // graph.write_graph_colored_from_bam(output + "/graph.before_final" + ".color", output + "/graph.before_final" + ".ref.bam.stats");
     // graph.get_annotation(output + "/graph.before_final");
 
-    // Graph graph;
-    // graph.restart_from_dot(output + "/graph.before_final.dot", output + "/graph.before_final.fasta");
-    // graph.write_graph_colored_from_bam(output + "/graph.before_final" + ".color", output + "/graph.before_final" + ".ref.bam.stats");
-
     while (true) {
         bool flag = true;
 
@@ -403,11 +399,9 @@ void MDBGRunner::simplifyMDBG() {
     }
 
     graph.write_graph(output + "/graph.before_removing_contained", false, true);
-    // graph.get_annotation(output + "/graph.before_removing_contained");
 
     // Graph graph;
     // graph.restart_from_dot(output + "/graph.before_removing_contained.dot", output + "/graph.before_removing_contained.fasta");
-    // graph.write_graph_colored_from_bam(output + "/graph.before_removing_contained" + ".color", output + "/graph.before_removing_contained" + ".ref.bam.stats");
 
     std::cout << "==========[Scaffolding]==========" << std::endl;
     removed_edges = 1;
@@ -442,6 +436,7 @@ void MDBGRunner::simplifyMDBG() {
     // Graph graph;
     // graph.restart_from_dot(output + "/graph.remove_contained_r4.dot", output + "/graph.remove_contained_r4.fasta");
 
+    std::cout << "[Connect] Connect linear and tips using spanning reads" << std::endl;
     graph.connect_linear_and_tips_using_spanning_reads(output + "/graph.spanning_reads", threads, reads);
 
     graph.write_graph(output + "/graph.final", 1000000, false, true);

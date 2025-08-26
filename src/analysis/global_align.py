@@ -23,11 +23,11 @@ def parse_cigar(cigar):
             total_aligned_bases_no_gap += length
         elif operation == 'D':  # Deletions (affect only the reference)
             total_aligned_bases += length
-            if length >= 10:
+            if length < 10:
                 total_aligned_bases_no_gap += length
         elif operation == 'I':  # Insertions (affect only the query)
             total_aligned_bases += length
-            if length >= 10:
+            if length < 10:
                 total_aligned_bases_no_gap += length
 
     # Calculate identity as the ratio of exact matches to total aligned bases
