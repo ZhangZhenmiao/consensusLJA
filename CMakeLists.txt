@@ -14,6 +14,8 @@ if(DEFINED ENV{CONDA_PREFIX})
 endif()
 find_package(ZLIB REQUIRED)
 
+include_directories(${ZLIB_INCLUDE_DIRS})
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
