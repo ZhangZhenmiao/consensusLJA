@@ -9,8 +9,8 @@
 #include <sstream>
 #include <filesystem>
 #include <map>
-#include "src/dbg/dot_graph.hpp"
-#include "src/dbg/read_aln.hpp"
+#include "dbg/dot_graph.hpp"
+#include "dbg/read_aln.hpp"
 #include "utils.hpp"
 namespace fs = std::filesystem;
 

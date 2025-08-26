@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.13)
+cmake_policy(SET CMP0074 NEW)
 project(cLJA VERSION 1.0 LANGUAGES CXX)
 
 # === C++ standard ===
@@ -8,6 +9,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # === Dependencies ===
 find_package(OpenMP REQUIRED)
+if(DEFINED ENV{CONDA_PREFIX})
+    set(ZLIB_ROOT $ENV{CONDA_PREFIX})
+endif()
+find_package(ZLIB REQUIRED)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)

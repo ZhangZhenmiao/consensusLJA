@@ -1,4 +1,5 @@
 project(sequences)
+cmake_policy(SET CMP0074 NEW)
 set(CMAKE_CXX_STANDARD 17)
 
 include_directories(.)

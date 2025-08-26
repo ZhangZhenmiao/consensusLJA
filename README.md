@@ -16,24 +16,24 @@ git clone https://github.com/ZhangZhenmiao/consensusLJA.git
 Ensure the following dependencies are installed:
 
 - C++ (C++20 support)
-- minimap2 (tested v2.21+)
-- samtools (tested v1.11+)
-- pysam (tested v0.22.1+)
-- CMake (tested v3.16+)
+- minimap2 (tested v2.21)
+- samtools (tested v1.11)
+- pysam (tested v0.22.1)
+- CMake (tested v3.16)
 - GNU Make
 - zlib
 
-If dependencies are not installed, try below command to install using mamba (faster than conda), or install by yourself:
+If dependencies are not installed, try below command to install using conda (this creates a new environment named clja; installation typically takes 1–5 minutes):
 
 ```bash
-mamba env create -f requirements.yml
+conda env create -f requirements.yml
 ```
 
 
 Build cLJA:
 
 ```bash
-cd cLJA && cmake . && make
+cd consensusLJA && cmake . && make
 ```
 
 ## Usage
