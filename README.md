@@ -19,6 +19,8 @@ Ensure the following dependencies are installed:
 - minimap2 (tested v2.21)
 - samtools (tested v1.11)
 - pysam (tested v0.22.1)
+- biopython (tested v1.81)
+- numpy (tested v2.2.5)
 - CMake (tested v3.22.1)
 - GNU Make
 - zlib

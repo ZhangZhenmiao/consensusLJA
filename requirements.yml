@@ -10,5 +10,7 @@ dependencies:
   - cmake=3.22.1
   - gxx=11.4.0
   - pysam=0.22.1
+  - biopython=1.81
+  - numpy=2.2.5
   - python=3.10.0
   - zlib=1.2.13
