@@ -61,12 +61,12 @@ int Graph::count_matches(std::string cigar) {
 
 void Graph::get_annotation(std::string prefix) {
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Wheat_stripe/reference/reference.compressed.fasta";
-    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fasta";
-    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
+    // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Rust_fungi/reference/reference.compressed.only_chrs.fasta";
+    std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.compressed.fasta";
     // std::string ref_seq = "/Poppy/zmzhang/cLJA_Project/Mytilus_gallo/genome/GCA_037788925.1_MytGallo_primary_0.1_genomic.compressed.fa";
     if (fs::is_regular_file(prefix + ".fasta.fai"))
         execute_command(("rm " + prefix + ".fasta.fai").c_str());
-    execute_command(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -p 0.1 -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str());
+    execute_command(("minimap2 -ax asm20 " + ref_seq + " " + prefix + ".fasta -t 100 | grep -v '^@' > " + prefix + ".ref.sam").c_str());
     if (!std::filesystem::exists(ref_seq + ".fai"))
         execute_command(("samtools faidx " + ref_seq).c_str());
     execute_command(("cut -f1,2 " + ref_seq + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + prefix + ".ref.header.sam").c_str());

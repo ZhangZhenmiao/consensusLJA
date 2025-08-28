@@ -424,8 +424,8 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                 new_alignments.extend(final_alignments)
 
             # Sort retained alignments by query coordinates
-            # high_identity_alignments[query_name] = sorted(new_alignments, key=lambda x: (x["query_start"], x["query_end"], -x["identity"], -x["identity_nogap"]))
-            high_identity_alignments[query_name] = sorted(new_alignments, key=lambda x: (x["query_start"]-x["query_end"], -x["identity"], -x["identity_nogap"]))
+            high_identity_alignments[query_name] = sorted(new_alignments, key=lambda x: (x["query_start"], x["query_end"], -x["identity"], -x["identity_nogap"]))
+            # high_identity_alignments[query_name] = sorted(new_alignments, key=lambda x: (x["query_start"]-x["query_end"], -x["identity"], -x["identity_nogap"]))
     
     
     # print(f"Edges with label: {processed_alignments} of {total_alignments}")

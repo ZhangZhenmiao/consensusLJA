@@ -433,6 +433,20 @@ void MDBGRunner::simplifyMDBG() {
         cnt_round += 1;
     }
 
+    removed_edges = 1;
+    while (removed_edges) {
+        graph.write_prefix_siffux_linear_edges(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), jumbodbg, threads, 501, removed_edges, 20000);
+        std::cout << "[Connect] Glued " << removed_edges << " edges" << std::endl;
+        graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
+
+        removed_paths = 1;
+        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths);
+        std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
+        graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
+
+        cnt_round += 1;
+    }
+
     // Graph graph;
     // graph.restart_from_dot(output + "/graph.remove_contained_r4.dot", output + "/graph.remove_contained_r4.fasta");
 

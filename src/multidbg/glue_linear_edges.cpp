@@ -340,8 +340,8 @@ void Graph::remove_deadend_edges_L(unsigned& removed_edges, std::unordered_map<s
             }
         }
         if (remove) {
-            std::cout << "[RepairTip] Deadend edge " << node.first << " -> " << deadend_out << " is removed (sim=" << sim << ")" << std::endl;
-            std::cout << "[RepairTip] Deadend edge " << reverse_complementary_node(deadend_out) << " -> " << reverse_complementary_node(node.first) << " is removed (sim=" << sim << ")" << std::endl;
+            std::cout << "[RepairTip] Deadend edge " << node.first << " -> " << deadend_out << " is removed" << std::endl;
+            std::cout << "[RepairTip] Deadend edge " << reverse_complementary_node(deadend_out) << " -> " << reverse_complementary_node(node.first) << " is removed" << std::endl;
             graph[node.first].outgoing_edges.erase(deadend_out);
             graph[deadend_out].incoming_edges.erase(node.first);
             graph[reverse_complementary_node(deadend_out)].outgoing_edges.erase(reverse_complementary_node(node.first));
@@ -1180,7 +1180,7 @@ void Graph::write_graph_contracted_L(const std::string& prefix, int min_length, 
     return;
 }
 
-void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jumbodbg, int threads, int k_mer, unsigned& num_glued) {
+void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jumbodbg, int threads, int k_mer, unsigned& num_glued, int extract_size) {
     num_glued = 0;
     execute_command("mkdir -p " + output);
     std::string output_prefix_suffix = output + "/graph_linear_edges.fa";
@@ -1226,11 +1226,11 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
 
             // find a valid linear edge
             if (node.second.incoming_edges.empty()) {
-                std::string seq1 = replaceNsWithRandomBases(node.second.sequence.substr(0, 5000));
+                std::string seq1 = replaceNsWithRandomBases(node.second.sequence.substr(0, extract_size));
                 outfile << ">" << node.first << "\n";
                 outfile << seq1 << "\n";
 
-                std::string seq2 = replaceNsWithRandomBases(graph[n_out].sequence.substr(graph[n_out].sequence.size() - 5000));
+                std::string seq2 = replaceNsWithRandomBases(graph[n_out].sequence.substr(int(graph[n_out].sequence.size()) >= extract_size ? graph[n_out].sequence.size() - extract_size : 0));
                 outfile << ">" << n_out << "\n";
                 outfile << seq2 << "\n";
 
@@ -1250,7 +1250,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
                 bc_id++;
             }
             else {
-                std::string seq2 = replaceNsWithRandomBases(graph[n_out].sequence.substr(graph[n_out].sequence.size() - 5000));
+                std::string seq2 = replaceNsWithRandomBases(graph[n_out].sequence.substr(int(graph[n_out].sequence.size()) >= extract_size ? graph[n_out].sequence.size() - extract_size : 0));
                 outfile << ">" << n_out << "\n";
                 outfile << seq2 << "\n";
 
@@ -1514,6 +1514,8 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             break;
     }
 
+    // graph_linear_edges.write_graph(output + "/graph_linear_edges.final.all", 1000000, false, true, std::unordered_set<std::string>(), kmer2bc);
+    // graph_linear_edges.get_annotation(output + "/graph_linear_edges.final.all");
     graph_linear_edges.write_graph_L(output + "/graph_linear_edges.final", 1000000, false, true, std::unordered_set<std::string>(), kmer2bc);
     graph_linear_edges.write_graph_contracted_L(output + "/graph_linear_edges.final.contracted.600", 600, false, kmer2bc);
 
@@ -1590,34 +1592,58 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
                 if (node1 == reverse_complementary_node(node2_out) || node2 == reverse_complementary_node(node1_in))
                     continue;
 
+                std::string connecting_seq = n.second.outgoing_edges[n_out].at(0).sequence;
+
+                Edge edge_in = graph[node1_in].outgoing_edges[node1].at(0);
+                Edge edge_out = graph[node2].outgoing_edges[node2_out].at(0);
+
+                std::string edge_in_unique = int(edge_in.sequence.size()) >= extract_size ? edge_in.sequence.substr(0, edge_in.sequence.size() - extract_size) : "";
+                std::string edge_out_unique = int(edge_out.sequence.size()) >= extract_size ? edge_out.sequence.substr(extract_size) : "";
+
+                // for forward strand
                 std::cout << "[Connect] Glue node " << node1 << " and " << node2 << " based on edge " << n.first << " -> " << n_out << std::endl;
+                std::string new_edge_seq = edge_in_unique + connecting_seq + edge_out_unique;
+                Edge new_edge(new_edge_seq.at(graph[node1_in].sequence.size()), new_edge_seq.size(), new_edge_seq, std::max(edge_in.multiplicity, edge_out.multiplicity));
+                new_edge.path_edges_in_original_graph.push_back(node1 + "_" + node2);
+                new_edge.path_nodes_in_original_graph.push_back(node1);
+                new_edge.path_nodes_in_original_graph.push_back(node2);
+                graph[node1_in].outgoing_edges.erase(node1);
+                graph[node1].incoming_edges.erase(node1_in);
+                graph[node2].outgoing_edges.erase(node2_out);
+                graph[node2_out].incoming_edges.erase(node2);
+                graph[node1_in].outgoing_edges[node2_out].push_back(new_edge);
+                graph[node2_out].incoming_edges[node1_in].push_back(new_edge);
+                graph.erase(node1);
+                graph.erase(node2);
 
-                // delete last 5000 bp for node1 and first 5000 bp for node2
-                graph[node1].sequence = graph[node1].sequence.substr(0, graph[node1].sequence.size() - 5000);
-                assert(graph[node1_in].outgoing_edges[node1].size() == 1);
-                graph[node1_in].outgoing_edges[node1].at(0).sequence = graph[node1_in].outgoing_edges[node1].at(0).sequence.substr(0, graph[node1_in].outgoing_edges[node1].at(0).sequence.size() - 5000);
-                graph[node1_in].outgoing_edges[node1].at(0).length = graph[node1_in].outgoing_edges[node1].at(0).sequence.size();
-                graph[node1].incoming_edges[node1_in].at(0).sequence = graph[node1_in].outgoing_edges[node1].at(0).sequence.substr(0, graph[node1_in].outgoing_edges[node1].at(0).sequence.size() - 5000);
-                graph[node1].incoming_edges[node1_in].at(0).length = graph[node1].incoming_edges[node1_in].at(0).sequence.size();
+                // std::cout << "[Connect] Glue node " << node1 << " and " << node2 << " based on edge " << n.first << " -> " << n_out << std::endl;
 
-                graph[node2].sequence = graph[node2].sequence.substr(5000);
-                assert(graph[node2].outgoing_edges[node2_out].size() == 1);
-                graph[node2].outgoing_edges[node2_out].at(0).sequence = graph[node2].outgoing_edges[node2_out].at(0).sequence.substr(5000);
-                graph[node2].outgoing_edges[node2_out].at(0).length = graph[node2].outgoing_edges[node2_out].at(0).sequence.size();
-                graph[node2_out].incoming_edges[node2].at(0).sequence = graph[node2].outgoing_edges[node2_out].at(0).sequence.substr(5000);
-                graph[node2_out].incoming_edges[node2].at(0).length = graph[node2_out].incoming_edges[node2].at(0).sequence.size();
+                // // delete last 5000 bp for node1 and first 5000 bp for node2
+                // graph[node1].sequence = graph[node1].sequence.substr(0, graph[node1].sequence.size() - 5000);
+                // assert(graph[node1_in].outgoing_edges[node1].size() == 1);
+                // graph[node1_in].outgoing_edges[node1].at(0).sequence = graph[node1_in].outgoing_edges[node1].at(0).sequence.substr(0, graph[node1_in].outgoing_edges[node1].at(0).sequence.size() - 5000);
+                // graph[node1_in].outgoing_edges[node1].at(0).length = graph[node1_in].outgoing_edges[node1].at(0).sequence.size();
+                // graph[node1].incoming_edges[node1_in].at(0).sequence = graph[node1_in].outgoing_edges[node1].at(0).sequence.substr(0, graph[node1_in].outgoing_edges[node1].at(0).sequence.size() - 5000);
+                // graph[node1].incoming_edges[node1_in].at(0).length = graph[node1].incoming_edges[node1_in].at(0).sequence.size();
 
-                // determine the edge sequence
-                std::string seq = n.second.outgoing_edges[n_out].at(0).sequence;
-                std::string new_edge_seq = graph[node1].sequence + seq + graph[node2].sequence;
+                // graph[node2].sequence = graph[node2].sequence.substr(5000);
+                // assert(graph[node2].outgoing_edges[node2_out].size() == 1);
+                // graph[node2].outgoing_edges[node2_out].at(0).sequence = graph[node2].outgoing_edges[node2_out].at(0).sequence.substr(5000);
+                // graph[node2].outgoing_edges[node2_out].at(0).length = graph[node2].outgoing_edges[node2_out].at(0).sequence.size();
+                // graph[node2_out].incoming_edges[node2].at(0).sequence = graph[node2].outgoing_edges[node2_out].at(0).sequence.substr(5000);
+                // graph[node2_out].incoming_edges[node2].at(0).length = graph[node2_out].incoming_edges[node2].at(0).sequence.size();
 
-                Edge edge(new_edge_seq.at(graph[node1].sequence.size()), new_edge_seq.size(), new_edge_seq, mean_cov);
-                edge.path_edges_in_original_graph.push_back(node1 + "_" + node2);
-                edge.path_nodes_in_original_graph.push_back(node1);
-                edge.path_nodes_in_original_graph.push_back(node2);
+                // // determine the edge sequence
+                // std::string seq = n.second.outgoing_edges[n_out].at(0).sequence;
+                // std::string new_edge_seq = graph[node1].sequence + seq + graph[node2].sequence;
 
-                graph[node1].outgoing_edges[node2].push_back(edge);
-                graph[node2].incoming_edges[node1].push_back(edge);
+                // Edge edge(new_edge_seq.at(graph[node1].sequence.size()), new_edge_seq.size(), new_edge_seq, mean_cov);
+                // edge.path_edges_in_original_graph.push_back(node1 + "_" + node2);
+                // edge.path_nodes_in_original_graph.push_back(node1);
+                // edge.path_nodes_in_original_graph.push_back(node2);
+
+                // graph[node1].outgoing_edges[node2].push_back(edge);
+                // graph[node2].incoming_edges[node1].push_back(edge);
                 num_glued += 1;
             }
         }
