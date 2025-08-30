@@ -464,6 +464,10 @@ void Graph::merge_tips(unsigned& num_tips) {
                         continue;
                 }
 
+                // if both tips long, do not merge
+                if (graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length >= 50000000 && graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length >= 50000000)
+                    continue;
+
                 std::cout << "[MergeTip] Merge tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
                 merge_vecs(graph[node.first].outgoing_edges[outgoing_tips[max_index]], graph[node.first].outgoing_edges[outgoing_tips[i]]);
                 merge_vecs(graph[outgoing_tips[max_index]].incoming_edges[node.first], graph[outgoing_tips[i]].incoming_edges[node.first]);

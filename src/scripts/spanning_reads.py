@@ -146,6 +146,24 @@ def filter_alignments_with_identity(bam_file_path, threshold=0.9):
 
     return high_identity_alignments
 
+def rvNode(node):
+    if "+" not in node:
+        if node[0] == "-":
+            return node[1:]  # remove leading '-'
+        else:
+            return "-" + node  # add leading '-'
+    else:
+        first_part, second_part = node.split("+")
+        if first_part[0] == "-":
+            first_part = first_part[1:]  # remove leading '-'
+        else:
+            first_part = "-" + first_part  # add leading '-'
+        if second_part[0] == "-":
+            second_part = second_part[1:]  # remove leading '-'
+        else:
+            second_part = "-" + second_part
+        return second_part + "+" + first_part
+
 def summarize_full_connected_sequences(high_identity_alignments, ref_fasta, output_result):
     fasta = pysam.FastaFile(ref_fasta)
     ref_pair_connections = defaultdict(list)
@@ -289,24 +307,24 @@ def summarize_full_connected_sequences(high_identity_alignments, ref_fasta, outp
             if ori1 == "head" and strand1 == "+":
                 node1 = contig1_n1
             elif ori1 == "tail" and strand1 == "-":
-                node1 = "-" + contig1_n2 if contig1_n2[0] != "-" else contig1_n2[1:]
+                node1 =rvNode(contig1_n2)
             elif ori1 == "head" and strand1 == "-":
-                node1 = "-" + contig1_n1 if contig1_n1[0] != "-" else contig1_n1[1:]
+                node1 = rvNode(contig1_n1)
             elif ori1 == "tail" and strand1 == "+":
                 node1 = contig1_n2
             
             if ori2 == "head" and strand2 == "+":
                 node2 = contig2_n1
             elif ori2 == "tail" and strand2 == "-":
-                node2 = "-" + contig2_n2 if contig2_n2[0] != "-" else contig2_n2[1:]
+                node2 = rvNode(contig2_n2)
             elif ori2 == "head" and strand1 == "-":
-                node2 = "-" + contig2_n1 if contig2_n1[0] != "-" else contig2_n1[1:]
+                node2 = rvNode(contig2_n1)
             elif ori2 == "tail" and strand1 == "+":
                 node2 = contig2_n2
             
             print(f"  Nodes: {node1} --> {node2}")
             out_f.write(f"{node1}_{node2}\t{connected_seq}\n")
-            print(f'  Nodes: {"-" + node2 if node2[0] != "-" else node2[1:]} --> {"-" + node1 if node1[0] != "-" else node1[1:]}')
+            print(f'  Nodes: {rvNode(node2)} --> {rvNode(node2)}')
             
             sum_gaps = 0
             for ent in entries:
@@ -340,7 +358,8 @@ def main():
         run_minimap2_to_bam(flank_fasta, args.hifi_reads, args.output_bam, args.compress, args.thread)
     
     high_identity_alignments = filter_alignments_with_identity(args.output_bam, 0.9)
-    summarize_full_connected_sequences(high_identity_alignments, flank_fasta, args.output_result)
+    if not os.path.isfile(args.output_result):
+        summarize_full_connected_sequences(high_identity_alignments, flank_fasta, args.output_result)
 
 if __name__ == "__main__":
     main()

@@ -1180,7 +1180,7 @@ void Graph::write_graph_contracted_L(const std::string& prefix, int min_length, 
     return;
 }
 
-void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jumbodbg, int threads, int k_mer, unsigned& num_glued, int extract_size) {
+void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jumbodbg, int threads, int k_mer, unsigned& num_glued, int extract_size, bool only_isolated) {
     num_glued = 0;
     execute_command("mkdir -p " + output);
     std::string output_prefix_suffix = output + "/graph_linear_edges.fa";
@@ -1195,74 +1195,147 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
     std::unordered_map<std::string, std::vector<std::string>> kmer2bc;
     std::unordered_map<std::string, std::vector<std::string>> kmer2nodes;
 
-    for (auto&& node : graph) {
-        if (traversed_nodes.find(node.first) != traversed_nodes.end())
-            continue;
-        if (node.second.outgoing_edges.size() == 1) {
-            std::string n_out;
-            for (auto&& n : node.second.outgoing_edges)
-                n_out = n.first;
-
-            if (graph[n_out].incoming_edges.size() != 1 || !graph[n_out].outgoing_edges.empty())
+    if (only_isolated) {
+        for (auto&& node : graph) {
+            if (traversed_nodes.find(node.first) != traversed_nodes.end())
                 continue;
+            if (node.second.outgoing_edges.size() == 1) {
+                std::string n_out;
+                for (auto&& n : node.second.outgoing_edges)
+                    n_out = n.first;
 
-            if (node.second.outgoing_edges[n_out].size() != 1)
+                if (graph[n_out].incoming_edges.size() != 1 || !graph[n_out].outgoing_edges.empty())
+                    continue;
+
+                if (node.second.outgoing_edges[n_out].size() != 1)
+                    continue;
+
+                traversed_nodes.insert(node.first);
+                traversed_nodes.insert(reverse_complementary_node(n_out));
+
+                std::string edge_label_forward = "Edge: " + node.second.outgoing_edges[n_out].at(0).label + " Length: " + format_with_commas(node.second.outgoing_edges[n_out].at(0).sequence.size());
+                if (!node.second.outgoing_edges[n_out].at(0).ref_ids.empty()) {
+                    for (auto&& r : node.second.outgoing_edges[n_out].at(0).ref_ids)
+                        edge_label_forward += ("\\n" + r);
+                }
+
+                std::string edge_label_reverse = "Edge: " + graph[reverse_complementary_node(n_out)].outgoing_edges[reverse_complementary_node(node.first)].at(0).label + " Length: " + format_with_commas(node.second.outgoing_edges[n_out].at(0).sequence.size());
+                if (!graph[reverse_complementary_node(n_out)].outgoing_edges[reverse_complementary_node(node.first)].at(0).ref_ids.empty()) {
+                    for (auto&& r : graph[reverse_complementary_node(n_out)].outgoing_edges[reverse_complementary_node(node.first)].at(0).ref_ids)
+                        edge_label_reverse += ("\\n" + r);
+                }
+
+                // find a valid linear edge
+                if (node.second.incoming_edges.empty()) {
+                    std::string seq1 = replaceNsWithRandomBases(node.second.sequence.substr(0, extract_size));
+                    outfile << ">" << node.first << "\n";
+                    outfile << seq1 << "\n";
+
+                    std::string seq2 = replaceNsWithRandomBases(graph[n_out].sequence.substr(int(graph[n_out].sequence.size()) >= extract_size ? graph[n_out].sequence.size() - extract_size : 0));
+                    outfile << ">" << n_out << "\n";
+                    outfile << seq2 << "\n";
+
+                    std::string suffix_start = seq1.substr(seq1.size() - k_mer);
+                    std::string prefix_end = seq2.substr(0, k_mer);
+                    kmer2bc[suffix_start].push_back(std::to_string(bc_id) + " " + edge_label_forward);
+                    kmer2bc[prefix_end].push_back(std::to_string(-bc_id) + " " + edge_label_forward);
+                    kmer2nodes[suffix_start].push_back(node.first);
+                    kmer2nodes[prefix_end].push_back(n_out);
+
+                    bc_id++;
+                    kmer2bc[reverse_complementary(suffix_start)].push_back(std::to_string(-bc_id) + " " + edge_label_reverse);
+                    kmer2bc[reverse_complementary(prefix_end)].push_back(std::to_string(bc_id) + " " + edge_label_reverse);
+                    kmer2nodes[reverse_complementary(suffix_start)].push_back(reverse_complementary_node(node.first));
+                    kmer2nodes[reverse_complementary(prefix_end)].push_back(reverse_complementary_node(n_out));
+
+                    bc_id++;
+                }
+                else {
+                    std::string seq2 = replaceNsWithRandomBases(graph[n_out].sequence.substr(int(graph[n_out].sequence.size()) >= extract_size ? graph[n_out].sequence.size() - extract_size : 0));
+                    outfile << ">" << n_out << "\n";
+                    outfile << seq2 << "\n";
+
+                    std::string prefix_end = seq2.substr(0, k_mer);
+                    kmer2bc[prefix_end].push_back(std::to_string(-bc_id) + " " + edge_label_forward);
+                    kmer2nodes[prefix_end].push_back(n_out);
+
+                    bc_id++;
+                    kmer2bc[reverse_complementary(prefix_end)].push_back(std::to_string(bc_id) + " " + edge_label_reverse);
+                    kmer2nodes[reverse_complementary(prefix_end)].push_back(reverse_complementary_node(n_out));
+
+                    bc_id++;
+                }
+            }
+        }
+    }
+    else {
+        for (auto&& node : graph) {
+            if (traversed_nodes.find(node.first) != traversed_nodes.end())
                 continue;
+            for (auto&& n : node.second.outgoing_edges) {
+                std::string n_out = n.first;
 
-            traversed_nodes.insert(node.first);
-            traversed_nodes.insert(reverse_complementary_node(n_out));
+                if (graph[n_out].incoming_edges.size() != 1 || !graph[n_out].outgoing_edges.empty())
+                    continue;
 
-            std::string edge_label_forward = "Edge: " + node.second.outgoing_edges[n_out].at(0).label + " Length: " + format_with_commas(node.second.outgoing_edges[n_out].at(0).sequence.size());
-            if (!node.second.outgoing_edges[n_out].at(0).ref_ids.empty()) {
-                for (auto&& r : node.second.outgoing_edges[n_out].at(0).ref_ids)
-                    edge_label_forward += ("\\n" + r);
-            }
+                if (node.second.outgoing_edges[n_out].size() != 1)
+                    continue;
 
-            std::string edge_label_reverse = "Edge: " + graph[reverse_complementary_node(n_out)].outgoing_edges[reverse_complementary_node(node.first)].at(0).label + " Length: " + format_with_commas(node.second.outgoing_edges[n_out].at(0).sequence.size());
-            if (!graph[reverse_complementary_node(n_out)].outgoing_edges[reverse_complementary_node(node.first)].at(0).ref_ids.empty()) {
-                for (auto&& r : graph[reverse_complementary_node(n_out)].outgoing_edges[reverse_complementary_node(node.first)].at(0).ref_ids)
-                    edge_label_reverse += ("\\n" + r);
-            }
+                traversed_nodes.insert(node.first);
+                traversed_nodes.insert(reverse_complementary_node(n_out));
 
-            // find a valid linear edge
-            if (node.second.incoming_edges.empty()) {
-                std::string seq1 = replaceNsWithRandomBases(node.second.sequence.substr(0, extract_size));
-                outfile << ">" << node.first << "\n";
-                outfile << seq1 << "\n";
+                std::string edge_label_forward = "Edge: " + node.second.outgoing_edges[n_out].at(0).label + " Length: " + format_with_commas(node.second.outgoing_edges[n_out].at(0).sequence.size());
+                if (!node.second.outgoing_edges[n_out].at(0).ref_ids.empty()) {
+                    for (auto&& r : node.second.outgoing_edges[n_out].at(0).ref_ids)
+                        edge_label_forward += ("\\n" + r);
+                }
 
-                std::string seq2 = replaceNsWithRandomBases(graph[n_out].sequence.substr(int(graph[n_out].sequence.size()) >= extract_size ? graph[n_out].sequence.size() - extract_size : 0));
-                outfile << ">" << n_out << "\n";
-                outfile << seq2 << "\n";
+                std::string edge_label_reverse = "Edge: " + graph[reverse_complementary_node(n_out)].outgoing_edges[reverse_complementary_node(node.first)].at(0).label + " Length: " + format_with_commas(node.second.outgoing_edges[n_out].at(0).sequence.size());
+                if (!graph[reverse_complementary_node(n_out)].outgoing_edges[reverse_complementary_node(node.first)].at(0).ref_ids.empty()) {
+                    for (auto&& r : graph[reverse_complementary_node(n_out)].outgoing_edges[reverse_complementary_node(node.first)].at(0).ref_ids)
+                        edge_label_reverse += ("\\n" + r);
+                }
 
-                std::string suffix_start = seq1.substr(seq1.size() - k_mer);
-                std::string prefix_end = seq2.substr(0, k_mer);
-                kmer2bc[suffix_start].push_back(std::to_string(bc_id) + " " + edge_label_forward);
-                kmer2bc[prefix_end].push_back(std::to_string(-bc_id) + " " + edge_label_forward);
-                kmer2nodes[suffix_start].push_back(node.first);
-                kmer2nodes[prefix_end].push_back(n_out);
+                // find a valid linear edge
+                if (node.second.incoming_edges.empty()) {
+                    std::string seq1 = replaceNsWithRandomBases(node.second.sequence.substr(0, extract_size));
+                    outfile << ">" << node.first << "\n";
+                    outfile << seq1 << "\n";
 
-                bc_id++;
-                kmer2bc[reverse_complementary(suffix_start)].push_back(std::to_string(-bc_id) + " " + edge_label_reverse);
-                kmer2bc[reverse_complementary(prefix_end)].push_back(std::to_string(bc_id) + " " + edge_label_reverse);
-                kmer2nodes[reverse_complementary(suffix_start)].push_back(reverse_complementary_node(node.first));
-                kmer2nodes[reverse_complementary(prefix_end)].push_back(reverse_complementary_node(n_out));
+                    std::string seq2 = replaceNsWithRandomBases(graph[n_out].sequence.substr(int(graph[n_out].sequence.size()) >= extract_size ? graph[n_out].sequence.size() - extract_size : 0));
+                    outfile << ">" << n_out << "\n";
+                    outfile << seq2 << "\n";
 
-                bc_id++;
-            }
-            else {
-                std::string seq2 = replaceNsWithRandomBases(graph[n_out].sequence.substr(int(graph[n_out].sequence.size()) >= extract_size ? graph[n_out].sequence.size() - extract_size : 0));
-                outfile << ">" << n_out << "\n";
-                outfile << seq2 << "\n";
+                    std::string suffix_start = seq1.substr(seq1.size() - k_mer);
+                    std::string prefix_end = seq2.substr(0, k_mer);
+                    kmer2bc[suffix_start].push_back(std::to_string(bc_id) + " " + edge_label_forward);
+                    kmer2bc[prefix_end].push_back(std::to_string(-bc_id) + " " + edge_label_forward);
+                    kmer2nodes[suffix_start].push_back(node.first);
+                    kmer2nodes[prefix_end].push_back(n_out);
 
-                std::string prefix_end = seq2.substr(0, k_mer);
-                kmer2bc[prefix_end].push_back(std::to_string(-bc_id) + " " + edge_label_forward);
-                kmer2nodes[prefix_end].push_back(n_out);
+                    bc_id++;
+                    kmer2bc[reverse_complementary(suffix_start)].push_back(std::to_string(-bc_id) + " " + edge_label_reverse);
+                    kmer2bc[reverse_complementary(prefix_end)].push_back(std::to_string(bc_id) + " " + edge_label_reverse);
+                    kmer2nodes[reverse_complementary(suffix_start)].push_back(reverse_complementary_node(node.first));
+                    kmer2nodes[reverse_complementary(prefix_end)].push_back(reverse_complementary_node(n_out));
 
-                bc_id++;
-                kmer2bc[reverse_complementary(prefix_end)].push_back(std::to_string(bc_id) + " " + edge_label_reverse);
-                kmer2nodes[reverse_complementary(prefix_end)].push_back(reverse_complementary_node(n_out));
+                    bc_id++;
+                }
+                else {
+                    std::string seq2 = replaceNsWithRandomBases(graph[n_out].sequence.substr(int(graph[n_out].sequence.size()) >= extract_size ? graph[n_out].sequence.size() - extract_size : 0));
+                    outfile << ">" << n_out << "\n";
+                    outfile << seq2 << "\n";
 
-                bc_id++;
+                    std::string prefix_end = seq2.substr(0, k_mer);
+                    kmer2bc[prefix_end].push_back(std::to_string(-bc_id) + " " + edge_label_forward);
+                    kmer2nodes[prefix_end].push_back(n_out);
+
+                    bc_id++;
+                    kmer2bc[reverse_complementary(prefix_end)].push_back(std::to_string(bc_id) + " " + edge_label_reverse);
+                    kmer2nodes[reverse_complementary(prefix_end)].push_back(reverse_complementary_node(n_out));
+
+                    bc_id++;
+                }
             }
         }
     }
@@ -1579,6 +1652,11 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
             if (node1 == reverse_complementary_node(node2))
                 continue;
 
+            if (graph.find(node1) == graph.end() || graph[node1].incoming_edges.size() != 1 || graph[node1].outgoing_edges.size() != 0)
+                continue;
+            if (graph.find(node2) == graph.end() || graph[node2].incoming_edges.size() != 0 || graph[node2].outgoing_edges.size() != 1)
+                continue;
+
             // node1 and node 2 can be glued
             if (graph[node1].outgoing_edges.empty() && graph[node2].incoming_edges.empty() && graph[node2].outgoing_edges.find(node1) == graph[node2].outgoing_edges.end()) {
                 std::string node1_in, node2_out;
@@ -1796,10 +1874,8 @@ void Graph::connect_linear_and_tips_using_spanning_reads(std::string output, int
             outfile_all << ">" << get_contracted_name(node.first) << "_" << get_contracted_name(node.first) << "\n";
             outfile_all << seq << "\n";
         }
-        if (node.second.outgoing_edges.size() == 1) {
-            std::string n_out;
-            for (auto&& n : node.second.outgoing_edges)
-                n_out = n.first;
+        for (auto&& n : node.second.outgoing_edges) {
+            std::string n_out = n.first;
 
             if (graph[n_out].incoming_edges.size() != 1 || !graph[n_out].outgoing_edges.empty())
                 continue;
@@ -1810,12 +1886,9 @@ void Graph::connect_linear_and_tips_using_spanning_reads(std::string output, int
             traversed_nodes.insert(node.first);
             traversed_nodes.insert(reverse_complementary_node(n_out));
 
-            // find a valid linear edge
-            if (node.second.incoming_edges.empty()) {
-                std::string seq = node.second.outgoing_edges[n_out].at(0).sequence;
-                outfile_all << ">" << get_contracted_name(node.first) << "_" << get_contracted_name(n_out) << "\n";
-                outfile_all << seq << "\n";
-            }
+            std::string seq = node.second.outgoing_edges[n_out].at(0).sequence;
+            outfile_all << ">" << get_contracted_name(node.first) << "_" << get_contracted_name(n_out) << "\n";
+            outfile_all << seq << "\n";
         }
     }
     outfile_all.close();
