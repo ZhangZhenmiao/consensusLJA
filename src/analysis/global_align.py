@@ -145,7 +145,8 @@ with open(alignment_file, 'r') as file:
     for line in file:
         fields = line.split()
         contig_id = fields[0]
-        chromosome = fields[1][:-1]  # Remove the last character (A or B)
+        # chromosome = fields[1][:-1]  # Remove the last character (A or B)
+        chromosome = fields[1][:fields[1].find("_")]
         if chromosome[0] == "-":
             chromosome = chromosome[1:]
         contig_length = int(fields[2])
@@ -154,13 +155,16 @@ with open(alignment_file, 'r') as file:
         if chromosome not in chromosome_contig_dict or contig_length > chromosome_contig_dict[chromosome][1]:
             chromosome_contig_dict[chromosome] = (contig_id, contig_length)
 
+chr_names = set()
 chromosome_strand_dict = {}
 with open(alignment_file, 'r') as file:
     for line in file:
         strand = '+'
         fields = line.split()
         contig_id = fields[0]
-        chromosome = fields[1][:-1]  # Remove the last character (A or B)
+        # chromosome = fields[1][:-1]  # Remove the last character (A or B)
+        chr_names.add(fields[1] if fields[1][0] != '-' else fields[1][1:])
+        chromosome = fields[1][:fields[1].find("_")]
         if chromosome[0] == "-":
             chromosome = chromosome[1:]
             strand = '-'
@@ -188,8 +192,17 @@ chromosome_sequences = read_fasta(chromosome_sequence_file)
 # Step 5: Perform global alignments in parallel using ThreadPoolExecutor
 args_list = []
 for chromosome, (contig_id, _) in chromosome_contig_dict.items():
-    args_list.append(("chromosome_" + chromosome + 'A', contig_id, contig_sequences.get(contig_id, ""), chromosome_sequences.get("chromosome_" + chromosome + 'A', ""), chromosome_strand_dict[chromosome][1]))
-    args_list.append(("chromosome_" + chromosome + 'B', contig_id, contig_sequences.get(contig_id, ""), chromosome_sequences.get("chromosome_" + chromosome + 'B', ""), chromosome_strand_dict[chromosome][1]))
+    if chromosome not in ["chr3", "chr6", "chr8", "chr9", "chr11", "chr13", "chr16", "chr18", "chr21", "chr23"]:
+        continue
+    m_name = ""
+    p_name = ""
+    for name in chr_names:
+        if chromosome + "_mat" in name:
+            m_name = name
+        if chromosome + "_pat" in name:
+            p_name = name
+    args_list.append((m_name, contig_id, contig_sequences.get(contig_id, ""), chromosome_sequences.get(m_name, ""), chromosome_strand_dict[chromosome][1]))
+    args_list.append((p_name, contig_id, contig_sequences.get(contig_id, ""), chromosome_sequences.get(p_name, ""), chromosome_strand_dict[chromosome][1]))
 
 # Step 6: Run the alignments in parallel using multiprocessing Pool
 with Pool(processes=processes) as pool:

@@ -412,7 +412,7 @@ void MDBGRunner::simplifyMDBG() {
         graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
 
         removed_paths = 1;
-        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths);
+        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths, 2000000);
         std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
         graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
 
@@ -426,7 +426,7 @@ void MDBGRunner::simplifyMDBG() {
         graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
 
         removed_paths = 1;
-        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths);
+        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths, 2000000);
         std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
         graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
 
@@ -440,7 +440,7 @@ void MDBGRunner::simplifyMDBG() {
         graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
 
         removed_paths = 1;
-        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths);
+        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths, 2000000);
         std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
         graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
 
@@ -454,7 +454,7 @@ void MDBGRunner::simplifyMDBG() {
         graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
 
         removed_paths = 1;
-        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths);
+        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths, 2000000);
         std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
         graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
 
@@ -462,7 +462,7 @@ void MDBGRunner::simplifyMDBG() {
     }
 
     // Graph graph;
-    // graph.restart_from_dot(output + "/graph.remove_contained_r6.dot", output + "/graph.remove_contained_r6.fasta");
+    // graph.restart_from_dot(output + "/graph.remove_contained_r8.dot", output + "/graph.remove_contained_r8.fasta");
 
     std::cout << "[Connect] Connect linear and tips using spanning reads" << std::endl;
     graph.connect_linear_and_tips_using_spanning_reads(output + "/graph.spanning_reads", threads, reads);
@@ -556,6 +556,15 @@ void MDBGRunner::simplifyMDBG() {
         if (flag)
             break;
     }
+
+    removed_edges = 1;
+    while (removed_edges) {
+        graph.extract_unambiguous(removed_edges);
+        if (removed_edges > 0)
+            std::cout << "[RepairTip] Extracted " << removed_edges << " unambiguous paths" << std::endl;
+    }
+
+    graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_final", threads, removed_paths, 2000000);
 
     graph.write_graph(output + "/graph.final", 1000000, false, true);
     // graph.write_graph_colored_from_bam(output + "/graph.final" + ".color", output + "/graph.final" + ".ref.bam.stats");

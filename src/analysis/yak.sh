@@ -8,11 +8,11 @@ CHILD_ASM=/Poppy/zmzhang/cLJA_Project/Bonobo/clja_investigate_scaffolding/5_poli
 # 1) Build parental k-mer DBs (k defaults to 31; -b37 is a good general setting)
 if [ ! -f "pat.yak" ]; then
     echo "Building paternal k-mer DB..."
-    yak count -b37 -t32 -o pat.yak "$PAT_FA"
+    yak count -K1.5g -t32 -o pat.yak "$PAT_FA"
 fi
 if [ ! -f "mat.yak" ]; then
     echo "Building maternal k-mer DB..."
-    yak count -b37 -t32 -o mat.yak "$MAT_FA"
+    yak count -K1.5g -t32 -o mat.yak "$MAT_FA"
 fi
 
 # 2) Evaluate child assembly for switches

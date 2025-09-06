@@ -114,7 +114,7 @@ namespace multidbg {
         void write_graph_colored_from_bam(const std::string& prefix, const std::string& bam_processed);
         void write_graph_gfa(const std::string& prefix);
         void write_prefix_siffux_linear_edges(std::string output_dir, std::string jumbodbg, int threads, int k_mer, unsigned& num_glued, int extract_size = 5000, bool only_isolated = true);
-        void remove_contained_contigs_minimap(std::string output, int threads, unsigned& num_contained);
+        void remove_contained_contigs_minimap(std::string output, int threads, unsigned& num_contained, int extract_length = 1000000);
         void connect_linear_and_tips_using_spanning_reads(std::string output, int threads, std::string reads, double identity = 0.9);
         int get_num_nodes();
         std::string get_contracted_name(std::string node);
@@ -129,7 +129,8 @@ namespace multidbg {
         void remove_deadend_edges_L(unsigned& removed_edges, std::unordered_map<std::string, std::vector<std::string>> nodes2bc = std::unordered_map<std::string, std::vector<std::string>>());
         void merge_tips_into_edges(unsigned& num_tips, double ratio = 0.8, bool only_tips = false, bool merge_long_tips = false);
         void merge_tips_into_edges_further(unsigned& num_tips, double ratio = 0.8);
-        void merge_tips(unsigned& num_tips);
+        void merge_tips(unsigned& num_tips, bool conservative = false);
+        void extract_unambiguous(unsigned& num_paths);
         void merge_secondary_edges(unsigned& num_edges);
 
         void general_whirl_removal(unsigned& removed_whirls, bool simple_whirl = false, bool force = false);

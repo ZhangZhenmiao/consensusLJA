@@ -13,13 +13,13 @@ print(len(sequences_ori), len(sequences_rm))
 ems = []
 fig, ax = pyplot.subplots(1, 1)
 
-em = wotplot.DotPlotMatrix(sequences_ori, sequences_rm, 300, verbose=True)
+em = wotplot.DotPlotMatrix(sequences_ori, sequences_rm, 20, verbose=True)
 wotplot.viz_spy(
     em, markersize=0.01, ax=ax, title=f""
 )
-ax.set_xlabel(f"{sys.argv[1][:sys.argv[1].rfind('.')]} ({len(sequences_ori)/1e3:.0f} Kb)")
-ax.set_ylabel(f"{sys.argv[2][:sys.argv[2].rfind('.')]} ({len(sequences_rm)/1e3:.0f} Kb)")
+ax.set_xlabel(f"{sys.argv[1][:sys.argv[1].rfind('.')]} ({len(sequences_ori)/1e6:.2f} Mb)")
+ax.set_ylabel(f"{sys.argv[2][:sys.argv[2].rfind('.')]} ({len(sequences_rm)/1e6:.2f} Mb)")
         
 fig.set_size_inches(16, 16)
 fig.tight_layout()
-pyplot.savefig(sys.argv[3], bbox_inches='tight')
+pyplot.savefig(sys.argv[3], bbox_inches='tight', dpi=1200)

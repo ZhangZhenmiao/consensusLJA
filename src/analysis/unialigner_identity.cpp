@@ -104,7 +104,7 @@ int count_matches(std::string cigar) {
         if (std::isdigit(c))
             num = num * 10 + (c - '0');
         else {
-            if (c == '=')
+            if (c == '=' || c == 'M')
                 matches += num;
             num = 0;
         }
@@ -148,6 +148,7 @@ void unialigner_identity(const std::string& seq1, const std::string& seq2) {
 
     auto idts = calculate_identities_from_cigar(cigar);
     std::cout << "Unialigner identity: " << idts.first << " " << idts.second << std::endl;
+    std::cout << 1.0 * count_matches(cigar) / std::min(s1.size(), s2.size()) << std::endl;
 }
 
 // Read all contigs from a fasta into a map

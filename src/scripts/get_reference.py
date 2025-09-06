@@ -209,6 +209,8 @@ def calculate_identities(alignment, gap_threshold=10):
                 insertions += length
                 if length >= gap_threshold:
                     long_gaps += length
+            elif op == 7:  # = (match)
+                matches += length
             elif op == 2:  # D (deletion in reference)
                 deletions += length
                 if length >= gap_threshold:
@@ -385,8 +387,8 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     'alignment': alignment
                 })
 
-                # query_name = "*" + alignment.query_name.split('_')[0]
-                query_name = alignment.query_name.split('_')[1]
+                query_name = "*" + alignment.query_name.split('_')[0]
+                # query_name = alignment.query_name.split('_')[1]
                 if query_name not in high_identity_alignments:
                     high_identity_alignments[query_name] = []
                 

@@ -1730,7 +1730,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
     merge_non_branching_paths(true);
 }
 
-void Graph::remove_contained_contigs_minimap(std::string output, int threads, unsigned& num_contained) {
+void Graph::remove_contained_contigs_minimap(std::string output, int threads, unsigned& num_contained, int extract_length) {
     num_contained = 0;
     execute_command("mkdir -p " + output);
     std::string output_prefix_suffix = output + "/linear_prefix_and_suffix.fasta";
@@ -1749,7 +1749,6 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
 
     std::unordered_set<std::string> traversed_nodes;
     std::cout << "[Deduplicate] Write prefixes and suffixes of linear edges to fasta" << std::endl;
-    int extract_length = 1000000;
     for (auto&& node : graph) {
         print2node[get_contracted_name(node.first)] = node.first;
         if (traversed_nodes.find(node.first) != traversed_nodes.end())

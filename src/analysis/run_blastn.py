@@ -27,8 +27,8 @@ def merge_intervals(intervals):
 # Parse command line arguments
 # -----------------------------
 parser = argparse.ArgumentParser(description="BLAST contigs ≤1Mb against local NT and summarize results")
-parser.add_argument("fasta_files", nargs=3, help="Three FASTA files to process")
-parser.add_argument("prefixes", nargs=3, help="Prefix for each FASTA file, in same order")
+parser.add_argument("fasta_files", nargs=1, help="Three FASTA files to process")
+parser.add_argument("prefixes", nargs=1, help="Prefix for each FASTA file, in same order")
 parser.add_argument("-o", "--outdir", default="blast_output", help="Output folder")
 parser.add_argument("--db", default="/Poppy/zmzhang/database/nt", help="Local NT database path")
 parser.add_argument("--threads", type=int, default=8, help="Number of threads for BLAST")

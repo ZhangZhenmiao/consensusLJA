@@ -50,7 +50,7 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                 
                 high_identity_alignments[query_name].append({
                     'identity': identity,
-                    'ref_id': alignment.reference_name[alignment.reference_name.find('_')+1:] if alignment.is_forward else '-' + alignment.reference_name[alignment.reference_name.find('_')+1:],
+                    'ref_id': alignment.reference_name if alignment.is_forward else '-' + alignment.reference_name,
                     # 'ref_id': alignment.reference_name if alignment.is_forward else '-' + alignment.reference_name,
                     'ref_start': alignment.reference_start if alignment.is_forward else bamfile.get_reference_length(alignment.reference_name) - alignment.reference_end,
                     'ref_end': alignment.reference_end if alignment.is_forward else bamfile.get_reference_length(alignment.reference_name) - alignment.reference_start,
