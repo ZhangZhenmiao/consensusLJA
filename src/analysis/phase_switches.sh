@@ -18,4 +18,4 @@ else
     echo "Assembly alignment already exists, skipping..."
 fi
 
-/Poppy/zmzhang/Consensus_Assembly/cLJA/src/scripts/phase_switches.py $ref_gaf $out/asm.gaf $ref_dbg/graph.dot $out/asm.results
+/Poppy/zmzhang/Consensus_Assembly/cLJA/src/analysis/phase_switches.py $ref_gaf $out/asm.gaf $ref_dbg/graph.dot $out/asm.results

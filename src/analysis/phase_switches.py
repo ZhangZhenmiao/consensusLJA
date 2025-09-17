@@ -147,7 +147,7 @@ def get_switches(graphaligner, paths, dot, out):
                 if len(refs) > 0:
                     pathid += 1
                     majority = Most_Common(refs)
-                    if majority == "17": continue
+                    # if majority == "17": continue
                     previous = ""
                     for e in genome_path:
                         if e in edge2ref:

@@ -25,7 +25,7 @@ def calculate_heterozygosity(num_variants, aligned_bases):
 
 def main():
     if len(sys.argv) != 3:
-        print("Usage: python calculate_heterozygosity.py <paf_file> <vcf_file>")
+        print("Usage: python hetero.py <paf_file> <vcf_file>")
         sys.exit(1)
 
     paf_file = sys.argv[1]

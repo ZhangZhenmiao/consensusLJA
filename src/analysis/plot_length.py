@@ -95,6 +95,8 @@ def plot_single(ax, stats_file, contigs_fai, stats2_file, contigs2_fai, ref_fai,
 
     def chr_sort_key(c):
         m = re.search(r'\d+', c)
+        if c == "X": return 1000
+        if c == "Y": return 2000
         return int(m.group()) if m else float('inf')
 
     chromosomes_sorted = sorted(set(list(chr_contigs1.keys()) + list(chr_contigs2.keys())),
@@ -115,6 +117,7 @@ def plot_single(ax, stats_file, contigs_fai, stats2_file, contigs2_fai, ref_fai,
     hapA_added = False
     hapB_added = False
 
+    bar_height_max = 0
     for i, c in enumerate(chromosomes_sorted):
         slots = []
         if c != "Y": slots.append(('hapA', hapA_mb[i], "#4C72B0"))
@@ -142,7 +145,37 @@ def plot_single(ax, stats_file, contigs_fai, stats2_file, contigs2_fai, ref_fai,
                     if long_contigs:
                         # get the consensus bar total height (Mb)
                         bar_height = sum(clen/1e6 for rs, re_, clen in val)
-                        dot_start = bar_height + 5.0  # start 5 Mb above bar top
+                        if bar_height > bar_height_max:
+                            bar_height_max = bar_height
+
+    for i, c in enumerate(chromosomes_sorted):
+        slots = []
+        if c != "Y": slots.append(('hapA', hapA_mb[i], "#4C72B0"))
+        if c != "X": slots.append(('hapB', hapB_mb[i], "#55A868"))
+        slots.append(('cons1', chr_contigs1.get(c, []), "#C44E52"))
+        slots.append(('cons2', chr_contigs2.get(c, []), "#8172B3"))
+
+        n_slots = len(slots)
+        slot_width = total_width / n_slots
+        start_pos = x[i] - total_width / 2
+
+        for j, (name, val, color) in enumerate(slots):
+            if 'cons' in name:
+                bottom = 0.0
+                for rs, re_, clen in sorted(val, key=lambda t: (t[0], t[1])):
+                    ax.bar(start_pos + j*slot_width, clen/1e6, slot_width, bottom=bottom,
+                           color=color, edgecolor='white', linewidth=0.3,
+                           label=name if (i==0 and j==0 and name=='cons1') else None)
+                    bottom += clen/1e6
+
+                # --- Add dots for contig counts (only if add_dots=True) ---
+                if add_dots and len(val) > 0:
+                    # count only contigs longer than 1 Mb
+                    long_contigs = [clen for rs, re_, clen in val if clen > 1e6]
+                    if long_contigs:
+                        # get the consensus bar total height (Mb)
+                        # bar_height = sum(clen/1e6 for rs, re_, clen in val)
+                        dot_start = bar_height_max + 5.0  # start 5 Mb above bar top
                         dot_spacing = 5.0             # vertical spacing (Mb)
 
                         for k in range(len(long_contigs)):
@@ -155,13 +188,13 @@ def plot_single(ax, stats_file, contigs_fai, stats2_file, contigs2_fai, ref_fai,
             else:
                 label = None
                 if name=='hapA' and not hapA_added:
-                    label='Haplome 1'; hapA_added=True
+                    label='Maternal Haplome'; hapA_added=True
                 if name=='hapB' and not hapB_added:
-                    label='Haplome 2'; hapB_added=True
+                    label='Paternal Haplome'; hapB_added=True
                 ax.bar(start_pos + j*slot_width, val, slot_width, color=color, edgecolor='white', linewidth=0.3, label=label)
 
     # Dummy bars for consensus legend
-    ax.bar(0,0,color="#C44E52", label='cLJA', edgecolor='white')
+    ax.bar(0,0,color="#C44E52", label='MGA', edgecolor='white')
     ax.bar(0,0,color="#8172B3", label='hifiasm', edgecolor='white')
     ax.set_xticks(x)
     ax.set_xticklabels([f"chr{c}" for c in chromosomes_sorted], fontsize=10)
