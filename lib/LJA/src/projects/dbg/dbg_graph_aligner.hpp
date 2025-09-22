@@ -57,6 +57,8 @@ namespace dbg {
 
         std::vector<hashing::MovingKWH> extractVertexPositions(const Sequence& seq, size_t max = size_t(-1)) const {
             std::vector<hashing::MovingKWH> res;
+            if (seq.size() < hasher().getK())
+                return std::move(res);
             for (const hashing::MovingKWH& kwh : hasher().kmers(seq)) {
                 if (containsVertex(kwh.hash())) {
                     res.emplace_back(kwh);

@@ -199,6 +199,8 @@ namespace dbg {
 
     void DbgConstructionHelper::processFullEdgeSequence(SparseDBG& dbg, KmerIndex& index, const Sequence& full_seq) const {
         std::vector<hashing::MovingKWH> kmers = index.extractVertexPositions(full_seq);
+        if (kmers.size() == 0)
+            return;
         VERIFY(kmers.front().getPos() == 0 && kmers.back().getPos() == full_seq.size() - hasher().getK());
         std::vector<VertexId> vertices;
         for (auto& kmer : kmers) {

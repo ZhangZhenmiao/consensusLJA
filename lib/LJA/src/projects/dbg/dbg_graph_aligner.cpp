@@ -56,7 +56,9 @@ dbg::GraphPath KmerIndex::align(const Sequence &seq, const std::string &name) co
     size_t k = hasher().getK();
     dbg::GraphPath res;
     if (kmers.empty()) {
-        for(const hashing::MovingKWH &kwh : hasher().kmers(seq)) {
+        if(seq.size() < hasher().getK())
+            return {};
+        for (const hashing::MovingKWH& kwh : hasher().kmers(seq)) {
             if (isAnchor(kwh.hash())) {
                 dbg::EdgePosition pos = getAnchor(kwh);
                 VERIFY(kwh.getPos() < pos.pos);
@@ -77,30 +79,31 @@ dbg::GraphPath KmerIndex::align(const Sequence &seq, const std::string &name) co
     if (kmers.front().getPos() > 0) {
         dbg::Vertex &rcstart = prestart->rc();
         if (!rcstart.hasOutgoing(seq[kmers.front().getPos() - 1] ^ 3)) {
-            std::cout << "No incoming for start vertex" << std::endl << seq << std::endl <<
-                      kmers.front().getPos() << " " << seq[kmers.front().getPos() - 1] << std::endl
-                      << kmers.front().getSeq() << std::endl;
-            VERIFY(false);
+            // std::cout << "No incoming for start vertex" << std::endl << seq << std::endl <<
+            //           kmers.front().getPos() << " " << seq[kmers.front().getPos() - 1] << std::endl
+            //           << kmers.front().getSeq() << std::endl;
+            return {};
         }
         dbg::Edge &rcedge = rcstart.getOutgoing(seq[kmers.front().getPos() - 1] ^ 3);
-        dbg::Edge &edge = rcedge.rc();
-        VERIFY(edge.truncSize() >= kmers.front().getPos());
+        dbg::Edge& edge = rcedge.rc();
+        if (edge.truncSize() < kmers.front().getPos())
+            return {};
         Segment<dbg::Edge> seg(edge, edge.truncSize() - kmers.front().getPos(), edge.truncSize());
         res += seg;
     }
     size_t cpos = kmers.front().getPos() + k;
     while(cpos < seq.size()) {
         if(seq.Subseq(cpos -k, cpos) != prestart->getSeq() || !prestart->hasOutgoing(seq[cpos])) {
-            std::cout << "No outgoing for middle\n" << seq << "\n" << cpos << " " << prestart->getInnerId() <<
-                      " " << prestart->outDeg() << "\n" << seq.Subseq(cpos -k, cpos) << "\n" << prestart->getSeq() << "\n" <<
-                      size_t(seq[cpos]) << std::endl;
-            std::cout << (seq.Subseq(cpos -k, cpos) != prestart->getSeq()) << " " <<  !prestart->hasOutgoing(seq[cpos]) << std::endl;
-            std::cout << hashing::MovingKWH(hasher(), seq.Subseq(cpos - k, cpos), 0).hash() << " " <<
-                      hashing::MovingKWH(hasher(), prestart->getSeq(), 0).hash() << std::endl;
-            for(dbg::Edge &tmp : *prestart) {
-                std::cout << tmp.getInnerId() << " " << tmp.truncSize() << std::endl;
-            }
-            VERIFY(false);
+            // std::cout << "No outgoing for middle\n" << seq << "\n" << cpos << " " << prestart->getInnerId() <<
+            //           " " << prestart->outDeg() << "\n" << seq.Subseq(cpos -k, cpos) << "\n" << prestart->getSeq() << "\n" <<
+            //           size_t(seq[cpos]) << std::endl;
+            // std::cout << (seq.Subseq(cpos -k, cpos) != prestart->getSeq()) << " " <<  !prestart->hasOutgoing(seq[cpos]) << std::endl;
+            // std::cout << hashing::MovingKWH(hasher(), seq.Subseq(cpos - k, cpos), 0).hash() << " " <<
+            //           hashing::MovingKWH(hasher(), prestart->getSeq(), 0).hash() << std::endl;
+            // for(dbg::Edge &tmp : *prestart) {
+            //     std::cout << tmp.getInnerId() << " " << tmp.truncSize() << std::endl;
+            // }
+            return {};
         }
         dbg::Edge &next = prestart->getOutgoing(seq[cpos]);
         size_t len = std::min<size_t>(next.truncSize(), seq.size() - cpos);
@@ -144,7 +147,9 @@ std::vector<ag::AlignmentChain<dbg::Edge, dbg::Edge>> KmerIndex::oldEdgeAlign(db
     Sequence seq = contig.getSeq();
     std::vector<ag::AlignmentChain < dbg::Edge, dbg::Edge>> res;
     size_t k = hasher().getK();
-    for(const hashing::MovingKWH &kwh : hasher().kmers(seq, 0, seq.size() - hasher().getK())) {
+    if (seq.size() < hasher().getK())
+        return std::move(res);
+    for (const hashing::MovingKWH& kwh : hasher().kmers(seq, 0, seq.size() - hasher().getK())) {
         if (res.empty() || kwh.getPos() >= res.back().seg_from.right) {
             dbg::Edge *edge = nullptr;
             size_t pos = 0;

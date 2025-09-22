@@ -44,8 +44,10 @@ findJunctions(logging::Logger &logger, const std::vector<Sequence> &disjointigs,
     logger.info() << "Filled " << bits.first << " bits out of " << bits.second << std::endl;
     logger.info() << "Finished filling bloom filter. Selecting junctions." << std::endl;
     ParallelRecordCollector<std::pair<hashing::htype, bool>> junctions(threads);
-    std::function<void(size_t, const Sequence &)> junk_task = [&filter, &hasher, &junctions](size_t pos, const Sequence & seq) {
-        for(const MovingKWH &kmer : hasher.kmers(seq)) {
+    std::function<void(size_t, const Sequence&)> junk_task = [&filter, &hasher, &junctions](size_t pos, const Sequence& seq) {
+        if(seq.size() < hasher.getK())
+            return;
+        for (const MovingKWH& kmer : hasher.kmers(seq)) {
             if (kmer.isFirst() || kmer.isLast()) {
                 junctions.emplace_back(kmer.hash(), kmer.getSeq() == kmer.getSeq().rc());
             } else {
