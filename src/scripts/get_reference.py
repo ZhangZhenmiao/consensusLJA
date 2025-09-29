@@ -354,7 +354,35 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     "CM075340.1": "Chr11",
                     "CM075341.1": "Chr12",
                     "CM075342.1": "Chr13",
-                    "CM075343.1": "Chr14"   
+                    "CM075343.1": "Chr14",
+                    "NC_091245.1": "Chr1",
+                    "NC_091246.1": "Chr2",
+                    "NC_091247.1": "Chr3",
+                    "NC_091248.1": "Chr4",
+                    "NC_091249.1": "Chr5",
+                    "NC_091250.1": "Chr6",
+                    "NC_091251.1": "Chr7",
+                    "NC_091252.1": "Chr8",
+                    "NC_091253.1": "Chr9",
+                    "NC_091254.1": "Chr10",
+                    "NC_091255.1": "Chr11",
+                    "NC_091256.1": "Chr12",
+                    "NC_091257.1": "Chr13",
+                    "NC_091258.1": "Chr14",
+                    "NC_091259.1": "Chr15",
+                    "NC_091260.1": "Chr16",
+                    "NC_091261.1": "Chr17",
+                    "NC_091262.1": "Chr18",
+                    "NC_091263.1": "Chr19",
+                    "NC_091264.1": "Chr20",
+                    "NC_091265.1": "Chr21",
+                    "NC_091266.1": "Chr22",
+                    "NC_091267.1": "Chr23",
+                    "NC_091268.1": "Chr24",
+                    "NC_091269.1": "Chr25",
+                    "NC_091270.1": "Chr26",
+                    "NC_091271.1": "Y",
+                    "NC_091727.1": "X"
                 }
                 
                 query_name = alignment.query_name.split('_')[0]
@@ -387,8 +415,8 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     'alignment': alignment
                 })
 
-                # query_name = "*" + alignment.query_name.split('_')[0]
-                query_name = alignment.query_name.split('_')[1]
+                query_name = "*" + alignment.query_name.split('_')[0]
+                # query_name = alignment.query_name.split('_')[1]
                 if query_name not in high_identity_alignments:
                     high_identity_alignments[query_name] = []
                 
@@ -546,7 +574,7 @@ def main():
             print_merged_spans(f"{chrom}M+{chrom}P", all_spans)
 
     # Step 4: Print special chromosomes (X, Y, etc.)
-    for ref_id in sorted(special_refs.keys(), key=lambda x: (x != 'X', x != 'Y', x)):
+    for ref_id in sorted(special_refs.keys(), key=lambda x: (x != 'X', x != 'Y', 100+int(x[4:]) if "-Chr" in x else (int (x[3:]) if "Chr" in x else -1000000))):
         spans = []
         print(f"\n=== Reference: {ref_id} ===")
         for query_name, aln, ref_span, query_span in sorted(special_refs[ref_id], key=lambda x: x[1]['ref_start']):

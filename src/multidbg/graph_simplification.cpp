@@ -880,8 +880,14 @@ void Graph::merge_tips_into_edges_further(unsigned& num_tips, double ratio) {
         if (graph[out_node_non_tip].outgoing_edges.size() != 0) {
             double sim = matches_by_edlib(prefix_tip, prefix_edge);
             std::cout << "[RepairTip] Check tip " << node.first << "->" << tip << " multi " << tip_edge.multiplicity << " len " << tip_edge.length << " to " << node.first << "->" << non_tip << "->" << out_node_non_tip << " multi " << path.multiplicity << " len " << path.length << ": sim " << sim << std::endl;
-            if (sim < ratio)
-                continue;
+            if (sim < ratio) {
+                if (tip_edge.length < path.length && tip_edge.length <= 1000000) {
+                    if (sim < 0.6)
+                        continue;
+                }
+                else
+                    continue;
+            }
 
             nodes_to_remove.insert(tip);
             nodes_to_remove.insert(reverse_complementary_node(tip));
@@ -1488,16 +1494,18 @@ void Graph::general_whirl_removal(unsigned& removed_whirls, bool simple_whirl, b
                 continue;
 
             std::string prev_node = node.first;
-            // successor_node has unambiguous outgoing edge
-            while (graph[successor_node].outgoing_edges.size() == 1) {
+            // successor_node has unambiguous outgoing edge, allow self-loop if force
+            while ((graph[successor_node].outgoing_edges.size() == 1 && graph[successor_node].outgoing_edges.find(successor_node) == graph[successor_node].outgoing_edges.end()) || (force && graph[successor_node].outgoing_edges.size() == 2 && graph[successor_node].outgoing_edges.find(successor_node) != graph[successor_node].outgoing_edges.end())) {
                 // add successor_node to the unambiguous path
                 if (!this->add_node_to_path(unambiguous_path, successor_node))
                     break;
 
                 std::string node_after_successor;
                 for (auto&& n : graph[successor_node].outgoing_edges) {
-                    node_after_successor = n.first;
+                    if (n.first != successor_node)
+                        node_after_successor = n.first;
                 }
+                assert(!node_after_successor.empty());
                 // skip bulges
                 if (this->graph[successor_node].outgoing_edges[node_after_successor].size() > 1)
                     break;
@@ -1514,7 +1522,7 @@ void Graph::general_whirl_removal(unsigned& removed_whirls, bool simple_whirl, b
                     break;
 
                 if (check_non_branching(node_after_successor))
-                    continue;
+                    break;
 
                 // find a cyclic unambiguous path
                 if (node_after_successor == node.first) {
@@ -1782,6 +1790,17 @@ bool Graph::get_reverse_path(Path& path, Path& path_reverse) {
                     break;
                 }
             }
+            
+            if (!find_reverse) {
+                for (int e = 0; e < edges.size(); ++e) {
+                    if (edges.at(e).sequence.size() == seq_reverse.size() && edges.at(e).sequence != seq_forward) {
+                        bulge_leg = e;
+                        find_reverse = true;
+                        break;
+                    }
+                }
+            }
+
             if (!find_reverse) {
                 flag = false;
                 throw std::runtime_error("Error: reverse edge does not exist");
@@ -2509,6 +2528,8 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
         // palindromic complex/simple bulge
         if (p2_reverse.nodes == p1.nodes) {
             if (p1.nodes.size() > 2) {
+                if (p1.length >= 10000000 || p2.length >= 10000000) // skip too long paths
+                    continue;
                 int index_to_remove = -1;
                 double min_multi = 100000;
                 for (int i = 0; i + 1 < p1.nodes.size(); ++i) {
@@ -2567,6 +2588,36 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
                 while (graph.find(new_node) != graph.end() || graph.find(new_node_rc) != graph.end()) {
                     new_node += "1";
                     new_node_rc += "1";
+                }
+
+                if (p1.nodes[0].find('+') != std::string::npos) {
+                    std::string n_s = p1.nodes[0].substr(0, p1.nodes[0].find('+')) + "1";
+                    std::string n_e = p1.nodes[0].substr(p1.nodes[0].rfind('+') + 1) + "1";
+                    while (graph.find(n_s) != graph.end()) {
+                        n_s += "1";
+                    }
+                    while (graph.find(n_e) != graph.end()) {
+                        n_e += "1";
+                    }
+                    std::string n_s_r = n_s.at(0) == '-' ? n_s.substr(1) : "-" + n_s;
+                    std::string n_e_r = n_e.at(0) == '-' ? n_e.substr(1) : "-" + n_e;
+                    new_node = n_s + "+" + n_e;
+                    new_node_rc = n_e_r + "+" + n_s_r;
+                }
+
+                if (p1.nodes[0].find('_') != std::string::npos) {
+                    std::string n_s = p1.nodes[0].substr(0, p1.nodes[0].find('_')) + "1";
+                    std::string n_e = p1.nodes[0].substr(p1.nodes[0].rfind('_') + 1) + "1";
+                    while (graph.find(n_s) != graph.end()) {
+                        n_s += "1";
+                    }
+                    while (graph.find(n_e) != graph.end()) {
+                        n_e += "1";
+                    }
+                    std::string n_s_r = n_s.at(0) == '-' ? n_s.substr(1) : "-" + n_s;
+                    std::string n_e_r = n_e.at(0) == '-' ? n_e.substr(1) : "-" + n_e;
+                    new_node = n_s + "_" + n_e;
+                    new_node_rc = n_e_r + "_" + n_s_r;
                 }
 
                 nodeid2Rev[new_node] = new_node_rc;
@@ -3303,6 +3354,10 @@ void Graph::extract_unambiguous(unsigned& num_paths) {
             continue;
 
         if (final_tip == n.first || final_tip == reverse_complementary_node(n.first))
+            continue;
+
+        // repeat between two chromosomes cannot be too large
+        if (graph[out_node].outgoing_edges[final_tip].at(0).sequence.size() >= 5000000)
             continue;
 
         n1.push_back(n.first);
