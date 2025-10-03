@@ -2,6 +2,7 @@
 import argparse
 import sys
 import os
+import re
 
 def classify_relationship(aln):
     """Return containment/overlap classification for query and ref."""
@@ -19,27 +20,17 @@ def classify_relationship(aln):
 
     # overlap definition
     overlap = (
-        aln["aln_length_query"] / aln["length_query"] >= 0.2
-        and aln["aln_length_ref"] / aln["length_ref"] >= 0.2
+        (aln["aln_length_query"] / aln["length_query"] >= 0.2
+        or aln["aln_length_ref"] / aln["length_ref"] >= 0.2)
         and identity >= 50
     )
 
-    if query_contained:
+    if query_contained or ref_contained:
         return "Contained"
     elif overlap:
         return "Overlap"
     else:
         return "None"
-
-def generate_paf(query_fasta, ref_fasta, output_paf, threads=8, minimap2_preset="asm20"):
-    """
-    Generate paf file from query vs reference using minimap2.
-    """
-    cmd = (
-        f"minimap2 -t {threads} -x {minimap2_preset} --eqx -Y -p 0.1 {ref_fasta} {query_fasta} > {output_paf}"
-    )
-    if os.system(cmd) != 0:
-        raise RuntimeError("paf generation failed")
 
 def parse_paf_line(line):
     """
@@ -64,8 +55,12 @@ def parse_paf_line(line):
     }
     # Optional tags
     for f in fields[12:]:
-        tag, typ, val = f.split(":")
-        paf[tag] = val
+        try:
+            tag, typ, val = f.split(":")
+            paf[tag] = val
+        except ValueError:
+            print(f"Warning: could not parse optional field: {f} for {line.strip()}", file=sys.stderr)
+            continue
     return paf
 
 def read_fasta_lengths(fasta_path):
@@ -94,19 +89,49 @@ def read_fasta_lengths(fasta_path):
 
 
 def calculate_identity(paf_entry, gap_threshold=10):
-    """
-    Identity = matches / aln_len.
-    Optionally could parse 'cg:Z:' tag for CIGAR to refine.
-    """
-    matches = paf_entry["matches"]
-    aln_len = paf_entry["aln_len"]
-    if aln_len == 0:
+    cigar_string = paf_entry["cg"]
+    if not cigar_string:
         return 0.0, 0.0
-    identity = matches / aln_len
 
-    # if we want no-gap identity, need CIGAR string (cg:Z:), otherwise fall back to same value
-    identity_nogap = identity
-    return identity * 100, identity_nogap * 100
+    # regex to parse cigar string into (length, op) pairs
+    tokens = re.findall(r'(\d+)([MIDNSHP=XB])', cigar_string)
+
+    matches = 0
+    mismatches = 0
+    insertions = 0
+    deletions = 0
+    long_gaps_i = 0
+    long_gaps_d = 0
+
+    for length_str, op in tokens:
+        length = int(length_str)
+        if op == "=":  # exact match
+            matches += length
+        elif op == "X":  # mismatch
+            mismatches += length
+        elif op == "I":  # insertion
+            insertions += length
+            if length >= gap_threshold:
+                long_gaps_i += length
+        elif op == "D":  # deletion
+            deletions += length
+            if length >= gap_threshold:
+                long_gaps_d += length
+        elif op == "M":  
+            # M = alignment match (could be match or mismatch, depends on aligner)
+            # If you want stricter accounting, treat as matches+mismatches, 
+            # but here we'll lump them as matches (since minimap2 with --eqx uses =/X)
+            matches += length  
+
+    aligned_len = matches + mismatches
+    total_bases = aligned_len + insertions + deletions
+
+    pid = matches / total_bases if total_bases > 0 else 0.0
+
+    total_bases_nogap = total_bases - long_gaps_i - long_gaps_d
+    pid_nogap = matches / total_bases_nogap if total_bases_nogap > 0 else 0.0
+
+    return pid * 100, pid_nogap * 100
 
 def filter_alignments_with_identity(paf_file_path, threshold=0):
     high_identity_alignments = {}
@@ -140,6 +165,8 @@ def filter_alignments_with_identity(paf_file_path, threshold=0):
                 'identity_nogap': identity_nogap,
                 'query_id': query_name1,
                 'ref_id': ref_name1,
+                'query_name': paf["query_name"],
+                'ref_name': paf["ref_name"],
                 'ref_start': paf["ref_start"]/lengths[paf["ref_name"]]*100 if paf["strand"] == "+" else (lengths[paf["ref_name"]] - paf["ref_end"])/lengths[paf["ref_name"]]*100,
                 'ref_end': paf["ref_end"]/lengths[paf["ref_name"]]*100 if paf["strand"] == "+" else (lengths[paf["ref_name"]] - paf["ref_start"])/lengths[paf["ref_name"]]*100,
                 'query_start': paf["query_start"]/lengths[paf["query_name"]]*100,
@@ -155,24 +182,49 @@ def filter_alignments_with_identity(paf_file_path, threshold=0):
             high_identity_alignments[query_name1].append(aln)
 
             status = classify_relationship(aln)
-            key = (aln["query_id"], aln["ref_id"], status)
+            key = min(aln["query_id"], aln["ref_id"])
 
-            # keep only the best identity per (query, ref, status)
-            if key not in best_hits or aln["identity"] > best_hits[key]["identity"]:
+            # keep only the longest aln length per (query, ref)
+            if key not in best_hits or max(aln["aln_length_query"], aln["aln_length_ref"]) > max(best_hits[key]["aln_length_query"], best_hits[key]["aln_length_ref"]):
                 best_hits[key] = aln
 
     # output summary
-    print("Query\tQuery Len\tQuery Aln Len\tQuery Start\tQuery End\tRef\tRef strand\tRef Len\tRef Aln Len\tRef Start\tRef End\tIdentity\tStatus")
-    for (query, ref, status), aln in best_hits.items():
+    print("Query\tQuery Len\tQuery Aln Len\tQuery Start\tQuery End\tRef\tRef Len\tRef Aln Len\tRef Start\tRef End\tIdentity\tStatus")
+    for key, aln in best_hits.items():
+        status = classify_relationship(aln)
+        if status == "None":
+            continue
+        if aln["strand"] == "reverse":
+            aln['ref_id'] = aln['ref_name'].split('_')[1]
         print(
-            f'{query}\t{aln["length_query"]}\t{aln["aln_length_query"]}\t'
+            f'{aln["query_id"]}\t{aln["length_query"]}\t{aln["aln_length_query"]}\t'
             f'{aln["query_start"]:.0f}\t{aln["query_end"]:.0f}\t'
-            f'{ref}\t{aln["strand"]}\t{aln["length_ref"]}\t{aln["aln_length_ref"]}\t'
+            f'{aln["ref_id"]}\t{aln["length_ref"]}\t{aln["aln_length_ref"]}\t'
             f'{aln["ref_start"]:.0f}\t{aln["ref_end"]:.0f}\t'
             f'{aln["identity"]:.2f}\t{status}'
         )
 
     return high_identity_alignments
+
+def generate_paf(query_fasta, ref_fasta, output_paf, threads=8, minimap2_preset="asm20", use_P=False, use_X=False):
+    """
+    Generate paf file from query vs reference using minimap2.
+    """
+    extra_opts = ""
+    if use_P and not use_X:
+        extra_opts = "-p 0.1"
+    elif use_X and not use_P:
+        extra_opts = "-X"
+    elif use_P and use_X:
+        extra_opts = "-p 0.1 -X"
+
+    cmd = (
+        f"minimap2 -t {threads} -x {minimap2_preset} -c --eqx -Y {extra_opts} "
+        f"{ref_fasta} {query_fasta} > {output_paf}"
+    )
+    if os.system(cmd) != 0:
+        raise RuntimeError("paf generation failed")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -180,12 +232,15 @@ if __name__ == "__main__":
     parser.add_argument("--ref", required=True, help="Reference FASTA file")
     parser.add_argument("--paf", required=True, help="Output paf file")
     parser.add_argument("--threads", type=int, default=8, help="Number of threads")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-P", action="store_true", help="Use minimap2 with -p 0.1")
+    group.add_argument("-X", action="store_true", help="Use minimap2 with -X")
     args = parser.parse_args()
 
     if not os.path.exists(args.paf):
-        generate_paf(args.query, args.ref, args.paf, threads=args.threads)
-    
-    global lengths 
+        generate_paf(args.query, args.ref, args.paf, threads=args.threads, use_P=args.P, use_X=args.X)
+
+    global lengths
     lengths = read_fasta_lengths(args.ref)
 
     filter_alignments_with_identity(args.paf, threshold=0)

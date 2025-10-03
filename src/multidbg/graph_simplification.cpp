@@ -3357,16 +3357,39 @@ void Graph::extract_unambiguous(unsigned& num_paths) {
             continue;
 
         // repeat between two chromosomes cannot be too large
-        if (graph[out_node].outgoing_edges[final_tip].at(0).sequence.size() >= 5000000)
-            continue;
+        // if (graph[out_node].outgoing_edges[final_tip].at(0).sequence.size() >= 5000000)
+        //     continue;
 
-        n1.push_back(n.first);
-        n2.push_back(out_node);
-        n3.push_back(final_tip);
+        int insert_pos = -1;
+        for (int i = 0; i < n2.size();++i) {
+            if (n2.at(i) == out_node) {
+                if (graph[n1.at(i)].outgoing_edges[n2.at(i)].at(0).sequence.size() >= graph[n.first].outgoing_edges[out_node].at(0).sequence.size()) {
+                    continue;
+                }
+                else {
+                    insert_pos = i;
+                    break;
+                }
+            }
+        }
 
-        n1.push_back(reverse_complementary_node(final_tip));
-        n2.push_back(reverse_complementary_node(out_node));
-        n3.push_back(reverse_complementary_node(n.first));
+        if (insert_pos == -1) {
+            n1.push_back(n.first);
+            n2.push_back(out_node);
+            n3.push_back(final_tip);
+
+            n1.push_back(reverse_complementary_node(final_tip));
+            n2.push_back(reverse_complementary_node(out_node));
+            n3.push_back(reverse_complementary_node(n.first));
+        }
+        else {
+            n1.insert(n1.begin() + insert_pos, n.first);
+            n2.insert(n2.begin() + insert_pos, out_node);
+            n3.insert(n3.begin() + insert_pos, final_tip);
+            n1.insert(n1.begin() + insert_pos + 1, reverse_complementary_node(final_tip));
+            n2.insert(n2.begin() + insert_pos + 1, reverse_complementary_node(out_node));
+            n3.insert(n3.begin() + insert_pos + 1, reverse_complementary_node(n.first));
+        }
     }
 
     int cnt_new_node = 1000000;
@@ -3415,6 +3438,18 @@ void Graph::extract_unambiguous(unsigned& num_paths) {
             e_reverse.path_nodes_in_original_graph.push_back(reverse_complementary_node(node1));
             graph[reverse_complementary_node(new_end_name)].outgoing_edges[reverse_complementary_node(node1)].push_back(e_reverse);
             graph[reverse_complementary_node(node1)].incoming_edges[reverse_complementary_node(new_end_name)].push_back(e_reverse);
+
+            // delete shared edge if it is long, as in this case it is unlikely a long repeat between two chromosomes
+            if (graph[node2].outgoing_edges[node3].at(0).sequence.size() >= 5000000) {
+                graph[node2].outgoing_edges.erase(node3);
+                graph[node3].incoming_edges.erase(node2);
+
+                graph[reverse_complementary_node(node3)].outgoing_edges.erase(reverse_complementary_node(node2));
+                graph[reverse_complementary_node(node2)].incoming_edges.erase(reverse_complementary_node(node3));
+
+                graph.erase(node3);
+                graph.erase(reverse_complementary_node(node3));
+            }
 
             std::cout << "[RepairTip] " << "Untangle path " << node1 << " -> " << node2 << " -> " << node3 << " to " << node1 << " -> " << new_end_name << " length " << p.sequence.size() << std::endl;
             std::cout << "[RepairTip] " << "Untangle path " << reverse_complementary_node(node3) << " -> " << reverse_complementary_node(node2) << " -> " << reverse_complementary_node(node1) << " to " << reverse_complementary_node(new_end_name) << " -> " << reverse_complementary_node(node1) << " length " << p_r.sequence.size() << std::endl;

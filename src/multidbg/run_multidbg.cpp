@@ -462,7 +462,7 @@ void MDBGRunner::simplifyMDBG() {
     }
 
     // Graph graph;
-    // graph.restart_from_dot(output + "/graph.remove_contained_r8.dot", output + "/graph.remove_contained_r8.fasta");
+    // graph.restart_from_dot(output + "/graph.remove_contained_r6.dot", output + "/graph.remove_contained_r6.fasta");
 
     std::cout << "[Connect] Connect linear and tips using spanning reads" << std::endl;
     graph.connect_linear_and_tips_using_spanning_reads(output + "/graph.spanning_reads", threads, reads);
@@ -562,6 +562,96 @@ void MDBGRunner::simplifyMDBG() {
         graph.extract_unambiguous(removed_edges);
         if (removed_edges > 0)
             std::cout << "[RepairTip] Extracted " << removed_edges << " unambiguous paths" << std::endl;
+    }
+
+    while (true) {
+        bool flag = true;
+
+        removed_paths = 1;
+        while (removed_paths) {
+            graph.resolving_bulge_with_two_multi_edge_paths(removed_paths, 5, 0.9, true, 2, true, true);
+            if (removed_paths)
+                flag = false;
+            if (removed_paths > 0)
+                std::cout << "[Detour] Removed " << removed_paths << " paths" << std::endl;
+        }
+
+        decoupled = 1;
+        while (decoupled) {
+            graph.resolve_edges_in_reverse_complement(decoupled);
+            if (decoupled)
+                flag = false;
+            if (decoupled > 0)
+                std::cout << "[Decouple] Decoupled " << decoupled << " strands" << std::endl;
+        }
+
+        decoupled = 1;
+        while (decoupled) {
+            graph.resolving_complex_palindromic_bulges(decoupled, 8);
+            if (decoupled)
+                flag = false;
+            if (decoupled > 0)
+                std::cout << "[Decouple] Removed " << decoupled << " complex palindromic bulges" << std::endl;
+        }
+
+        removed_tips = 1;
+        while (removed_tips) {
+            graph.merge_tips_into_edges(removed_tips, 0.8, false, true);
+            if (removed_tips)
+                flag = false;
+            if (removed_tips > 0)
+                std::cout << "[RepairTip] Merged " << removed_tips << " tips to edges" << std::endl;
+        }
+
+        removed_tips = 1;
+        while (removed_tips) {
+            graph.merge_tips(removed_tips);
+            if (removed_tips)
+                flag = false;
+            if (removed_tips > 0)
+                std::cout << "[MergeTip] Merged " << removed_tips << " tips to tips" << std::endl;
+        }
+
+        removed_tips = 1;
+        while (removed_tips) {
+            graph.merge_tips_into_edges_further(removed_tips);
+            if (removed_tips)
+                flag = false;
+            if (removed_tips > 0)
+                std::cout << "[RepairTip] Merged " << removed_tips << " tips to paths" << std::endl;
+        }
+
+        removed_whirls = 1;
+        while (removed_whirls) {
+            graph.general_whirl_removal(removed_whirls, false, true);
+            graph.merge_non_branching_paths(true);
+            if (removed_whirls)
+                flag = false;
+            if (removed_whirls > 0)
+                std::cout << "[Dewhirl] Removed " << removed_whirls << " whirls" << std::endl;
+        }
+
+        removed_bulges = 1;
+        while (removed_bulges) {
+            graph.multi_bulge_removal(removed_bulges);
+            graph.merge_non_branching_paths(true);
+            if (removed_bulges)
+                flag = false;
+            if (removed_bulges > 0)
+                std::cout << "[Detour] Removed " << removed_bulges << " bulges" << std::endl;
+        }
+
+        removed_edges = 1;
+        while (removed_edges) {
+            graph.merge_secondary_edges(removed_edges);
+            if (removed_edges)
+                flag = false;
+            if (removed_edges > 0)
+                std::cout << "[RepairTip] Merged " << removed_edges << " deadend edges" << std::endl;
+        }
+
+        if (flag)
+            break;
     }
 
     graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_final", threads, removed_paths, 2000000);
