@@ -2528,8 +2528,8 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
         // palindromic complex/simple bulge
         if (p2_reverse.nodes == p1.nodes) {
             if (p1.nodes.size() > 2) {
-                if (p1.length >= 10000000 || p2.length >= 10000000) // skip too long paths
-                    continue;
+                // if (p1.length >= 10000000 || p2.length >= 10000000) // skip too long paths
+                //     continue;
                 int index_to_remove = -1;
                 double min_multi = 100000;
                 for (int i = 0; i + 1 < p1.nodes.size(); ++i) {
@@ -2537,14 +2537,14 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
                     std::string node2 = p1.nodes[i + 1];
                     bool flag_outgoing = false;
                     for (auto&& e : graph[node1].outgoing_edges) {
-                        if (e.first != node2) {
+                        if (e.first != node2 && e.first != node1) {
                             flag_outgoing = true;
                             break;
                         }
                     }
                     bool flag_incoming = false;
                     for (auto&& e : graph[node2].incoming_edges) {
-                        if (e.first != node1) {
+                        if (e.first != node1 && e.first != node2) {
                             flag_incoming = true;
                             break;
                         }
@@ -2561,6 +2561,8 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
                     continue;
                 }
                 else {
+                    if (graph[p1.nodes[index_to_remove]].outgoing_edges[p1.nodes[index_to_remove + 1]].at(0).sequence.size() >= 10000000) // skip too long paths
+                        continue;
                     std::cout << "[Decouple] Palindromic bulge: path1 (length " << p1.length << ", min multi " << p1.min_multi << "): " << p1.nodes[0];
                     for (int i = 1; i < p1.nodes.size();++i)
                         std::cout << "->" << p1.nodes[i];
@@ -3318,77 +3320,85 @@ void Graph::extract_unambiguous(unsigned& num_paths) {
     std::vector<std::string> n1, n2, n3;
 
     for (auto&& n : graph) {
-        if (!n.second.incoming_edges.empty())
-            continue;
-        if (!n.second.outgoing_edges.size() == 1)
-            continue;
+        // incoming edge is not necessary a tip
+        // if (!n.second.incoming_edges.empty())
+        //     continue;
+        // if (n.second.outgoing_edges.size() != 1) {
+        //     if (n.second.outgoing_edges.size() != 2 || n.second.outgoing_edges.find(n.first) == n.second.outgoing_edges.end())
+        //         continue;
+        // }
 
         std::string out_node;
-        for (auto&& n_o : n.second.outgoing_edges)
-            out_node = n_o.first;
-
-        if (n.second.outgoing_edges[out_node].size() != 1)
-            continue;
-
-        if (n.first == out_node || n.first == reverse_complementary_node(out_node))
-            continue;
-
-        if (graph[out_node].outgoing_edges.size() != 1) {
-            if (graph[out_node].outgoing_edges.size() != 2 || graph[out_node].outgoing_edges.find(out_node) == graph[out_node].outgoing_edges.end())
-                continue;
-        }
-
-        std::string final_tip;
-        for (auto&& n_o : graph[out_node].outgoing_edges) {
-            if (n_o.first != out_node)
-                final_tip = n_o.first;
-        }
-
-        if (graph[out_node].outgoing_edges[final_tip].size() != 1)
-            continue;
-
-        if (!graph[final_tip].outgoing_edges.empty())
-            continue;
-
-        if (final_tip == out_node || final_tip == reverse_complementary_node(out_node))
-            continue;
-
-        if (final_tip == n.first || final_tip == reverse_complementary_node(n.first))
-            continue;
-
-        // repeat between two chromosomes cannot be too large
-        // if (graph[out_node].outgoing_edges[final_tip].at(0).sequence.size() >= 5000000)
-        //     continue;
-
-        int insert_pos = -1;
-        for (int i = 0; i < n2.size();++i) {
-            if (n2.at(i) == out_node) {
-                if (graph[n1.at(i)].outgoing_edges[n2.at(i)].at(0).sequence.size() >= graph[n.first].outgoing_edges[out_node].at(0).sequence.size()) {
+        for (auto&& n_o : n.second.outgoing_edges) {
+            if (n_o.first != n.first) {
+                out_node = n_o.first;
+                if (n.second.outgoing_edges[out_node].size() != 1)
                     continue;
+
+                if (n.first == out_node || n.first == reverse_complementary_node(out_node))
+                    continue;
+
+                if (graph[out_node].outgoing_edges.size() != 1) {
+                    if (graph[out_node].outgoing_edges.size() != 2 || graph[out_node].outgoing_edges.find(out_node) == graph[out_node].outgoing_edges.end())
+                        continue;
+                }
+
+                std::string final_tip;
+                for (auto&& n_o : graph[out_node].outgoing_edges) {
+                    if (n_o.first != out_node)
+                        final_tip = n_o.first;
+                }
+
+                if (final_tip.empty())
+                    continue;
+
+                if (graph[out_node].outgoing_edges[final_tip].size() != 1)
+                    continue;
+
+                if (!graph[final_tip].outgoing_edges.empty())
+                    continue;
+
+                if (final_tip == out_node || final_tip == reverse_complementary_node(out_node))
+                    continue;
+
+                if (final_tip == n.first || final_tip == reverse_complementary_node(n.first))
+                    continue;
+
+                // repeat between two chromosomes cannot be too large
+                // if (graph[out_node].outgoing_edges[final_tip].at(0).sequence.size() >= 5000000)
+                //     continue;
+
+                int insert_pos = -1;
+                for (int i = 0; i < n2.size();++i) {
+                    if (n2.at(i) == out_node) {
+                        if (graph[n1.at(i)].outgoing_edges[n2.at(i)].at(0).sequence.size() >= graph[n.first].outgoing_edges[out_node].at(0).sequence.size()) {
+                            continue;
+                        }
+                        else {
+                            insert_pos = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (insert_pos == -1) {
+                    n1.push_back(n.first);
+                    n2.push_back(out_node);
+                    n3.push_back(final_tip);
+
+                    n1.push_back(reverse_complementary_node(final_tip));
+                    n2.push_back(reverse_complementary_node(out_node));
+                    n3.push_back(reverse_complementary_node(n.first));
                 }
                 else {
-                    insert_pos = i;
-                    break;
+                    n1.insert(n1.begin() + insert_pos, n.first);
+                    n2.insert(n2.begin() + insert_pos, out_node);
+                    n3.insert(n3.begin() + insert_pos, final_tip);
+                    n1.insert(n1.begin() + insert_pos + 1, reverse_complementary_node(final_tip));
+                    n2.insert(n2.begin() + insert_pos + 1, reverse_complementary_node(out_node));
+                    n3.insert(n3.begin() + insert_pos + 1, reverse_complementary_node(n.first));
                 }
             }
-        }
-
-        if (insert_pos == -1) {
-            n1.push_back(n.first);
-            n2.push_back(out_node);
-            n3.push_back(final_tip);
-
-            n1.push_back(reverse_complementary_node(final_tip));
-            n2.push_back(reverse_complementary_node(out_node));
-            n3.push_back(reverse_complementary_node(n.first));
-        }
-        else {
-            n1.insert(n1.begin() + insert_pos, n.first);
-            n2.insert(n2.begin() + insert_pos, out_node);
-            n3.insert(n3.begin() + insert_pos, final_tip);
-            n1.insert(n1.begin() + insert_pos + 1, reverse_complementary_node(final_tip));
-            n2.insert(n2.begin() + insert_pos + 1, reverse_complementary_node(out_node));
-            n3.insert(n3.begin() + insert_pos + 1, reverse_complementary_node(n.first));
         }
     }
 
@@ -3396,6 +3406,31 @@ void Graph::extract_unambiguous(unsigned& num_paths) {
     for (int i = 0; i < n1.size(); i += 2) {
         std::string node1 = n1.at(i), node2 = n2.at(i), node3 = n3.at(i);
         if (graph.find(node1) != graph.end() && graph.find(node2) != graph.end() && graph.find(node3) != graph.end()) {
+            if (graph[node2].outgoing_edges.find(node3) != graph[node2].outgoing_edges.end() && graph[node2].outgoing_edges[node3].at(0).sequence.size() >= 200000) {
+                int cnt_edge = 0, cnt_tip = 0;
+                for (int j = 0; j < n1.size(); j += 2) {
+                    if (n2.at(j) == node2) {
+                        if (graph.find(n1.at(j)) != graph.end() && graph[n1.at(j)].incoming_edges.empty()){
+                            cnt_tip += 1;
+                        }
+                        else if (graph.find(n1.at(j)) != graph.end() && !graph[n1.at(j)].incoming_edges.empty()) {
+                            cnt_edge += 1;
+                        }
+                    }
+                }
+
+                if (graph[node2].outgoing_edges[node3].at(0).sequence.size() >= 5000000) {
+                    if (cnt_tip >= 2)
+                        continue;
+                    if (cnt_tip == 1 && !graph[node1].incoming_edges.empty())
+                        continue;
+                    if (cnt_tip == 0)
+                        continue;
+                }
+                else if (!graph[node1].incoming_edges.empty())
+                    continue;
+            }
+
             num_paths += 2;
 
             Path p;
@@ -3406,7 +3441,7 @@ void Graph::extract_unambiguous(unsigned& num_paths) {
             Path p_r;
             get_reverse_path(p, p_r);
 
-            std::string new_end_name = std::to_string(cnt_new_node);
+            std::string new_end_name = std::to_string(++cnt_new_node);
 
             while (graph.find(new_end_name) != graph.end()) new_end_name = std::to_string(++cnt_new_node);
             nodeid2Rev[new_end_name] = "-" + new_end_name;

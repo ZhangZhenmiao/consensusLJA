@@ -89,6 +89,21 @@ def read_fasta_lengths(fasta_path):
 
 
 def calculate_identity(paf_entry, gap_threshold=10):
+    if "cg" not in paf_entry:
+        """
+        Identity = matches / aln_len.
+        Optionally could parse 'cg:Z:' tag for CIGAR to refine.
+        """
+        matches = paf_entry["matches"]
+        aln_len = paf_entry["aln_len"]
+        if aln_len == 0:
+            return 0.0, 0.0
+        identity = matches / aln_len
+
+        # if we want no-gap identity, need CIGAR string (cg:Z:), otherwise fall back to same value
+        identity_nogap = identity
+        return identity * 100, identity_nogap * 100
+    
     cigar_string = paf_entry["cg"]
     if not cigar_string:
         return 0.0, 0.0
@@ -133,7 +148,7 @@ def calculate_identity(paf_entry, gap_threshold=10):
 
     return pid * 100, pid_nogap * 100
 
-def filter_alignments_with_identity(paf_file_path, threshold=0):
+def filter_alignments_with_identity(paf_file_path, output_path, threshold=0):
     high_identity_alignments = {}
     total_alignments = 0
     processed_alignments = 0
@@ -182,27 +197,38 @@ def filter_alignments_with_identity(paf_file_path, threshold=0):
             high_identity_alignments[query_name1].append(aln)
 
             status = classify_relationship(aln)
-            key = min(aln["query_id"], aln["ref_id"])
+            key = min((aln["query_id"], aln["ref_id"]), (aln["ref_id"], aln["query_id"]))
 
             # keep only the longest aln length per (query, ref)
             if key not in best_hits or max(aln["aln_length_query"], aln["aln_length_ref"]) > max(best_hits[key]["aln_length_query"], best_hits[key]["aln_length_ref"]):
                 best_hits[key] = aln
 
     # output summary
-    print("Query\tQuery Len\tQuery Aln Len\tQuery Start\tQuery End\tRef\tRef Len\tRef Aln Len\tRef Start\tRef End\tIdentity\tStatus")
-    for key, aln in best_hits.items():
-        status = classify_relationship(aln)
-        if status == "None":
-            continue
-        if aln["strand"] == "reverse":
-            aln['ref_id'] = aln['ref_name'].split('_')[1]
-        print(
-            f'{aln["query_id"]}\t{aln["length_query"]}\t{aln["aln_length_query"]}\t'
-            f'{aln["query_start"]:.0f}\t{aln["query_end"]:.0f}\t'
-            f'{aln["ref_id"]}\t{aln["length_ref"]}\t{aln["aln_length_ref"]}\t'
-            f'{aln["ref_start"]:.0f}\t{aln["ref_end"]:.0f}\t'
-            f'{aln["identity"]:.2f}\t{status}'
-        )
+    print("Query\tQuery Len\tQuery Aln Len\tQuery Start\tQuery End\tRef\tRef Len\tRef Aln Len\tRef Start\tRef End\tIdentity1\tIdentity2\tStatus")
+    with open(output_path, 'w') if output_path else sys.stdout as out_edges:
+        for key, aln in best_hits.items():
+            status = classify_relationship(aln)
+            if status == "None":
+                continue
+            if aln["strand"] == "reverse":
+                aln['ref_id'] = aln['ref_name'].split('_')[1]
+            if status == "Contained":
+                if aln["length_query"] < aln["length_ref"]:
+                    out_edges.write(aln["query_name"].split('_')[0] + '\n' + aln["query_name"].split('_')[1] + '\n')
+                else:
+                    out_edges.write(aln["ref_name"].split('_')[0] + '\n' + aln["ref_name"].split('_')[1] + '\n')
+            if status == "Overlap":
+                if aln["length_query"] <= aln["length_ref"] and aln["query_end"] - aln["query_start"] > 85:
+                    out_edges.write(aln["query_name"].split('_')[0] + '\n' + aln["query_name"].split('_')[1] + '\n')
+                if aln["length_ref"] < aln["length_query"] and aln["ref_end"] - aln["ref_start"] > 85:
+                    out_edges.write(aln["ref_name"].split('_')[0] + '\n' + aln["ref_name"].split('_')[1] + '\n')
+            print(
+                f'{aln["query_id"]}\t{aln["length_query"]}\t{aln["aln_length_query"]}\t'
+                f'{aln["query_start"]:.0f}\t{aln["query_end"]:.0f}\t'
+                f'{aln["ref_id"]}\t{aln["length_ref"]}\t{aln["aln_length_ref"]}\t'
+                f'{aln["ref_start"]:.0f}\t{aln["ref_end"]:.0f}\t'
+                f'{aln["identity"]:.2f}\t{aln["identity_nogap"]:.2f}\t{status}'
+            )
 
     return high_identity_alignments
 
@@ -219,7 +245,7 @@ def generate_paf(query_fasta, ref_fasta, output_paf, threads=8, minimap2_preset=
         extra_opts = "-p 0.1 -X"
 
     cmd = (
-        f"minimap2 -t {threads} -x {minimap2_preset} -c --eqx -Y {extra_opts} "
+        f"minimap2 -t {threads} -x {minimap2_preset} {extra_opts} "
         f"{ref_fasta} {query_fasta} > {output_paf}"
     )
     if os.system(cmd) != 0:
@@ -232,6 +258,7 @@ if __name__ == "__main__":
     parser.add_argument("--ref", required=True, help="Reference FASTA file")
     parser.add_argument("--paf", required=True, help="Output paf file")
     parser.add_argument("--threads", type=int, default=8, help="Number of threads")
+    parser.add_argument("--output", help="Output file for summary")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-P", action="store_true", help="Use minimap2 with -p 0.1")
     group.add_argument("-X", action="store_true", help="Use minimap2 with -X")
@@ -243,4 +270,4 @@ if __name__ == "__main__":
     global lengths
     lengths = read_fasta_lengths(args.ref)
 
-    filter_alignments_with_identity(args.paf, threshold=0)
+    filter_alignments_with_identity(args.paf, args.output, threshold=0)

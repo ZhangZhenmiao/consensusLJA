@@ -394,6 +394,9 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
 
                 if alignment.reference_name in id_map:
                     ref_id = id_map[alignment.reference_name]
+                
+                if "A" not in ref_id and "B" not in ref_id and "M" not in ref_id and "P" not in ref_id and "Chr" not in ref_id and "X" not in ref_id and "Y" not in ref_id:
+                    continue
 
                 query_alignment_start, query_alignment_end, query_len = true_query_start_end(alignment.cigarstring)
 

@@ -1,4 +1,3 @@
-#include "edlib.h"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -112,16 +111,6 @@ int count_matches(std::string cigar) {
     return matches;
 }
 
-void edlib_identity(std::string sequence1, std::string sequence2) {
-    EdlibAlignResult result = edlibAlign(sequence1.c_str(), sequence1.size(), sequence2.c_str(), sequence2.size(), edlibNewAlignConfig(-1, EDLIB_MODE_NW, EDLIB_TASK_PATH, NULL, 0));
-    std::string cigar = edlibAlignmentToCigar(result.alignment, result.alignmentLength, EDLIB_CIGAR_EXTENDED);
-    edlibFreeAlignResult(result);
-    auto idts = calculate_identities_from_cigar(cigar);
-    std::cout << "Edlib identity: " << idts.first << " " << idts.second << std::endl;
-    std::cout << 1.0 * count_matches(cigar) / std::min(sequence1.size(), sequence2.size()) << std::endl;
-}
-
-
 void unialigner_identity(const std::string& seq1, const std::string& seq2) {
     std::string s1 = replace_N(seq1);
     std::string s2 = replace_N(seq2);
@@ -198,6 +187,5 @@ int main(int argc, char* argv[]) {
     // seq2 = seq2.substr(0, 100000);
 
     unialigner_identity(seq1, seq2);
-    edlib_identity(seq1, seq2);
     return 0;
 }

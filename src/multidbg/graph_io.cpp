@@ -803,7 +803,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
             std::string end_node = edges.first;
             if (!nodes_retain.empty() && nodes_retain.find(node.first) == nodes_retain.end() && nodes_retain.find(end_node) == nodes_retain.end())
                 continue;
-            if (graph[edges.first].number_of_contracted_edge > 0) {
+            if (graph.at(edges.first).number_of_contracted_edge > 0) {
                 end_node = get_contracted_name(edges.first);
             }
             for (auto&& edge : edges.second) {
@@ -842,7 +842,7 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                     edge.rc_label = label_reverse;
                     // std::cout << "New label " << label_forward << " and " << label_reverse << std::endl;
                     bool flag = false;
-                    for (auto&& edge_i : graph[edges.first].incoming_edges[node.first]) {
+                    for (auto&& edge_i : graph.at(edges.first).incoming_edges[node.first]) {
                         if (edge_i.sequence == edge.sequence) {
                             // the edge should appear only once
                             assert(flag == false);
@@ -853,8 +853,8 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                     }
                     assert(flag);
                     flag = false;
-                    for (auto&& edge_r : graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(node.first)]) {
-                        if (edge_r.sequence == reverse_complementary(edge.sequence) || graph[reverse_complementary_node(edges.first)].outgoing_edges[reverse_complementary_node(node.first)].size() == 1) {
+                    for (auto&& edge_r : graph.at(reverse_complementary_node(edges.first)).outgoing_edges[reverse_complementary_node(node.first)]) {
+                        if (edge_r.sequence == reverse_complementary(edge.sequence) || graph.at(reverse_complementary_node(edges.first)).outgoing_edges[reverse_complementary_node(node.first)].size() == 1) {
                             assert(flag == false);
                             flag = true;
                             edge_r.rc_label = label_forward;
@@ -863,8 +863,8 @@ void Graph::write_graph(const std::string& prefix, int thick, bool contracted, b
                     }
                     assert(flag);
                     flag = false;
-                    for (auto&& edge_r_i : graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(edges.first)]) {
-                        if (edge_r_i.sequence == reverse_complementary(edge.sequence) || graph[reverse_complementary_node(node.first)].incoming_edges[reverse_complementary_node(edges.first)].size() == 1) {
+                    for (auto&& edge_r_i : graph.at(reverse_complementary_node(node.first)).incoming_edges[reverse_complementary_node(edges.first)]) {
+                        if (edge_r_i.sequence == reverse_complementary(edge.sequence) || graph.at(reverse_complementary_node(node.first)).incoming_edges[reverse_complementary_node(edges.first)].size() == 1) {
                             assert(flag == false);
                             flag = true;
                             edge_r_i.rc_label = label_forward;
@@ -1099,7 +1099,7 @@ void Graph::write_graph_final_formatting(const std::string& prefix, int thick, b
             std::string end_node = edges.first;
             if (!nodes_retain.empty() && nodes_retain.find(node.first) == nodes_retain.end() && nodes_retain.find(end_node) == nodes_retain.end())
                 continue;
-            if (graph[edges.first].number_of_contracted_edge > 0) {
+            if (graph.at(edges.first).number_of_contracted_edge > 0) {
                 end_node = get_contracted_name(edges.first);
             }
             for (auto&& edge : edges.second) {
@@ -1138,7 +1138,7 @@ void Graph::write_graph_final_formatting(const std::string& prefix, int thick, b
                     edge.rc_label = label_reverse;
                     // std::cout << "New label " << label_forward << " and " << label_reverse << std::endl;
                     bool flag = false;
-                    for (auto&& edge_i : graph[edges.first].incoming_edges[node.first]) {
+                    for (auto&& edge_i : graph.at(edges.first).incoming_edges[node.first]) {
                         if (edge_i.sequence == edge.sequence) {
                             // the edge should appear only once
                             assert(flag == false);
@@ -1806,7 +1806,86 @@ void Graph::write_graph_colored_from_bam(const std::string& prefix, const std::s
     write_graph(prefix, 1000000, false, true);
 }
 
-void Graph::write_graph_gfa(const std::string& prefix) {
+void Graph::write_graph_gfa(const std::string& prefix, std::string exclude_edges) {
+    std::ifstream fin(exclude_edges);
+    std::string line;
+    std::unordered_set<std::string> edges_to_exclude;
+    while (getline(fin, line)) {
+        std::cout << "[Deduplicate] Cognate edge to remove: " << line << std::endl;
+        edges_to_exclude.insert(line);
+    }
+
+    if (!edges_to_exclude.empty()) {
+        std::vector<std::string> nodes_to_remove;
+        for (auto&& node : graph) {
+            std::vector<std::string> out_to_remove;
+            for (auto&& n2 : node.second.outgoing_edges) {
+                std::vector<int> indices;
+                for (int i = 0; i < n2.second.size(); ++i) {
+                    if (edges_to_exclude.find(n2.second.at(i).label) != edges_to_exclude.end()) {
+                        indices.push_back(i);
+                    }
+                }
+                remove_items_from_vector(n2.second, indices);
+                if (n2.second.empty())
+                    out_to_remove.push_back(n2.first);
+
+                indices.clear();
+                for (int i = 0; i < graph[n2.first].incoming_edges[node.first].size(); ++i) {
+                    if (edges_to_exclude.find(graph[n2.first].incoming_edges[node.first].at(i).label) != edges_to_exclude.end()) {
+                        indices.push_back(i);
+                    }
+                }
+                remove_items_from_vector(graph[n2.first].incoming_edges[node.first], indices);
+                if (graph[n2.first].incoming_edges[node.first].empty()) {
+                    graph[n2.first].incoming_edges.erase(node.first);
+                    if (graph[n2.first].incoming_edges.empty() && graph[n2.first].outgoing_edges.empty())
+                        nodes_to_remove.push_back(n2.first);
+                }
+            }
+
+            std::vector<std::string> in_to_remove;
+            for (auto&& n2 : node.second.incoming_edges) {
+                std::vector<int> indices;
+                for (int i = 0; i < n2.second.size(); ++i) {
+                    if (edges_to_exclude.find(n2.second.at(i).label) != edges_to_exclude.end()) {
+                        indices.push_back(i);
+                    }
+                }
+                remove_items_from_vector(n2.second, indices);
+                if (n2.second.empty())
+                    in_to_remove.push_back(n2.first);
+
+                indices.clear();
+                for (int i = 0; i < graph[n2.first].outgoing_edges[node.first].size(); ++i) {
+                    if (edges_to_exclude.find(graph[n2.first].outgoing_edges[node.first].at(i).label) != edges_to_exclude.end()) {
+                        indices.push_back(i);
+                    }
+                }
+                remove_items_from_vector(graph[n2.first].outgoing_edges[node.first], indices);
+                if (graph[n2.first].outgoing_edges[node.first].empty()) {
+                    graph[n2.first].outgoing_edges.erase(node.first);
+                    if (graph[n2.first].incoming_edges.empty() && graph[n2.first].outgoing_edges.empty())
+                        nodes_to_remove.push_back(n2.first);
+                }
+            }
+
+            for (auto&& e : out_to_remove) {
+                node.second.outgoing_edges.erase(e);
+            }
+            for (auto&& e : in_to_remove) {
+                node.second.incoming_edges.erase(e);
+            }
+            if ((out_to_remove.size() || in_to_remove.size()) && node.second.incoming_edges.empty() && node.second.outgoing_edges.empty())
+                nodes_to_remove.push_back(node.first);
+        }
+        for (auto&& n : nodes_to_remove)
+            graph.erase(n);
+
+        merge_non_branching_paths(true);
+        write_graph_final_formatting(prefix + "_deduplicated", 1000000, false, true);
+    }
+
     std::string graph_gfa = prefix + ".gfa";
     std::cout << "[WriteGraph] Write graph " << graph_gfa << std::endl;
     std::ofstream file_gfa(graph_gfa);
@@ -1820,7 +1899,10 @@ void Graph::write_graph_gfa(const std::string& prefix) {
             for (auto&& e : n2.second) {
                 if (traversed_labels.find(e.label) == traversed_labels.end()) {
                     traversed_labels.insert(e.label);
-                    traversed_labels.insert(e.rc_label);std::string new_label = std::to_string(cnt++);
+                    traversed_labels.insert(e.rc_label);
+                    if (edges_to_exclude.find(e.label) != edges_to_exclude.end() || edges_to_exclude.find(e.rc_label) != edges_to_exclude.end())
+                        continue;
+                    std::string new_label = std::to_string(cnt++);
                     edgeid2gfa_node[e.label] = std::make_pair(new_label, '+');
                     edgeid2gfa_node[e.rc_label] = std::make_pair(new_label, '-');
                     if (n1.first != n2.first) {

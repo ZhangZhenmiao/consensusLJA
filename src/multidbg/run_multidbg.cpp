@@ -563,6 +563,7 @@ void MDBGRunner::simplifyMDBG() {
         if (removed_edges > 0)
             std::cout << "[RepairTip] Extracted " << removed_edges << " unambiguous paths" << std::endl;
     }
+    graph.write_graph(output + "/graph.extract_unambiguous", 1000000, false, true);
 
     while (true) {
         bool flag = true;
@@ -660,8 +661,11 @@ void MDBGRunner::simplifyMDBG() {
     // graph.write_graph_colored_from_bam(output + "/graph.final" + ".color", output + "/graph.final" + ".ref.bam.stats");
 
     // graph.get_annotation(output + "/graph.final");
+    // Graph graph;
+    // graph.restart_from_dot(output + "/graph.final.dot", output + "/graph.final.fasta");
 
-    graph.write_graph_gfa(output + "/graph.final");
+    execute_command(getExecutablePath() + "/../src/scripts/investigate_overlap.py --ref " + output + "/graph.final.fasta --query " + output + "/graph.final.fasta --paf " + output + "/graph.final.fasta.paf --threads " + std::to_string(threads) + " -P --output " + output + "/graph.final.fasta.paf.dup.txt");
+    graph.write_graph_gfa(output + "/graph.final", output + "/graph.final.fasta.paf.dup.txt");
 
     graph.write_graph_final_formatting(output + "/graph.final.formatting", 1000000, false, true);
 }
