@@ -22,7 +22,7 @@ print(len(sequences_ori), len(sequences_rm))
 
 # Create dot plot
 fig, ax = pyplot.subplots(1, 1)
-em = wotplot.DotPlotMatrix(sequences_ori, sequences_rm, 100, verbose=True)
+em = wotplot.DotPlotMatrix(sequences_ori, sequences_rm, 200, verbose=True)
 wotplot.viz_spy(em, markersize=0.01, ax=ax, title="")
 
 ax.set_xlabel(f"{sys.argv[1][:sys.argv[1].rfind('.')]} ({len(sequences_ori)/1e6:.2f} Mb)")

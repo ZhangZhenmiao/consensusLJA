@@ -361,10 +361,10 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
 
             identity, identity_nogap = calculate_identities(alignment, gap_threshold=10)
             
-            if identity_nogap >= threshold*100:
+            if identity_nogap >= threshold*100 and identity >= threshold*100:
                 processed_alignments += 1
                 
-                ref_id = alignment.reference_name[alignment.reference_name.find('_') + 1:]
+                ref_id = alignment.reference_name
                 id_map = {
                     "chr1_mat_hsa1": "1M", 
                     "chr2_mat_hsa3": "2M", 
@@ -489,9 +489,6 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
 
                 if alignment.reference_name in id_map:
                     ref_id = id_map[alignment.reference_name]
-                
-                if "A" not in ref_id and "B" not in ref_id and "M" not in ref_id and "P" not in ref_id and "Chr" not in ref_id and "X" not in ref_id and "Y" not in ref_id:
-                    continue
 
                 query_alignment_start, query_alignment_end, query_len = true_query_start_end(alignment.cigarstring)
 
@@ -570,8 +567,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Extract high-identity alignments from a BAM file.")
     parser.add_argument("bam_file", help="Path to the input BAM file.")
     parser.add_argument("fasta_file", help="Path to graph.fasta file.")
-    parser.add_argument("-t", "--threshold", type=float, default=0.9,
-                        help="Identity threshold (default: 0.9).")
+    parser.add_argument("-t", "--threshold", type=float, default=1,
+                        help="Identity threshold (default: 1).")
     parser.add_argument("-o", "--output", help="Path to the output file. If not specified, prints to stdout.")
     parser.add_argument("-d", "--dotfile", help="")
     return parser.parse_args()
@@ -644,10 +641,8 @@ def main():
     if dotfile:
         edge2comp = classify_dot_edges(dotfile)
     
-    uniq_ratios = compute_dbg_ratios(args.fasta_file, output_path + "_jumboDBG", 80)
-
     # Step 3: Print autosomal haplotype groups
-    print(f"Edge ID\tLength of edge\tRef ID\tLength of ref\tQuery span\tRef span\tPI\tNon-repetitiveness")
+    print(f"Edge ID\tLength of edge\tRef ID\tLength of ref\tQuery span\tRef span\tPI")
     for chrom in sorted(haplo_groups.keys(), key=lambda x: int(x)):
         all_spans = []
         for hap in ['M', 'P', 'A', 'B']:
@@ -662,12 +657,12 @@ def main():
                     f"{query_name}\t{aln['length_entire_query']:,}\t{ref_id}\t{aln['length_entire_ref']:,}"
                     f"\tQ:{aln['length_query']:,} ({aln['query_start']:.0f}-{aln['query_end']:.0f}, span={query_span:.0f})"
                     f"\tR:{aln['length_ref']:,} ({aln['ref_start']:.2f}-{aln['ref_end']:.2f}, span={ref_span:.2f})"
-                    f"\tPI={aln['identity']:.0f}/{aln['identity_nogap']:.0f}\tNon-repetitiveness={uniq_ratios.get(query_name, 0):.3f}"
+                    f"\tPI={aln['identity']:.0f}/{aln['identity_nogap']:.0f}"
                 ) if query_name not in edge2comp else (
                     f"{query_name}\t{aln['length_entire_query']:,}\t{ref_id}\t{aln['length_entire_ref']:,}"
                     f"\tQ:{aln['length_query']:,} ({aln['query_start']:.0f}-{aln['query_end']:.0f}, span={query_span:.0f})"
                     f"\tR:{aln['length_ref']:,} ({aln['ref_start']:.2f}-{aln['ref_end']:.2f}, span={ref_span:.2f})"
-                    f"\tPI={aln['identity']:.0f}/{aln['identity_nogap']:.0f}\tNon-repetitiveness={uniq_ratios.get(query_name, 0):.3f}"
+                    f"\tPI={aln['identity']:.0f}/{aln['identity_nogap']:.0f}"
                     f"\t{edge2comp[query_name]}"
                 )
                 # output_lines.append(line)
@@ -688,12 +683,12 @@ def main():
                 f"{query_name}\t{aln['length_entire_query']:,}\t{ref_id}\t{aln['length_entire_ref']:,}"
                 f"\tQ:{aln['length_query']:,} ({aln['query_start']:.0f}-{aln['query_end']:.0f}, span={query_span:.0f})"
                 f"\tR:{aln['length_ref']:,} ({aln['ref_start']:.2f}-{aln['ref_end']:.2f}, span={ref_span:.2f})"
-                f"\tPI={aln['identity']:.0f}/{aln['identity_nogap']:.0f}\tNon-repetitiveness={uniq_ratios.get(query_name, 0):.3f}"
+                f"\tPI={aln['identity']:.0f}/{aln['identity_nogap']:.0f}"
             )if query_name not in edge2comp else (
                     f"{query_name}\t{aln['length_entire_query']:,}\t{ref_id}\t{aln['length_entire_ref']:,}"
                     f"\tQ:{aln['length_query']:,} ({aln['query_start']:.0f}-{aln['query_end']:.0f}, span={query_span:.0f})"
                     f"\tR:{aln['length_ref']:,} ({aln['ref_start']:.2f}-{aln['ref_end']:.2f}, span={ref_span:.2f})"
-                    f"\tPI={aln['identity']:.0f}/{aln['identity_nogap']:.0f}\tNon-repetitiveness={uniq_ratios.get(query_name, 0):.3f}"
+                    f"\tPI={aln['identity']:.0f}/{aln['identity_nogap']:.0f}"
                     f"\t{edge2comp[query_name]}"
                 )
             # output_lines.append(line)

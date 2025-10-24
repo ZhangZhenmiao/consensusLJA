@@ -739,7 +739,7 @@ void Graph::merge_tips_into_edges(unsigned& num_tips, double ratio, bool only_ti
                 }
 
                 // should be very careful merging extra-long tips to edges, because we only mapps the 1Mb prefix
-                if (graph[node.first].outgoing_edges[t].at(0).length >= 20000000)
+                if (graph[node.first].outgoing_edges[t].at(0).length >= 10000000)
                     continue;
 
                 // calculate similarity

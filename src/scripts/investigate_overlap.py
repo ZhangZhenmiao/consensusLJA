@@ -10,12 +10,12 @@ def classify_relationship(aln):
 
     # query contained in ref
     query_contained = (
-        aln["aln_length_query"] / aln["length_query"] >= 0.9 and identity >= 50 and aln["length_query"] <= aln["length_ref"]
+        aln["aln_length_query"] / aln["length_query"] >= 0.9 and identity >= 70 and aln["length_query"] <= aln["length_ref"]
     )
 
     # ref contained in query
     ref_contained = (
-        aln["aln_length_ref"] / aln["length_ref"] >= 0.9 and identity >= 50 and aln["length_ref"] <= aln["length_query"]
+        aln["aln_length_ref"] / aln["length_ref"] >= 0.9 and identity >= 70 and aln["length_ref"] <= aln["length_query"]
     )
 
     # overlap definition
@@ -269,5 +269,6 @@ if __name__ == "__main__":
 
     global lengths
     lengths = read_fasta_lengths(args.ref)
+    lengths.update(read_fasta_lengths(args.query))
 
     filter_alignments_with_identity(args.paf, args.output, threshold=0)
