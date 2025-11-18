@@ -4,6 +4,12 @@ import edlib
 import subprocess
 import re
 from multiprocessing import Pool
+import random
+
+def replace_N(seq: str) -> str:
+    """Replace N bases with random A/C/G/T nucleotides."""
+    bases = ["A", "C", "G", "T"]
+    return "".join(random.choice(bases) if c == "N" else c for c in seq.upper())
 
 def parse_cigar(cigar):
     # Regular expression to extract the operations and lengths from the CIGAR string
@@ -82,6 +88,8 @@ def align_contig_chromosome(args):
     if contig_sequence and chromosome_sequence:
         if strand == '-':
             contig_sequence = reverse_complement(contig_sequence)
+        contig_sequence = replace_N(contig_sequence)
+        chromosome_sequence = replace_N(chromosome_sequence)
         print("aligning", chromosome, contig_id, strand, flush=True)
         # Perform global alignment with edlib
         alignment_result = edlib.align(contig_sequence, chromosome_sequence, mode="NW", task="path")
@@ -96,6 +104,8 @@ def run_unialigner(args):
     if contig_sequence and chromosome_sequence:
         if strand == '-':
             contig_sequence = reverse_complement(contig_sequence)
+        contig_sequence = replace_N(contig_sequence)
+        chromosome_sequence = replace_N(chromosome_sequence)
         print("aligning", chromosome, contig_id, strand, flush=True)
         # Write the contig and chromosome sequences to temporary files
         with open(f"{contig_id}.fasta", 'w') as contig_file, open(f"{chromosome}.fasta", 'w') as chromosome_file:
@@ -146,7 +156,7 @@ with open(alignment_file, 'r') as file:
         fields = line.split()
         contig_id = fields[0]
         # chromosome = fields[1][:-1]  # Remove the last character (A or B)
-        chromosome = fields[1][:fields[1].find("_")]
+        chromosome = fields[1][:fields[1].find("_")] if fields[1].find("_") != -1 else fields[1]
         if chromosome[0] == "-":
             chromosome = chromosome[1:]
         contig_length = int(fields[2])
@@ -164,7 +174,7 @@ with open(alignment_file, 'r') as file:
         contig_id = fields[0]
         # chromosome = fields[1][:-1]  # Remove the last character (A or B)
         chr_names.add(fields[1] if fields[1][0] != '-' else fields[1][1:])
-        chromosome = fields[1][:fields[1].find("_")]
+        chromosome = fields[1][:fields[1].find("_")] if fields[1].find("_") != -1 else fields[1]
         if chromosome[0] == "-":
             chromosome = chromosome[1:]
             strand = '-'
@@ -191,8 +201,10 @@ chromosome_sequences = read_fasta(chromosome_sequence_file)
 
 # Step 5: Perform global alignments in parallel using ThreadPoolExecutor
 args_list = []
+chr_names = chromosome_sequences.keys()
 for chromosome, (contig_id, _) in chromosome_contig_dict.items():
-    if chromosome not in ["chr3", "chr6", "chr8", "chr9", "chr11", "chr13", "chr16", "chr18", "chr21", "chr23"]:
+    # for giraffe MGA
+    if chromosome not in ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr9", "chr10", "chr12", "chr13", "chrX", "chrY"]:
         continue
     m_name = ""
     p_name = ""

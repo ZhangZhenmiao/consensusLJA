@@ -1790,7 +1790,7 @@ bool Graph::get_reverse_path(Path& path, Path& path_reverse) {
                     break;
                 }
             }
-            
+
             if (!find_reverse) {
                 for (int e = 0; e < edges.size(); ++e) {
                     if (edges.at(e).sequence.size() == seq_reverse.size() && edges.at(e).sequence != seq_forward) {
@@ -2676,6 +2676,12 @@ void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved
         || node2 == reverse_complementary_node(outgoing_nodes[1])
         )
         return;
+    if (node1 == incoming_nodes[0] || node1 == incoming_nodes[1]
+        || node1 == outgoing_nodes[0] || node1 == outgoing_nodes[1]
+        || node2 == incoming_nodes[0] || node2 == incoming_nodes[1]
+        || node2 == outgoing_nodes[0] || node2 == outgoing_nodes[1]
+        )
+        return;
     if (strict) {
         if (incoming_nodes[0] != reverse_complementary_node(outgoing_nodes[0]))
             return;
@@ -2688,12 +2694,20 @@ void Graph::resolve_edges_rc(std::string node1, std::string node2, int& resolved
     this->add_node_to_path(path1, incoming_nodes.at(0));
     std::string node = node1;
     this->add_node_to_path(path1, node);
+    int length_reverse = 0;
     while (node != node2) {
+        std::string node_next;
         for (auto&& n : graph[node].outgoing_edges) {
-            node = n.first;
+            if (n.first != node)
+                node_next = n.first;
         }
+        length_reverse += (graph[node].outgoing_edges[node_next].at(0).length - graph[node_next].sequence.size());
+        node = node_next;
         this->add_node_to_path(path1, node);
     }
+    length_reverse += graph[node2].sequence.size();
+    if (length_reverse >= 10000000) // skip too long paths
+        return;
     this->add_node_to_path(path1, outgoing_nodes.at(1));
     path1.multiplicity = 1.0 * (graph[incoming_nodes.at(0)].outgoing_edges[node1].at(0).multiplicity * graph[incoming_nodes.at(0)].outgoing_edges[node1].at(0).length
         + graph[node2].outgoing_edges[outgoing_nodes.at(1)].at(0).multiplicity * graph[node2].outgoing_edges[outgoing_nodes.at(1)].at(0).length)
@@ -3410,7 +3424,7 @@ void Graph::extract_unambiguous(unsigned& num_paths) {
                 int cnt_edge = 0, cnt_tip = 0;
                 for (int j = 0; j < n1.size(); j += 2) {
                     if (n2.at(j) == node2) {
-                        if (graph.find(n1.at(j)) != graph.end() && graph[n1.at(j)].incoming_edges.empty()){
+                        if (graph.find(n1.at(j)) != graph.end() && graph[n1.at(j)].incoming_edges.empty()) {
                             cnt_tip += 1;
                         }
                         else if (graph.find(n1.at(j)) != graph.end() && !graph[n1.at(j)].incoming_edges.empty()) {

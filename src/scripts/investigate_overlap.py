@@ -22,7 +22,7 @@ def classify_relationship(aln):
     overlap = (
         (aln["aln_length_query"] / aln["length_query"] >= 0.2
         or aln["aln_length_ref"] / aln["length_ref"] >= 0.2)
-        and identity >= 50
+        and identity >= 70
     )
 
     if query_contained or ref_contained:
@@ -208,8 +208,8 @@ def filter_alignments_with_identity(paf_file_path, output_path, threshold=0):
     with open(output_path, 'w') if output_path else sys.stdout as out_edges:
         for key, aln in best_hits.items():
             status = classify_relationship(aln)
-            if status == "None":
-                continue
+            # if status == "None":
+            #     continue
             if aln["strand"] == "reverse":
                 aln['ref_id'] = aln['ref_name'].split('_')[1]
             if status == "Contained":
@@ -218,10 +218,16 @@ def filter_alignments_with_identity(paf_file_path, output_path, threshold=0):
                 else:
                     out_edges.write(aln["ref_name"].split('_')[0] + '\n' + aln["ref_name"].split('_')[1] + '\n')
             if status == "Overlap":
-                if aln["length_query"] <= aln["length_ref"] and aln["query_end"] - aln["query_start"] > 85:
-                    out_edges.write(aln["query_name"].split('_')[0] + '\n' + aln["query_name"].split('_')[1] + '\n')
-                if aln["length_ref"] < aln["length_query"] and aln["ref_end"] - aln["ref_start"] > 85:
-                    out_edges.write(aln["ref_name"].split('_')[0] + '\n' + aln["ref_name"].split('_')[1] + '\n')
+                if aln["length_query"] <= aln["length_ref"]:
+                    if aln["query_end"] - aln["query_start"] >= 85:
+                        out_edges.write(aln["query_name"].split('_')[0] + '\n' + aln["query_name"].split('_')[1] + '\n')
+                    elif aln["query_end"] - aln["query_start"] >= 50 and aln["query_id"][:aln["query_id"].find('.')] == aln["ref_id"][:aln["ref_id"].find('.')]:
+                        out_edges.write(aln["query_name"].split('_')[0] + '\n' + aln["query_name"].split('_')[1] + '\n')
+                if aln["length_ref"] < aln["length_query"]:
+                    if aln["ref_end"] - aln["ref_start"] >= 85:
+                        out_edges.write(aln["ref_name"].split('_')[0] + '\n' + aln["ref_name"].split('_')[1] + '\n')
+                    elif aln["ref_end"] - aln["ref_start"] >= 50 and aln["query_id"][:aln["query_id"].find('.')] == aln["ref_id"][:aln["ref_id"].find('.')]:
+                        out_edges.write(aln["ref_name"].split('_')[0] + '\n' + aln["ref_name"].split('_')[1] + '\n')
             print(
                 f'{aln["query_id"]}\t{aln["length_query"]}\t{aln["aln_length_query"]}\t'
                 f'{aln["query_start"]:.0f}\t{aln["query_end"]:.0f}\t'

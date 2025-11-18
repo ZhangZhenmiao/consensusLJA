@@ -51,4 +51,17 @@ options:
   -?, --help       print this message
 ```
 
+Reads can be compressed or uncompressed, and can be provided in FASTQ or FASTA format. Read names must not contain whitespace.
+
+A valid fastq read name example:
+
+```bash
+@m84124_230731_175605_s1/251662659/ccs
+```
+An invalid fastq read name example (contains whitespace and will cause issues for LJA):
+
+```bash
+@m84124_230731_175605_s1/251662659/ccs  ML:B:C,255,254,250,247,255,255,120,231,131,218,255,102,89,255,254,249,254,217,255,255,254,244,253,255,251,254,247,230,235,255,207,255,255,238,253   MM:Z:C+m?,30,49,6,29,3,29,39,49,48,51,9,34,13,34,24,33,8,10,8,1,10,39,1,28,27,56,60,8,6,14,1,3,1,0,9;
+```
+
 The results will be in <output_folder>/5_polishing/assembly.fasta.

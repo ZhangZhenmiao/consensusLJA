@@ -436,6 +436,37 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     "chr1522_pat_hsa1421_random_utig4-1011": "1522P", 
                     "chr1522_pat_hsa1421_random_utig4-2055": "1522P", 
                     "chrY_pat_hsaY": "Y",
+                    "chr1_mat": "1M", 
+                    "chr2_mat": "2M", 
+                    "chr3_mat": "3M", 
+                    "chr4_mat": "4M", 
+                    "chr5_mat": "5M", 
+                    "chr6_mat": "6M", 
+                    "chr7_mat": "7M", 
+                    "chr8_mat": "8M", 
+                    "chr9_mat": "9M", 
+                    "chr10_mat": "10M", 
+                    "chr11_mat": "11M", 
+                    "chr12_mat": "12M", 
+                    "chr13_mat": "13M", 
+                    "chr14_mat": "14M", 
+                    "chrX_mat": "X",
+                    "chr1_pat": "1P",
+                    "chr2_pat": "2P",
+                    "chr3_pat": "3P",
+                    "chr4_pat": "4P",
+                    "chr5_pat": "5P",
+                    "chr6_pat": "6P",
+                    "chr7_pat": "7P",
+                    "chr8_pat": "8P",
+                    "chr9_pat": "9P",
+                    "chr10_pat": "10P",
+                    "chr11_pat": "11P",
+                    "chr12_pat": "12P",
+                    "chr13_pat": "13P",
+                    "chr14_pat": "14P",
+                    "chrY_pat": "Y",
+                    "chrM": "mtDNA",
                     "CM075330.1": "Chr1",
                     "CM075331.1": "Chr2",
                     "CM075332.1": "Chr3",
@@ -490,8 +521,8 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                 if alignment.reference_name in id_map:
                     ref_id = id_map[alignment.reference_name]
                 
-                if "A" not in ref_id and "B" not in ref_id and "M" not in ref_id and "P" not in ref_id and "Chr" not in ref_id and "X" not in ref_id and "Y" not in ref_id:
-                    continue
+                # if "A" not in ref_id and "B" not in ref_id and "M" not in ref_id and "P" not in ref_id and "Chr" not in ref_id and "X" not in ref_id and "Y" not in ref_id:
+                #     continue
 
                 query_alignment_start, query_alignment_end, query_len = true_query_start_end(alignment.cigarstring)
 
@@ -569,7 +600,7 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(description="Extract high-identity alignments from a BAM file.")
     parser.add_argument("bam_file", help="Path to the input BAM file.")
-    parser.add_argument("fasta_file", help="Path to graph.fasta file.")
+    parser.add_argument("fasta_file", default="", help="Path to graph.fasta file.")
     parser.add_argument("-t", "--threshold", type=float, default=0.9,
                         help="Identity threshold (default: 0.9).")
     parser.add_argument("-o", "--output", help="Path to the output file. If not specified, prints to stdout.")
@@ -644,7 +675,7 @@ def main():
     if dotfile:
         edge2comp = classify_dot_edges(dotfile)
     
-    uniq_ratios = compute_dbg_ratios(args.fasta_file, output_path + "_jumboDBG", 80)
+    uniq_ratios = compute_dbg_ratios(args.fasta_file, output_path + "_jumboDBG", 80) if args.fasta_file != "" else {}
 
     # Step 3: Print autosomal haplotype groups
     print(f"Edge ID\tLength of edge\tRef ID\tLength of ref\tQuery span\tRef span\tPI\tNon-repetitiveness")

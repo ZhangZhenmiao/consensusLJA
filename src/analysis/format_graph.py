@@ -135,7 +135,7 @@ chrom_color = {
     "Chr8": "#FF0000", "Chr9": "#3C06A6", "Chr10": "#6CB9AB", "Chr11": "#988430", "Chr12": "#4BAA54",
     "Chr13": "#154E54", "Chr14": "#A74C5D", "Chr15": "#528444", "Chr16": "#B61664", "Chr17": "#8F3296",
     "Chr18": "#E1A9E7", "Chr19": "#54340D", "Chr20": "#316260", "Chr21": "#8041AF", "Chr22": "#5AB499", "Chr23": "#952395",
-    "Chr24": "#70229F", "Chr25": "#4D4050", "Chr26": "#969696"
+    "Chr24": "#70229F", "Chr25": "#4D4050", "Chr26": "#969696", "mtDNA": "#FF0000"
 }
 
 def extract_length(s):
@@ -198,7 +198,10 @@ def process_dot_file(dot_path, output_path, bam_stats, DBG_ratio):
                 label_quote = line.find('"', label_start)
                 label_prefix = line[:label_start]
                 label_suffix = line[label_quote:]
-                new_line = f'{label_prefix}{line[label_start: line.find(")")+1]}{annotation_str}'f"\\nNon-repetitiveness={DBG_ratio[edge_id]*100:.0f}"f'{label_suffix}'
+                if edge_id in DBG_ratio:
+                    new_line = f'{label_prefix}{line[label_start: line.find(")")+1]}{annotation_str}'f"\\nNon-repetitiveness={DBG_ratio[edge_id]*100:.0f}"f'{label_suffix}'
+                else:
+                    new_line = f'{label_prefix}{line[label_start: line.find(")")+1]}{annotation_str}'f'{label_suffix}'
                 color_start = new_line.find('color="')
                 color_end = new_line.find('"', color_start + 7)
                 if color_start != -1 and color_end != -1:
@@ -211,7 +214,10 @@ def process_dot_file(dot_path, output_path, bam_stats, DBG_ratio):
                 label_quote = line.find('"', label_start)
                 label_prefix = line[:label_start]
                 label_suffix = line[label_quote:]
-                new_line = f'{label_prefix}{line[label_start: line.find(")")+1]}'f'\\nNon-repetitiveness={DBG_ratio[edge_id]*100:.0f}'f'{label_suffix}'
+                if edge_id in DBG_ratio:
+                    new_line = f'{label_prefix}{line[label_start: line.find(")")+1]}'f'\\nNon-repetitiveness={DBG_ratio[edge_id]*100:.0f}'f'{label_suffix}'
+                else:
+                    new_line = line
                 color_start = new_line.find('color="')
                 color_end = new_line.find('"', color_start + 7)
                 if color_start != -1 and color_end != -1:
