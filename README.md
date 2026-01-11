@@ -1,13 +1,13 @@
 
-# consensusLJA
+# Mocaic Genome Assembler (MGA)
 
 ## Overview
 
-**cLJA** is a consensus assemblier developed on [LJA](https://github.com/AntonBankevich/LJA). cLJA generates near-complete consensus assemblies using HiFi reads alone.
+**MGA** is a consensus assemblier developed on [LJA](https://github.com/AntonBankevich/LJA). MGA generates near-complete consensus assemblies using HiFi reads alone.
 
 ## Installation
 
-To install **consensusLJA**, follow these steps:
+To install **MGA**, follow these steps:
 
 ```bash
 git clone https://github.com/ZhangZhenmiao/consensusLJA.git
@@ -32,7 +32,7 @@ conda env create -f requirements.yml
 ```
 
 
-Build cLJA:
+Build MGA:
 
 ```bash
 cd consensusLJA && cmake . && make -j 8
@@ -40,7 +40,7 @@ cd consensusLJA && cmake . && make -j 8
 
 ## Usage
 
-Run cLJA with the following command:
+Run MGA with the following command:
 
 ```bash
 usage: cLJA --reads=<path_to_reads> --output=<output_folder> [options] ... 
