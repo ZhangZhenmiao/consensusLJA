@@ -1,5 +1,5 @@
 
-# Mocaic Genome Assembler (MGA)
+# Mosaic Genome Assembler (MGA)
 
 ## Overview
 
