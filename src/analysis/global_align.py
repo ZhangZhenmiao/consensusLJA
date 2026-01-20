@@ -5,6 +5,7 @@ import subprocess
 import re
 from multiprocessing import Pool
 import random
+import os
 
 def replace_N(seq: str) -> str:
     """Replace N bases with random A/C/G/T nucleotides."""
@@ -102,31 +103,37 @@ def align_contig_chromosome(args):
 def run_unialigner(args):
     chromosome, contig_id, contig_sequence, chromosome_sequence, strand = args  # Unpack the tuple here
     if contig_sequence and chromosome_sequence:
-        if strand == '-':
-            contig_sequence = reverse_complement(contig_sequence)
-        contig_sequence = replace_N(contig_sequence)
-        chromosome_sequence = replace_N(chromosome_sequence)
-        print("aligning", chromosome, contig_id, strand, flush=True)
-        # Write the contig and chromosome sequences to temporary files
-        with open(f"{contig_id}.fasta", 'w') as contig_file, open(f"{chromosome}.fasta", 'w') as chromosome_file:
-            contig_file.write(f">{contig_id}\n{contig_sequence}\n")
-            chromosome_file.write(f">{chromosome}\n{chromosome_sequence}\n")
-
         output_dir = f"{chromosome}_{contig_id}_unialigner"
         cigar_file_path = f"{output_dir}/cigar.txt"
-        # Run unialigner via subprocess
-        cmd = ["/Poppy/zmzhang/software/unialigner_new/tandem_aligner/build/bin/tandem_aligner", "--first", f"{chromosome}.fasta", "--second", f"{contig_id}.fasta", "-o", chromosome + '_' + contig_id+ '_unialigner']
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        if not os.path.exists(output_dir):
+            if strand == '-':
+                contig_sequence = reverse_complement(contig_sequence)
+            contig_sequence = replace_N(contig_sequence)
+            chromosome_sequence = replace_N(chromosome_sequence)
+            print("aligning", chromosome, contig_id, strand, flush=True)
+            # Write the contig and chromosome sequences to temporary files
+            with open(f"{contig_id}.fasta", 'w') as contig_file, open(f"{chromosome}.fasta", 'w') as chromosome_file:
+                contig_file.write(f">{contig_id}\n{contig_sequence}\n")
+                chromosome_file.write(f">{chromosome}\n{chromosome_sequence}\n")
+            # Run unialigner via subprocess
+            cmd = ["/Poppy/zmzhang/software/unialigner_new/tandem_aligner/build/bin/tandem_aligner", "--first", f"{chromosome}.fasta", "--second", f"{contig_id}.fasta", "-o", chromosome + '_' + contig_id+ '_unialigner']
+            result = subprocess.run(cmd, capture_output=True, text=True)
 
-        # Check if the command succeeded and retrieve the CIGAR string
-        if result.returncode == 0:
+            # Check if the command succeeded and retrieve the CIGAR string
+            if result.returncode == 0:
+                try:
+                    with open(cigar_file_path, 'r') as cigar_file:
+                        cigar_string = cigar_file.read().strip()  # Read the cigar.txt content
+                except FileNotFoundError:
+                    cigar_string = "CIGAR file not found"
+            else:
+                cigar_string = f"Error: {result.stderr.strip()}"
+        else:
             try:
                 with open(cigar_file_path, 'r') as cigar_file:
                     cigar_string = cigar_file.read().strip()  # Read the cigar.txt content
             except FileNotFoundError:
                 cigar_string = "CIGAR file not found"
-        else:
-            cigar_string = f"Error: {result.stderr.strip()}"
 
         # Cleanup: remove the temporary files
         # subprocess.run(["rm", f"{contig_id}.fasta", f"{chromosome}.fasta"])
@@ -204,7 +211,10 @@ args_list = []
 chr_names = chromosome_sequences.keys()
 for chromosome, (contig_id, _) in chromosome_contig_dict.items():
     # for giraffe MGA
-    if chromosome not in ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr9", "chr10", "chr12", "chr13", "chrX", "chrY"]:
+    # if chromosome not in ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr9", "chr10", "chr12", "chr13", "chrX", "chrY"]:
+    #     continue
+    # # for bonobo MGA
+    if chromosome not in ["chr3", "chr6", "chr8", "chr9", "chr11", "chr13", "chr16", "chr18", "chr21", "chr22", "chr23"]:
         continue
     m_name = ""
     p_name = ""
@@ -213,6 +223,7 @@ for chromosome, (contig_id, _) in chromosome_contig_dict.items():
             m_name = name
         if chromosome + "_pat" in name:
             p_name = name
+    print(chromosome, contig_id, m_name, p_name, chromosome_strand_dict[chromosome])
     args_list.append((m_name, contig_id, contig_sequences.get(contig_id, ""), chromosome_sequences.get(m_name, ""), chromosome_strand_dict[chromosome][1]))
     args_list.append((p_name, contig_id, contig_sequences.get(contig_id, ""), chromosome_sequences.get(p_name, ""), chromosome_strand_dict[chromosome][1]))
 

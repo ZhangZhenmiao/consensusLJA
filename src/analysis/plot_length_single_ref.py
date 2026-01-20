@@ -51,8 +51,8 @@ id_map = {
     "NC_091268.1": "Chr24",
     "NC_091269.1": "Chr25",
     "NC_091270.1": "Chr26",
-    "NC_091271.1": "Y",
-    "NC_091727.1": "X"
+    "NC_091271.1": "ChrY",
+    "NC_091727.1": "ChrX"
 }
 
 def read_fai(fai_file):
@@ -62,6 +62,8 @@ def read_fai(fai_file):
             parts = line.strip().split("\t")
             if len(parts) >= 2:
                 name, length = parts[0], int(parts[1])
+                if name in id_map:
+                    name = id_map[name]
                 lengths[name] = length
     return lengths
 
@@ -97,6 +99,8 @@ def read_stats(stats_file, contig_lengths, exclude):
             ref_name, is_rev = parse_ref(raw_ref)
             if 'mtDNA' in ref_name or 'chrM' in ref_name:
                 continue  # skip mitochondrial mappings
+            if 'X' not in ref_name and 'Y' not in ref_name and int(ref_name) > 50:
+                continue  # skip non-chromosomal mappings
             if is_rev:
                 ref_start, ref_end = (100 - ref_end), (100 - ref_start)
             
@@ -139,10 +143,8 @@ def plot_single(ax, stats_file, contigs_fai, stats2_file, contigs2_fai, ref_fai,
     hapA_bp = []
     hapB_bp = []
     for c in chromosomes_sorted:
-        valA = ref_lengths.get(f"chromosome_{c}A") or next((ref_lengths[k] for k in ref_lengths if f"chr{c}_mat" in k), 0)
-        valB = ref_lengths.get(f"chromosome_{c}B") or next((ref_lengths[k] for k in ref_lengths if f"chr{c}_pat" in k), 0)
+        valA = ref_lengths.get(f"chromosome_{c}A") or next((ref_lengths[k] for k in ref_lengths if f"Chr{c}" in k), 0)
         hapA_bp.append(valA)
-        hapB_bp.append(valB)
     hapA_mb = [v/1e6 for v in hapA_bp]
     hapB_mb = [v/1e6 for v in hapB_bp]
 
@@ -153,8 +155,7 @@ def plot_single(ax, stats_file, contigs_fai, stats2_file, contigs2_fai, ref_fai,
     bar_height_max = 0
     for i, c in enumerate(chromosomes_sorted):
         slots = []
-        if c != "Y": slots.append(('hapA', hapA_mb[i], "#4C72B0"))
-        if c != "X": slots.append(('hapB', hapB_mb[i], "#55A868"))
+        slots.append(('hapA', hapA_mb[i], "#4C72B0"))
         slots.append(('cons1', chr_contigs1.get(c, []), "#C44E52"))
         slots.append(('cons2', chr_contigs2.get(c, []), "#8172B3"))
 
@@ -183,8 +184,7 @@ def plot_single(ax, stats_file, contigs_fai, stats2_file, contigs2_fai, ref_fai,
 
     for i, c in enumerate(chromosomes_sorted):
         slots = []
-        if c != "Y": slots.append(('hapA', hapA_mb[i], "#4C72B0"))
-        if c != "X": slots.append(('hapB', hapB_mb[i], "#55A868"))
+        slots.append(('hapA', hapA_mb[i], "#4C72B0"))
         slots.append(('cons1', chr_contigs1.get(c, []), "#C44E52"))
         slots.append(('cons2', chr_contigs2.get(c, []), "#8172B3"))
 
@@ -229,7 +229,7 @@ def plot_single(ax, stats_file, contigs_fai, stats2_file, contigs2_fai, ref_fai,
             else:
                 label = None
                 if name=='hapA' and not hapA_added:
-                    label='Maternal Haplome'; hapA_added=True
+                    label='Reference Chromosome'; hapA_added=True
                     # label='Haplome A'; hapA_added=True
                 if name=='hapB' and not hapB_added:
                     label='Paternal Haplome'; hapB_added=True

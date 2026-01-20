@@ -60,7 +60,7 @@ def read_fasta(file_path):
             if line.startswith(">"):  # Header line
                 if current_seq_id is not None:
                     sequences[current_seq_id] = ''.join(current_seq)
-                current_seq_id = line[1:]  # Remove '>' and get the ID
+                current_seq_id = line[1:].split()[0]  # Remove '>' and get the ID
                 current_seq = []
             else:
                 current_seq.append(line)
@@ -204,6 +204,8 @@ with open(alignment_file, 'r') as file:
         if chromosome[0] == "-":
             chromosome = chromosome[1:]
         chromosome = chr2ref[chromosome] if chromosome in chr2ref else "None"
+        if chromosome == "None":
+            continue
         contig_length = int(fields[2])
 
         # Store the contig with the largest length for each chromosome
@@ -222,6 +224,8 @@ with open(alignment_file, 'r') as file:
             chromosome = chromosome[1:]
             strand = '-'
         chromosome = chr2ref[chromosome] if chromosome in chr2ref else "None"
+        if chromosome == "None":
+            continue
         contig_length = int(fields[2])
 
         # Store the contig with the largest length for each chromosome

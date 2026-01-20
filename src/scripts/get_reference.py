@@ -353,7 +353,14 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
     processed_alignments = 0
 
     with pysam.AlignmentFile(bam_file_path, "r") as bamfile:
-        for alignment in bamfile:
+        while True:
+            try:
+                alignment = next(bamfile)
+            except StopIteration:
+                break
+            except Exception:
+                # parse error (e.g., CIGAR length too long) → skip
+                continue
             total_alignments += 1
 
             if alignment.is_unmapped:

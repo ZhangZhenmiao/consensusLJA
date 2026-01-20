@@ -410,55 +410,52 @@ def filter_alignments_with_identity(paf_file_path, threshold=0.0):
                 'length_ref': length_ref,
             })
 
-            # Second "orientation" (like your second dict using the other part of qname)
-            parts = qname.split('_')
-            if len(parts) > 1:
-                qname_secondary = "*" + qname_primary
-                if qname_secondary not in high_identity_alignments:
-                    high_identity_alignments[qname_secondary] = []
+            qname_secondary = "*" + qname_primary
+            if qname_secondary not in high_identity_alignments:
+                high_identity_alignments[qname_secondary] = []
 
-                if is_forward:
-                    # flip signs / coords similarly to your BAM code
-                    ref_id2 = ref_id if is_reverse else '-' + ref_id
-                    ref_start_pct2 = 100.0 * ((tlen - tend) / tlen)
-                    ref_end_pct2 = 100.0 * ((tlen - tstart) / tlen)
-                    ref_start_cood2 = float(tlen - tend)
-                    ref_end_cood2 = float(tlen - tstart)
+            if is_forward:
+                # flip signs / coords similarly to your BAM code
+                ref_id2 = ref_id if is_reverse else '-' + ref_id
+                ref_start_pct2 = 100.0 * ((tlen - tend) / tlen)
+                ref_end_pct2 = 100.0 * ((tlen - tstart) / tlen)
+                ref_start_cood2 = float(tlen - tend)
+                ref_end_cood2 = float(tlen - tstart)
 
-                    query_start_pct2 = 100.0 * ((qlen - qend) / qlen)
-                    query_end_pct2 = 100.0 * ((qlen - qstart) / qlen)
-                    query_start_cood2 = float(qlen - qend)
-                    query_end_cood2 = float(qlen - qstart)
-                else:
-                    ref_id2 = ref_id if is_reverse else '-' + ref_id
-                    ref_start_pct2 = 100.0 * (tstart / tlen)
-                    ref_end_pct2 = 100.0 * (tend / tlen)
-                    ref_start_cood2 = float(tstart)
-                    ref_end_cood2 = float(tend)
+                query_start_pct2 = 100.0 * ((qlen - qend) / qlen)
+                query_end_pct2 = 100.0 * ((qlen - qstart) / qlen)
+                query_start_cood2 = float(qlen - qend)
+                query_end_cood2 = float(qlen - qstart)
+            else:
+                ref_id2 = ref_id if is_reverse else '-' + ref_id
+                ref_start_pct2 = 100.0 * (tstart / tlen)
+                ref_end_pct2 = 100.0 * (tend / tlen)
+                ref_start_cood2 = float(tstart)
+                ref_end_cood2 = float(tend)
 
-                    query_start_pct2 = 100.0 * (qstart / qlen)
-                    query_end_pct2 = 100.0 * (qend / qlen)
-                    query_start_cood2 = float(qstart)
-                    query_end_cood2 = float(qend)
+                query_start_pct2 = 100.0 * (qstart / qlen)
+                query_end_pct2 = 100.0 * (qend / qlen)
+                query_start_cood2 = float(qstart)
+                query_end_cood2 = float(qend)
 
-                high_identity_alignments[qname_secondary].append({
-                    'identity': identity,
-                    'identity_nogap': identity_nogap,
-                    'ref_id': ref_id2,
-                    'ref_start': ref_start_pct2,
-                    'ref_end': ref_end_pct2,
-                    'ref_start_cood': ref_start_cood2,
-                    'ref_end_cood': ref_end_cood2,
-                    'query_start': query_start_pct2,
-                    'query_end': query_end_pct2,
-                    'query_start_cood': query_start_cood2,
-                    'query_end_cood': query_end_cood2,
-                    'reverse': is_reverse,
-                    'length_entire_query': float(qlen),
-                    'length_entire_ref': float(tlen),
-                    'length_query': length_query,
-                    'length_ref': length_ref,
-                })
+            high_identity_alignments[qname_secondary].append({
+                'identity': identity,
+                'identity_nogap': identity_nogap,
+                'ref_id': ref_id2,
+                'ref_start': ref_start_pct2,
+                'ref_end': ref_end_pct2,
+                'ref_start_cood': ref_start_cood2,
+                'ref_end_cood': ref_end_cood2,
+                'query_start': query_start_pct2,
+                'query_end': query_end_pct2,
+                'query_start_cood': query_start_cood2,
+                'query_end_cood': query_end_cood2,
+                'reverse': is_reverse,
+                'length_entire_query': float(qlen),
+                'length_entire_ref': float(tlen),
+                'length_query': length_query,
+                'length_ref': length_ref,
+            })
 
     # dedup & merge per query + ref_id (same as your BAM version)
     for query_name, alignments in high_identity_alignments.items():
@@ -495,8 +492,8 @@ def parse_arguments():
     parser.add_argument(
         "-t", "--threshold",
         type=float,
-        default=0.9,
-        help="Identity threshold (default: 0.9)."
+        default=0.5,
+        help="Identity threshold (default: 0)."
     )
     parser.add_argument(
         "-o", "--output",

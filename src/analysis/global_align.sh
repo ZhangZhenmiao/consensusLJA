@@ -19,5 +19,5 @@ fi
 if [ ! -f align.ref.paf.stats ]; then
     /Poppy/zmzhang/Consensus_Assembly/cLJA/src/analysis/global_align_get_ref.py align.ref.paf $asm -o align.ref.paf.stats
 fi
-# /Poppy/zmzhang/Consensus_Assembly/cLJA/src/analysis/global_align.sheep.py align.ref.paf.stats $asm $ref $threads unialigner results > unialigner.log 2>&1
-/Poppy/zmzhang/Consensus_Assembly/cLJA/src/analysis/global_align.py align.ref.paf.stats $asm $ref $threads unialigner results > unialigner.log 2>&1
+# /Poppy/zmzhang/Consensus_Assembly/cLJA/src/analysis/global_align.sheep.py align.ref.paf.stats $asm $ref 10 unialigner results > unialigner.log 2>&1
+/Poppy/zmzhang/Consensus_Assembly/cLJA/src/analysis/global_align.py align.ref.paf.stats $asm $ref 10 unialigner results > unialigner.log 2>&1
