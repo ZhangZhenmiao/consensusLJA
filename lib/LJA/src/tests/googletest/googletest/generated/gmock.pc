@@ -1,10 +1,10 @@
-libdir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/lib
-includedir=/Poppy/zmzhang/Consensus_Assembly/cLJA/lib/LJA/include
+libdir=/scratch/zvz5647/software/consensusLJA/lib/LJA/lib
+includedir=/scratch/zvz5647/software/consensusLJA/lib/LJA/include
 
 Name: gmock
 Description: GoogleMock (without main() function)
 Version: 1.14.0
 URL: https://github.com/google/googletest
 Requires: gtest = 1.14.0
-Libs: -L${libdir} -lgmock 
+Libs: -L${libdir} -lgmock -lpthread
 Cflags: -I${includedir} -DGTEST_HAS_PTHREAD=1

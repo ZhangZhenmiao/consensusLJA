@@ -471,9 +471,16 @@ void Graph::merge_tips(unsigned& num_tips, bool conservative) {
                     < 0.5)
                     continue;
 
-                // if both tips long, do not merge
+                // if both tips super long, do not merge
                 if (graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length >= 50000000 && graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length >= 50000000)
                     continue;
+
+                // if both tips long, do not risk to merge -- in the case below, no need to merge
+                if (graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length >= 10000000 && graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length >= 10000000) {
+                    if (graph[node.first].incoming_edges.empty() || (graph[node.first].incoming_edges.size() == 1 && graph[node.first].incoming_edges.find(node.first) != graph[node.first].incoming_edges.end())) {
+                        continue;
+                    }
+                }
 
                 std::cout << "[MergeTip] Merge tip " << outgoing_tips.at(i) << " length " << graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length << " to tip " << outgoing_tips.at(max_index) << " length " << graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length << " sim " << sim << std::endl;
                 merge_vecs(graph[node.first].outgoing_edges[outgoing_tips[max_index]], graph[node.first].outgoing_edges[outgoing_tips[i]]);
@@ -3420,6 +3427,7 @@ void Graph::extract_unambiguous(unsigned& num_paths) {
     for (int i = 0; i < n1.size(); i += 2) {
         std::string node1 = n1.at(i), node2 = n2.at(i), node3 = n3.at(i);
         if (graph.find(node1) != graph.end() && graph.find(node2) != graph.end() && graph.find(node3) != graph.end()) {
+            bool flag_remove = false;
             if (graph[node2].outgoing_edges.find(node3) != graph[node2].outgoing_edges.end() && graph[node2].outgoing_edges[node3].at(0).sequence.size() >= 200000) {
                 int cnt_edge = 0, cnt_tip = 0;
                 for (int j = 0; j < n1.size(); j += 2) {
@@ -3443,6 +3451,37 @@ void Graph::extract_unambiguous(unsigned& num_paths) {
                 }
                 else if (!graph[node1].incoming_edges.empty())
                     continue;
+                else if (cnt_tip >= 2 && graph[node1].incoming_edges.empty()) {
+                    // to be safe, check multiplicity
+                    double multi_out = graph[node2].outgoing_edges[node3].at(0).multiplicity;
+
+                    // get ratio for each tip
+                    double sum_ratio = 0;
+                    int closest_tip = -1;
+                    double closest_ratio = 0;
+                    for (int j = 0; j < n1.size(); j += 2) {
+                        if (n2.at(j) == node2) {
+                            if (graph.find(n1.at(j)) != graph.end() && graph[n1.at(j)].incoming_edges.empty()) {
+                                double multi_tip = graph[n1.at(j)].outgoing_edges[node2].at(0).multiplicity;
+                                double ratio = multi_tip / multi_out;
+                                sum_ratio += ratio;
+                                if (std::abs(ratio - 1) < std::abs(closest_ratio - 1)) {
+                                    closest_ratio = ratio;
+                                    closest_tip = j;
+                                }
+                            }
+                        }
+                    }
+
+                    // if sum_ratio differ from 1 too much, the out edge should belong to the closest tip
+                    if (sum_ratio - 1 > 0.8) {
+                        if (closest_tip != i)
+                            continue;
+                        else {
+                            flag_remove = true;
+                        }
+                    }
+                }
             }
 
             num_paths += 2;
@@ -3489,7 +3528,7 @@ void Graph::extract_unambiguous(unsigned& num_paths) {
             graph[reverse_complementary_node(node1)].incoming_edges[reverse_complementary_node(new_end_name)].push_back(e_reverse);
 
             // delete shared edge if it is long, as in this case it is unlikely a long repeat between two chromosomes
-            if (graph[node2].outgoing_edges[node3].at(0).sequence.size() >= 5000000) {
+            if (graph[node2].outgoing_edges[node3].at(0).sequence.size() >= 5000000 || flag_remove) {
                 graph[node2].outgoing_edges.erase(node3);
                 graph[node3].incoming_edges.erase(node2);
 

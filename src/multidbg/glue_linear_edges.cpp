@@ -1235,7 +1235,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
                     outfile << ">" << n_out << "\n";
                     outfile << seq2 << "\n";
 
-                    std::string suffix_start = seq1.substr(seq1.size() - k_mer);
+                    std::string suffix_start = seq1.substr(seq1.size() >= k_mer ? seq1.size() - k_mer : 0);
                     std::string prefix_end = seq2.substr(0, k_mer);
                     kmer2bc[suffix_start].push_back(std::to_string(bc_id) + " " + edge_label_forward);
                     kmer2bc[prefix_end].push_back(std::to_string(-bc_id) + " " + edge_label_forward);
@@ -1306,7 +1306,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
                     outfile << ">" << n_out << "\n";
                     outfile << seq2 << "\n";
 
-                    std::string suffix_start = seq1.substr(seq1.size() - k_mer);
+                    std::string suffix_start = seq1.substr(seq1.size() >= k_mer ? seq1.size() - k_mer : 0);
                     std::string prefix_end = seq2.substr(0, k_mer);
                     kmer2bc[suffix_start].push_back(std::to_string(bc_id) + " " + edge_label_forward);
                     kmer2bc[prefix_end].push_back(std::to_string(-bc_id) + " " + edge_label_forward);
@@ -1605,6 +1605,13 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
                 continue;
 
             if (kmer2nodes.find(graph_linear_edges.graph[n_out].sequence) == kmer2nodes.end())
+                continue;
+
+            // n_o also should not have outgoing edges, same as N
+            if (!graph_linear_edges.graph[n_out].outgoing_edges.empty())
+                continue;
+
+            if (graph_linear_edges.graph[n_out].incoming_edges.size() != 1)
                 continue;
 
             int max_i = -1;

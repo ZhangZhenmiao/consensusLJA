@@ -515,7 +515,54 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     "NC_091269.1": "Chr25",
                     "NC_091270.1": "Chr26",
                     "NC_091271.1": "Y",
-                    "NC_091727.1": "X"
+                    "NC_091727.1": "X",
+                    "CP139523.2": "1M",
+                    "CP139519.2": "2M",
+                    "CP139518.2": "3M",
+                    "CP139517.2": "4M",
+                    "CP139516.2": "5M",
+                    "CP139515.2": "6M",
+                    "CP139514.2": "7M",
+                    "CP139513.2": "8M",
+                    "CP139512.2": "9M",
+                    "CP139533.2": "10M",
+                    "CP139532.2": "11M",
+                    "CP139531.2": "12M",
+                    "CP139530.2": "13M",
+                    "CP139529.2": "14M",
+                    "CP139528.2": "15M",
+                    "CP139527.2": "16M",
+                    "CP139526.2": "17M",
+                    "CP139525.2": "18M",
+                    "CP139524.2": "19M",
+                    "CP139522.2": "20M",
+                    "CP139521.2": "21M",
+                    "CP139520.2": "22M",
+                    "CP139511.2": "X",
+                    "CP139510.1": "mtDNA",
+                    "CP139546.2": "1P",
+                    "CP139542.2": "2P",
+                    "CP139541.2": "3P",
+                    "CP139540.2": "4P",
+                    "CP139539.2": "5P",
+                    "CP139538.2": "6P",
+                    "CP139537.2": "7P",
+                    "CP139536.2": "8P",
+                    "CP139535.2": "9P",
+                    "CP139556.2": "10P",
+                    "CP139555.2": "11P",
+                    "CP139554.2": "12P",
+                    "CP139553.2": "13P",
+                    "CP139552.2": "14P",
+                    "CP139551.2": "15P",
+                    "CP139550.2": "16P",
+                    "CP139549.2": "17P",
+                    "CP139548.2": "18P",
+                    "CP139547.2": "19P",
+                    "CP139545.2": "20P",
+                    "CP139544.2": "21P",
+                    "CP139543.2": "22P",
+                    "CP139534.2": "Y"
                 }
                 
                 query_name = alignment.query_name.split('_')[0]
@@ -553,8 +600,8 @@ def filter_alignments_with_identity(bam_file_path, threshold=0):
                     'alignment': alignment
                 })
 
-                # query_name = "*" + alignment.query_name.split('_')[0]
-                query_name = alignment.query_name.split('_')[1]
+                query_name = "*" + alignment.query_name.split('_')[0]
+                # query_name = alignment.query_name.split('_')[1]
                 if query_name not in high_identity_alignments:
                     high_identity_alignments[query_name] = []
                 

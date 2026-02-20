@@ -462,7 +462,7 @@ void MDBGRunner::simplifyMDBG() {
     }
 
     // Graph graph;
-    // graph.restart_from_dot(output + "/graph.remove_contained_r6.dot", output + "/graph.remove_contained_r6.fasta");
+    // graph.restart_from_dot(output + "/graph.remove_contained_r7.dot", output + "/graph.remove_contained_r7.fasta");
 
     std::cout << "[Connect] Connect linear and tips using spanning reads" << std::endl;
     graph.connect_linear_and_tips_using_spanning_reads(output + "/graph.spanning_reads", threads, reads);

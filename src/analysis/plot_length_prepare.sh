@@ -7,7 +7,7 @@ set -e
 
 # deduplicate
 if [ ! -f $prefix.dedup.fa ]; then
-    python /Poppy/zmzhang/Consensus_Assembly/cLJA/src/analysis/deduplication.py $asm $prefix.dedup.fa > $prefix.dedup.log 2>&1 &
+    python /scratch/zvz5647/software/consensusLJA/src/analysis/deduplication.py $asm $prefix.dedup.fa > $prefix.dedup.log 2>&1 &
 else
     echo "$prefix.dedup.fa already exists, skipping deduplication."
 fi

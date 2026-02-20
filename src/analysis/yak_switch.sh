@@ -1,9 +1,9 @@
 # Parental T2T references (can be .fa or .fa.gz)
-PAT_FA=/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.mat.cur.20231122.fasta
-MAT_FA=/Poppy/zmzhang/cLJA_Project/Bonobo/genome/mPanPan1.pat.cur.20231122.fasta
+PAT_FA=/scratch/zvz5647/hg002/genome/GCA_018852605.3_hg002v1.1.pat_genomic.fna
+MAT_FA=/scratch/zvz5647/hg002/genome/GCA_018852615.3_hg002v1.1.mat_genomic.fna
 
 # Child phased assembly
-CHILD_ASM=/Poppy/zmzhang/cLJA_Project/Bonobo/clja_investigate_scaffolding/5_polishing/assembly.filtered.fasta
+CHILD_ASM=/scratch/zvz5647/hg002/hifiasm/hifiasm.p_ctg.dedup.fa
 
 # 1) Build parental k-mer DBs (k defaults to 31; -b37 is a good general setting)
 if [ ! -f "pat.yak" ]; then
@@ -16,4 +16,4 @@ if [ ! -f "mat.yak" ]; then
 fi
 
 # 2) Evaluate child assembly for switches
-yak trioeval -t32 pat.yak mat.yak "$CHILD_ASM" > trioeval.clja.txt
+yak trioeval -t32 pat.yak mat.yak "$CHILD_ASM" > trioeval.hifiasm.txt

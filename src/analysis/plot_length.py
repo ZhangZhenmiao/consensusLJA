@@ -52,7 +52,54 @@ id_map = {
     "NC_091269.1": "Chr25",
     "NC_091270.1": "Chr26",
     "NC_091271.1": "Y",
-    "NC_091727.1": "X"
+    "NC_091727.1": "X",
+    "CP139523.2": "1M",
+    "CP139519.2": "2M",
+    "CP139518.2": "3M",
+    "CP139517.2": "4M",
+    "CP139516.2": "5M",
+    "CP139515.2": "6M",
+    "CP139514.2": "7M",
+    "CP139513.2": "8M",
+    "CP139512.2": "9M",
+    "CP139533.2": "10M",
+    "CP139532.2": "11M",
+    "CP139531.2": "12M",
+    "CP139530.2": "13M",
+    "CP139529.2": "14M",
+    "CP139528.2": "15M",
+    "CP139527.2": "16M",
+    "CP139526.2": "17M",
+    "CP139525.2": "18M",
+    "CP139524.2": "19M",
+    "CP139522.2": "20M",
+    "CP139521.2": "21M",
+    "CP139520.2": "22M",
+    "CP139511.2": "X",
+    "CP139510.1": "mtDNA",
+    "CP139546.2": "1P",
+    "CP139542.2": "2P",
+    "CP139541.2": "3P",
+    "CP139540.2": "4P",
+    "CP139539.2": "5P",
+    "CP139538.2": "6P",
+    "CP139537.2": "7P",
+    "CP139536.2": "8P",
+    "CP139535.2": "9P",
+    "CP139556.2": "10P",
+    "CP139555.2": "11P",
+    "CP139554.2": "12P",
+    "CP139553.2": "13P",
+    "CP139552.2": "14P",
+    "CP139551.2": "15P",
+    "CP139550.2": "16P",
+    "CP139549.2": "17P",
+    "CP139548.2": "18P",
+    "CP139547.2": "19P",
+    "CP139545.2": "20P",
+    "CP139544.2": "21P",
+    "CP139543.2": "22P",
+    "CP139534.2": "Y"
 }
 
 def read_fai(fai_file):
@@ -119,7 +166,8 @@ def read_stats(stats_file, contig_lengths, exclude):
 def plot_single(ax, stats_file, contigs_fai, stats2_file, contigs2_fai, ref_fai, exclude_file1, exclude_file2, add_dots=False):
     contig_lengths1 = read_fai(contigs_fai)
     contig_lengths2 = read_fai(contigs2_fai)
-    ref_lengths = read_fai(ref_fai)
+    ref_lengths_tmp = read_fai(ref_fai)
+    ref_lengths = {id_map.get(k, k): v for k, v in ref_lengths_tmp.items()}
     exclude1 = load_exclude_list(exclude_file1)
     exclude2 = load_exclude_list(exclude_file2)
 
@@ -139,10 +187,19 @@ def plot_single(ax, stats_file, contigs_fai, stats2_file, contigs2_fai, ref_fai,
     hapA_bp = []
     hapB_bp = []
     for c in chromosomes_sorted:
-        valA = ref_lengths.get(f"chromosome_{c}A") or next((ref_lengths[k] for k in ref_lengths if f"chr{c}_mat" in k), 0)
-        valB = ref_lengths.get(f"chromosome_{c}B") or next((ref_lengths[k] for k in ref_lengths if f"chr{c}_pat" in k), 0)
-        hapA_bp.append(valA)
-        hapB_bp.append(valB)
+        if c not in ["X", "Y"]:
+            valA = ref_lengths.get(f"{c}M") or next((ref_lengths[k] for k in ref_lengths if f"chr{c}_mat" in k), 0)
+            valB = ref_lengths.get(f"{c}P") or next((ref_lengths[k] for k in ref_lengths if f"chr{c}_pat" in k), 0)
+            hapA_bp.append(valA)
+            hapB_bp.append(valB)
+        elif c == "X":
+            valA = ref_lengths.get("X") or next((ref_lengths[k] for k in ref_lengths if "chrX" in k), 0)
+            hapA_bp.append(valA)
+            hapB_bp.append(0)
+        elif c == "Y":
+            valB = ref_lengths.get("Y") or next((ref_lengths[k] for k in ref_lengths if "chrY" in k), 0)
+            hapA_bp.append(0)
+            hapB_bp.append(valB)
     hapA_mb = [v/1e6 for v in hapA_bp]
     hapB_mb = [v/1e6 for v in hapB_bp]
 
