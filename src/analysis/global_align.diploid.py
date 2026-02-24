@@ -417,7 +417,7 @@ for chromosome, (contig_id, _) in chromosome_contig_dict.items():
     # if chromosome not in ["chr3", "chr6", "chr8", "chr9", "chr11", "chr13", "chr16", "chr18", "chr21", "chr22", "chr23"]:
     #     continue
     # for HG002
-    if chromosome not in ["2","4", "6", "7", "8", "9", "10", "11", "12", "17", "18", "20", "X"]:
+    if chromosome not in ["2", "3", "4", "6", "7", "8", "9", "10", "11", "12", "17", "18", "20", "X"]:
         continue
     if chromosome not in ['X', 'Y']:
         m_name = ""
