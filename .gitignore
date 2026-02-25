@@ -11,3 +11,5 @@
 **/*.a
 **/*.o
 **/bin/
+src/analysis/trim_header
+src/analysis/replace_n
