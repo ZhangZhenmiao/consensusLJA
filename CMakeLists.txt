@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 cmake_policy(SET CMP0074 NEW)
-project(cLJA VERSION 1.0 LANGUAGES CXX)
+project(MGA VERSION 1.0 LANGUAGES CXX)
 
 # === C++ standard ===
 set(CMAKE_CXX_STANDARD 20)
@@ -27,7 +27,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 file(GLOB DBG_SOURCES src/dbg/*.cpp)
 file(GLOB MULTIDBG_SOURCES src/multidbg/*.cpp)
 
-add_executable(cLJA
+add_executable(MGA
     src/main.cpp
     src/utils.cpp
     ${DBG_SOURCES}
@@ -36,24 +36,24 @@ add_executable(cLJA
 )
 
 # === Includes ===
-target_include_directories(cLJA PRIVATE
+target_include_directories(MGA PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/cmdline
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/edlib/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 # === Libraries ===
-target_link_libraries(cLJA PRIVATE OpenMP::OpenMP_CXX)
+target_link_libraries(MGA PRIVATE OpenMP::OpenMP_CXX)
 
 # === Compiler flags ===
-target_compile_features(cLJA PRIVATE cxx_std_20)
-target_compile_options(cLJA PRIVATE
+target_compile_features(MGA PRIVATE cxx_std_20)
+target_compile_options(MGA PRIVATE
     $<$<CONFIG:Release>:-O3>
     $<$<CONFIG:Debug>:-g>
 )
 
 # === Linker flags (OpenMP explicitly) ===
-target_link_options(cLJA PRIVATE ${OpenMP_CXX_FLAGS})
+target_link_options(MGA PRIVATE ${OpenMP_CXX_FLAGS})
 
 # === Submodules ===
 add_subdirectory(lib/LJA)

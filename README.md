@@ -13,7 +13,7 @@ To install **MGA**, follow these steps:
 git clone https://github.com/ZhangZhenmiao/consensusLJA.git
 ```
 
-Ensure the following dependencies are installed:
+MGA depends on the following packages:
 
 - C++ (C++20 support)
 - minimap2 (tested v2.21)
@@ -25,10 +25,11 @@ Ensure the following dependencies are installed:
 - GNU Make
 - zlib
 
-If dependencies are not installed, try below command to install using conda (this creates a new environment named clja; installation typically takes 1–5 minutes):
+We provide a conda command to install all dependencies (this creates a new environment named mga; installation typically takes 1–5 minutes):
 
 ```bash
 conda env create -f requirements.yml
+conda activate mga
 ```
 
 
@@ -36,6 +37,7 @@ Build MGA:
 
 ```bash
 cd consensusLJA && cmake . && make -j 8
+# MGA executable will be located at bin after building
 ```
 
 ## Usage
@@ -43,7 +45,7 @@ cd consensusLJA && cmake . && make -j 8
 Run MGA with the following command:
 
 ```bash
-usage: cLJA --reads=<path_to_reads> --output=<output_folder> [options] ... 
+usage: MGA --reads=<path_to_reads> --output=<output_folder> [options] ... 
 options:
   -r, --reads      path to reads (string)
   -o, --output     the output directory (string)

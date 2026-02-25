@@ -1,4 +1,4 @@
-name: clja
+name: mga
 channels:
   - anaconda
   - bioconda
