@@ -53,9 +53,7 @@ options:
   -?, --help       print this message
 ```
 
-Reads can be compressed or uncompressed, and can be provided in FASTQ or FASTA format. Read names must not contain whitespace.
-
-A valid fastq read name example:
+Reads can be compressed or uncompressed, and can be provided in FASTQ or FASTA format. Read names must not contain whitespace. A valid fastq read name example:
 
 ```bash
 @m84124_230731_175605_s1/251662659/ccs
@@ -71,7 +69,7 @@ You can use `src/analysis/trim_header` to trim read names if they contain whites
 ```bash
 gcc -o src/analysis/trim_header src/analysis/trim_header.c -lz
 # trim_header only supports gzipped fastq files as input
-src/analysis/trim_header reads.fastq.gz -o reads.cleaned.fastq
+src/analysis/trim_header reads.fastq.gz reads.cleaned.fastq
 ```
 
 The results will be in <output_folder>/5_polishing/assembly.fasta.
