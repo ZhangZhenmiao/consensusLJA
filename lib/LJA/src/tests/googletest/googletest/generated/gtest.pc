@@ -1,9 +1,9 @@
-libdir=/scratch/zvz5647/software/consensusLJA/lib/LJA/lib
-includedir=/scratch/zvz5647/software/consensusLJA/lib/LJA/include
+libdir=/Poppy/zmzhang/software/consensusLJA/lib/LJA/lib
+includedir=/Poppy/zmzhang/software/consensusLJA/lib/LJA/include
 
 Name: gtest
 Description: GoogleTest (without main() function)
 Version: 1.14.0
 URL: https://github.com/google/googletest
-Libs: -L${libdir} -lgtest -lpthread
+Libs: -L${libdir} -lgtest 
 Cflags: -I${includedir} -DGTEST_HAS_PTHREAD=1
