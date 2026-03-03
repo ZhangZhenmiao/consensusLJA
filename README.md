@@ -94,7 +94,7 @@ Like all assembly tools, MGA includes numerous parameters, which can be broadly 
 | | `SharedLength` | 5 Mb |
 | | `SufficientlyShort` | 200 kb |
 | | `ShortEdgeLength` | 20 kb |
-| **Scaffolding** | `Scaffolding` | (L=5k, k=501); (L=5k, k=301); (L=20k, k=501) |
+| **Scaffolding** | `ScaffoldingParameters` | (L=5k, k=501); (L=5k, k=301); (L=20k, k=501) |
 | | `ScaffoldingPI` | (PI_span_low=90.0%, PI_span_high=99.5%) |
 | | `PI_Cognate` | 70% |
 | | `Span_Cognate` | 85% |
@@ -116,20 +116,20 @@ Below we describe how these parameters are used in various modules of MGA.
 #### 3. Scaffolding
 
 #### Connecting parameters (ScaffoldingParameters and ScaffoldingPI)
-The Connect(G,Reads*) operation forms the set OpenEndsL by generating starting and ending segments of length L for all contigs in the graph multiDBConsensus_k(Reads*). It then identifies weakly-overlapping contigs in OpenEndsL by constructing the graph DB_k(OpenEnds) with small k-mer sizes for several (L, k) combinations. By default, MGA uses the following parameter sets in order: (L=5,000, k=501); (L=5,000, k=301); (L=20,000, k=501). These two combinations are designed for detecting overlaps at most 5,000 bp. MGA detects larger overlaps up to 20,000 bp using the setting (L=20,000, k=501); we select k=501 instead of k=301 for this combination to keep the graph relatively simple. These parameter sets are collectively referred to as ScaffoldingParameters. Each setting is repeated iteratively until no further connections can be made.
+The Connect(G,Reads*) operation forms the set $OpenEnds_L$ by generating starting and ending segments of length L for all contigs in the graph $multiDBConsensus_k(Reads*)$. It then identifies weakly-overlapping contigs in $OpenEnds_L$ by constructing the graph $DB_k(OpenEnds)$ with small k-mer sizes for several (L, k) combinations. By default, MGA uses the following parameter sets in order: (L=5,000, k=501); (L=5,000, k=301); (L=20,000, k=501). The first two combinations are designed for detecting overlaps at most 5,000 bp. MGA detects larger overlaps up to 20,000 bp using the setting (L=20,000, k=501); we select k=501 instead of k=301 for this combination to keep the graph relatively simple. These parameter sets are collectively referred to as ScaffoldingParameters. Each setting is repeated iteratively until no further connections can be made.
 
-The Connect(G,Reads*) module also checks whether any two strings in OpenEndsL (for L=20,000) can be connected by spanning reads. It aligns all reads to OpenEndsL using minimap2 and analyzes all alignments with percent identity ≥ PI_span_low (default 90%) and a span of at least 3 kb. Strings S and T in OpenEndsL are spanned by a read R if 
+The Connect(G,Reads*) module also checks whether any two strings in $OpenEnds_L$ (for L=20,000) can be connected by spanning reads. It aligns all reads to $OpenEnds_L$ using minimap2 and analyzes all alignments with percent identity ≥ PI_span_low (default 90%) and a span of at least 3 kb. Strings S and T in $OpenEnds_L$ are spanned by a read R if 
 * R aligns to both a prefix of S (starting coordinate ≤ 20) and a suffix of T (distance from alignment’s end to the end of string T ≤ 20);
 * At least one of these alignments has a percent identity ≥ PI_span_high (default 99.5%).
 
-If spanning reads are found for strings S and T in OpenEndsL, MGA merges them into a single string (edge). The pair of parameters (PI_span_low, PI_span_high)  is collectively referred to as ScaffoldingPI.  
+If spanning reads are found for strings S and T in $OpenEnds_L$, MGA merges them into a single string (edge). The pair of parameters (PI_span_low, PI_span_high)  is collectively referred to as ScaffoldingPI.  
 
 #### Deduplication parameters (PI_Cognate and Span_Cognate)
-For all contigs spelled by edges in the graph multiDBConsensusk(Reads*), the deduplication module performs all-vs-all alignments  using minimap2 with option “-x asm20” and “-p 0.1”. 
+For all contigs spelled by edges in the graph $multiDBConsensus_k(Reads*)$, the deduplication module performs all-vs-all alignments  using minimap2 with option “-x asm20” and “-p 0.1”. 
 
 A contig A is classified a cognate contig of contig B if:
 * A is aligned to B with percent identity ≥ PI_Cognate (default: 70%);
 * The aligned fraction on A is larger than Span_Cognate (default 85%); and
 * A is shorter than B.
 
-The edge of A is then removed in multiDBConsensusk(Reads*), and the non-branching paths in the resulting graph are condensed.
+The edge of A is then removed in $multiDBConsensus_k(Reads*)$, and the non-branching paths in the resulting graph are condensed.
