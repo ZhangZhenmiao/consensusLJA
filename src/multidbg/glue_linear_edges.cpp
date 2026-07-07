@@ -1592,6 +1592,7 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
     graph_linear_edges.write_graph_L(output + "/graph_linear_edges.final", 1000000, false, true, std::unordered_set<std::string>(), kmer2bc);
     graph_linear_edges.write_graph_contracted_L(output + "/graph_linear_edges.final.contracted.600", 600, false, kmer2bc);
 
+    std::unordered_map<std::string, std::string> node1_to_node2_scanned;
     for (auto&& n : graph_linear_edges.graph) {
         if (n.second.incoming_edges.empty() && n.second.outgoing_edges.size() == 1) {
             std::string n_out;
@@ -1629,7 +1630,11 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
                     max_i = i;
                     max_len_node1 = len;
                 }
-
+                if (node1_to_node2_scanned.find(node1) != node1_to_node2_scanned.end()) {
+                    max_i = i;
+                    max_len_node1 = len;
+                    break;
+                }
             }
 
             int max_j = -1;
@@ -1655,6 +1660,11 @@ void Graph::write_prefix_siffux_linear_edges(std::string output, std::string jum
 
             std::string node1 = kmer2nodes.at(n.second.sequence).at(max_i);
             std::string node2 = kmer2nodes.at(graph_linear_edges.graph[n_out].sequence).at(max_j);
+            if (node1_to_node2_scanned.find(node1) != node1_to_node2_scanned.end())
+                node2 = node1_to_node2_scanned[node1];
+
+            node1_to_node2_scanned[node1] = node2;
+            node1_to_node2_scanned[reverse_complementary_node(node2)] = reverse_complementary_node(node1);
 
             if (node1 == reverse_complementary_node(node2))
                 continue;
