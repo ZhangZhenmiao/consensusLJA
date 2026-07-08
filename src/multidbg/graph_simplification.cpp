@@ -2592,42 +2592,13 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
                 for (int i = 1; i < p2.nodes.size();++i)
                     std::cout << "->" << p2.nodes[i];
                 std::cout << std::endl;
-                std::string new_node = p1.nodes[0] + "1";
-                std::string new_node_rc = reverse_complementary_node(p1.nodes[0]) + "1";
-                while (graph.find(new_node) != graph.end() || graph.find(new_node_rc) != graph.end()) {
-                    new_node += "1";
-                    new_node_rc += "1";
-                }
 
-                if (p1.nodes[0].find('+') != std::string::npos) {
-                    std::string n_s = p1.nodes[0].substr(0, p1.nodes[0].find('+')) + "1";
-                    std::string n_e = p1.nodes[0].substr(p1.nodes[0].rfind('+') + 1) + "1";
-                    while (graph.find(n_s) != graph.end()) {
-                        n_s += "1";
-                    }
-                    while (graph.find(n_e) != graph.end()) {
-                        n_e += "1";
-                    }
-                    std::string n_s_r = n_s.at(0) == '-' ? n_s.substr(1) : "-" + n_s;
-                    std::string n_e_r = n_e.at(0) == '-' ? n_e.substr(1) : "-" + n_e;
-                    new_node = n_s + "+" + n_e;
-                    new_node_rc = n_e_r + "+" + n_s_r;
+                int new_node_index = 10000000;
+                std::string new_node = std::to_string(new_node_index);
+                while (graph.find(new_node) != graph.end()) {
+                    new_node = std::to_string(++new_node_index);
                 }
-
-                if (p1.nodes[0].find('_') != std::string::npos) {
-                    std::string n_s = p1.nodes[0].substr(0, p1.nodes[0].find('_')) + "1";
-                    std::string n_e = p1.nodes[0].substr(p1.nodes[0].rfind('_') + 1) + "1";
-                    while (graph.find(n_s) != graph.end()) {
-                        n_s += "1";
-                    }
-                    while (graph.find(n_e) != graph.end()) {
-                        n_e += "1";
-                    }
-                    std::string n_s_r = n_s.at(0) == '-' ? n_s.substr(1) : "-" + n_s;
-                    std::string n_e_r = n_e.at(0) == '-' ? n_e.substr(1) : "-" + n_e;
-                    new_node = n_s + "_" + n_e;
-                    new_node_rc = n_e_r + "_" + n_s_r;
-                }
+                std::string new_node_rc = "-" + new_node;
 
                 nodeid2Rev[new_node] = new_node_rc;
                 nodeid2Rev[new_node_rc] = new_node;
@@ -2644,8 +2615,13 @@ void Graph::resolving_complex_palindromic_bulges(int& removed_paths, int x) {
                 graph[new_node_rc].outgoing_edges[p1.nodes[1]].push_back(graph[p1.nodes[0]].outgoing_edges[p1.nodes[1]].at(p2.bulge_legs[0]));
                 graph[p1.nodes[1]].incoming_edges[new_node_rc].push_back(graph[p1.nodes[0]].outgoing_edges[p1.nodes[1]].at(p2.bulge_legs[0]));
 
-                graph[p1.nodes[0]].outgoing_edges.erase(p1.nodes[p1.nodes.size() - 1]);
-                graph[p1.nodes[p1.nodes.size() - 1]].incoming_edges.erase(p1.nodes[0]);
+                remove_items_from_vector(graph[p1.nodes[0]].outgoing_edges[p1.nodes[1]], { p1.bulge_legs[0], p2.bulge_legs[0] });
+                remove_items_from_vector(graph[p1.nodes[1]].incoming_edges[p1.nodes[0]], { p1.bulge_legs[0], p2.bulge_legs[0] });
+
+                if (graph[p1.nodes[0]].outgoing_edges[p1.nodes[1]].empty()) {
+                    graph[p1.nodes[0]].outgoing_edges.erase(p1.nodes[1]);
+                    graph[p1.nodes[1]].incoming_edges.erase(p1.nodes[0]);
+                }
                 removed_paths += 2;
             }
         }
