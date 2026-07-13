@@ -1850,6 +1850,13 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
         if (underscore_pos != std::string::npos) {
             std::string node1 = print2node.at(line.substr(0, underscore_pos));
             std::string node2 = print2node.at(line.substr(underscore_pos + 1));
+
+            // to be safe, the edge length should not excced 10*(extract length)
+            if (graph.find(node1) == graph.end() || graph[node1].outgoing_edges.find(node2) == graph[node1].outgoing_edges.end())
+                continue;
+            if (graph.at(node1).outgoing_edges[node2].at(0).sequence.size() > 10 * extract_length)
+                continue;
+
             std::cout << "[Deduplicate] Remove contained edge " << node1 << " -> " << node2 << std::endl;
             std::cout << "[Deduplicate] Remove contained edge " << reverse_complementary_node(node2) << " -> " << reverse_complementary_node(node1) << std::endl;
 

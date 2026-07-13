@@ -1599,33 +1599,36 @@ void Graph::write_graph_contracted(const std::string& prefix, int min_length, bo
                 for (auto&& e : node.second.outgoing_edges)
                     out_node = e.first;
 
-                std::vector<std::string>& in_path = graph_vis[in_node].outgoing_edges.at(node.first).at(0).path_nodes_in_original_graph;
-                std::vector<std::string>& out_path = graph_vis[node.first].outgoing_edges.at(out_node).at(0).path_nodes_in_original_graph;
+                if (graph_vis[in_node].outgoing_edges.at(node.first).size() == 1 && graph_vis[node.first].outgoing_edges.at(out_node).size() == 1) {
 
-                if (in_path.at(in_path.size() - 1) == out_path.at(0)) {
-                    graph_vis[node.first].sequence = graph.at(in_path.at(in_path.size() - 1)).sequence;
-                    flag = true;
-                    for (auto&& e : node.second.incoming_edges) {
-                        for (auto&& e_in : e.second) {
-                            assert(e_in.length == e_in.sequence.size());
-                            assert(e_in.sequence.substr(e_in.sequence.size() - graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
+                    std::vector<std::string>& in_path = graph_vis[in_node].outgoing_edges.at(node.first).at(0).path_nodes_in_original_graph;
+                    std::vector<std::string>& out_path = graph_vis[node.first].outgoing_edges.at(out_node).at(0).path_nodes_in_original_graph;
+
+                    if (in_path.at(in_path.size() - 1) == out_path.at(0)) {
+                        graph_vis[node.first].sequence = graph.at(in_path.at(in_path.size() - 1)).sequence;
+                        flag = true;
+                        for (auto&& e : node.second.incoming_edges) {
+                            for (auto&& e_in : e.second) {
+                                assert(e_in.length == e_in.sequence.size());
+                                assert(e_in.sequence.substr(e_in.sequence.size() - graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
+                            }
+                            for (auto&& e_out : graph_vis[e.first].outgoing_edges[node.first]) {
+                                assert(e_out.length == e_out.sequence.size());
+                                assert(e_out.sequence.substr(e_out.sequence.size() - graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
+                            }
                         }
-                        for (auto&& e_out : graph_vis[e.first].outgoing_edges[node.first]) {
-                            assert(e_out.length == e_out.sequence.size());
-                            assert(e_out.sequence.substr(e_out.sequence.size() - graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
+                        for (auto&& e : node.second.outgoing_edges) {
+                            for (auto&& e_out : e.second) {
+                                assert(e_out.length == e_out.sequence.size());
+                                assert(e_out.sequence.substr(0, graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
+                            }
+                            for (auto&& e_in : graph_vis[e.first].incoming_edges[node.first]) {
+                                assert(e_in.length == e_in.sequence.size());
+                                assert(e_in.sequence.substr(0, graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
+                            }
                         }
+                        std::cout << "[WriteGraph] Modify contracted node sequence for " << node.first << ", new length " << graph_vis[node.first].sequence.size() << std::endl;
                     }
-                    for (auto&& e : node.second.outgoing_edges) {
-                        for (auto&& e_out : e.second) {
-                            assert(e_out.length == e_out.sequence.size());
-                            assert(e_out.sequence.substr(0, graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
-                        }
-                        for (auto&& e_in : graph_vis[e.first].incoming_edges[node.first]) {
-                            assert(e_in.length == e_in.sequence.size());
-                            assert(e_in.sequence.substr(0, graph_vis[node.first].sequence.size()) == graph_vis[node.first].sequence);
-                        }
-                    }
-                    std::cout << "[WriteGraph] Modify contracted node sequence for " << node.first << ", new length " << graph_vis[node.first].sequence.size() << std::endl;
                 }
             }
 
