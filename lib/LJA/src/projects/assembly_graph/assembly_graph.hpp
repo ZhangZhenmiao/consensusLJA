@@ -482,7 +482,12 @@ namespace ag {
         }
 
         void updateMaxOutId(int value) {
-            max_out_id[value % 10] = std::max(max_out_id[value%10], value / 10);
+            const int code = value % 10;
+            // Only generated edge ids use nucleotide/empty suffix codes 0..4.
+            if (code < 0 || static_cast<size_t>(code) >= max_out_id.size()) {
+                return;
+            }
+            max_out_id[code] = std::max(max_out_id[code], value / 10);
         }
 
         void updateMaxOutId(const std::array<int, 5> other) {
