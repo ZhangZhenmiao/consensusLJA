@@ -34,53 +34,82 @@ void Graph::load_read_path(const std::string& graph_aln) {
     if (!fs::is_regular_file(graph_aln))
         return;
     std::ifstream aln_file(graph_aln);
-    std::string line;
-    getline(aln_file, line);
-    int cnt_frames = std::atoi(line.c_str());
-    assert(cnt_frames == 2);
-    getline(aln_file, line);
-    int cnt_corrected = std::atoi(line.c_str());;
-    for (int i = 0; i < cnt_corrected; ++i) {
+    if (graph_aln.find("dbg") != std::string::npos) {
+        std::cout << "[ReadGraph] Load corrected and pseudo reads from " << graph_aln << std::endl;
+        std::string line;
         getline(aln_file, line);
-        std::size_t pos = 0;
-        std::vector<std::string> items;
-        while (pos != std::string::npos) {
-            std::size_t pos_next = line.find(' ', pos);
-            items.push_back(line.substr(pos, pos_next - pos));
-            if (pos_next != std::string::npos)
-                pos = pos_next + 1;
-            else
-                pos = pos_next;
-        }
-        read2aln[items[0]].prefix = std::atoi(items[3].c_str());
-        read2aln[items[0]].suffix = std::atoi(items[4].c_str());
-        read2aln[items[0]].start_base_path = items[2].substr(2);
-        find_path_from_start_bases(items[1], read2aln[items[0]].start_base_path, items[0], read2aln[items[0]].nodes_path, read2aln[items[0]].prefix, read2aln[items[0]].suffix);
-        if (items[1] != "0")
-            assert(read2aln[items[0]].start_base_path.size() + 1 == read2aln[items[0]].nodes_path.size());
-    }
-    getline(aln_file, line);
-    int cnt_pseudo = std::atoi(line.c_str());;
-    for (int i = 0; i < cnt_pseudo; ++i) {
+        int cnt_frames = std::atoi(line.c_str());
+        assert(cnt_frames == 2);
         getline(aln_file, line);
-        std::size_t pos = 0;
-        std::vector<std::string> items;
-        while (pos != std::string::npos) {
-            std::size_t pos_next = line.find(' ', pos);
-            items.push_back(line.substr(pos, pos_next - pos));
-            if (pos_next != std::string::npos)
-                pos = pos_next + 1;
-            else
-                pos = pos_next;
+        int cnt_corrected = std::atoi(line.c_str());;
+        for (int i = 0; i < cnt_corrected; ++i) {
+            getline(aln_file, line);
+            std::size_t pos = 0;
+            std::vector<std::string> items;
+            while (pos != std::string::npos) {
+                std::size_t pos_next = line.find(' ', pos);
+                items.push_back(line.substr(pos, pos_next - pos));
+                if (pos_next != std::string::npos)
+                    pos = pos_next + 1;
+                else
+                    pos = pos_next;
+            }
+            read2aln[items[0]].prefix = std::atoi(items[3].c_str());
+            read2aln[items[0]].suffix = std::atoi(items[4].c_str());
+            read2aln[items[0]].start_base_path = items[2].substr(2);
+            find_path_from_start_bases(items[1], read2aln[items[0]].start_base_path, items[0], read2aln[items[0]].nodes_path, read2aln[items[0]].prefix, read2aln[items[0]].suffix);
+            if (items[1] != "0")
+                assert(read2aln[items[0]].start_base_path.size() + 1 == read2aln[items[0]].nodes_path.size());
         }
-        pseudo2aln[items[0]].prefix = std::atoi(items[3].c_str());
-        pseudo2aln[items[0]].suffix = std::atoi(items[4].c_str());
-        pseudo2aln[items[0]].start_base_path = items[2].substr(2);
-        find_path_from_start_bases(items[1], pseudo2aln[items[0]].start_base_path, items[0], pseudo2aln[items[0]].nodes_path, pseudo2aln[items[0]].prefix, pseudo2aln[items[0]].suffix);
-        if (items[1] != "0")
-            assert(pseudo2aln[items[0]].start_base_path.size() + 1 == pseudo2aln[items[0]].nodes_path.size());
+        getline(aln_file, line);
+        int cnt_pseudo = std::atoi(line.c_str());;
+        for (int i = 0; i < cnt_pseudo; ++i) {
+            getline(aln_file, line);
+            std::size_t pos = 0;
+            std::vector<std::string> items;
+            while (pos != std::string::npos) {
+                std::size_t pos_next = line.find(' ', pos);
+                items.push_back(line.substr(pos, pos_next - pos));
+                if (pos_next != std::string::npos)
+                    pos = pos_next + 1;
+                else
+                    pos = pos_next;
+            }
+            pseudo2aln[items[0]].prefix = std::atoi(items[3].c_str());
+            pseudo2aln[items[0]].suffix = std::atoi(items[4].c_str());
+            pseudo2aln[items[0]].start_base_path = items[2].substr(2);
+            find_path_from_start_bases(items[1], pseudo2aln[items[0]].start_base_path, items[0], pseudo2aln[items[0]].nodes_path, pseudo2aln[items[0]].prefix, pseudo2aln[items[0]].suffix);
+            if (items[1] != "0")
+                assert(pseudo2aln[items[0]].start_base_path.size() + 1 == pseudo2aln[items[0]].nodes_path.size());
+        }
+        std::cout << "[ReadGraph] Load " << cnt_corrected << " corrected reads, " << cnt_pseudo << " pseudo reads." << std::endl;
     }
-    std::cout << "[ReadGraph] Load " << cnt_corrected << " corrected reads, " << cnt_pseudo << " pseudo reads." << std::endl;
+    else {
+        std::cout << "[ReadGraph] Load corrected reads from " << graph_aln << std::endl;
+        std::string line;
+        getline(aln_file, line);
+        int cnt_corrected = std::atoi(line.c_str());;
+        for (int i = 0; i < cnt_corrected; ++i) {
+            getline(aln_file, line);
+            std::size_t pos = 0;
+            std::vector<std::string> items;
+            while (pos != std::string::npos) {
+                std::size_t pos_next = line.find(' ', pos);
+                items.push_back(line.substr(pos, pos_next - pos));
+                if (pos_next != std::string::npos)
+                    pos = pos_next + 1;
+                else
+                    pos = pos_next;
+            }
+            read2aln[items[0]].prefix = std::atoi(items[3].c_str());
+            read2aln[items[0]].suffix = std::atoi(items[4].c_str());
+            read2aln[items[0]].start_base_path = items[2].substr(2);
+            find_path_from_start_bases(items[1], read2aln[items[0]].start_base_path, items[0], read2aln[items[0]].nodes_path, read2aln[items[0]].prefix, read2aln[items[0]].suffix);
+            if (items[1] != "0")
+                assert(read2aln[items[0]].start_base_path.size() + 1 == read2aln[items[0]].nodes_path.size());
+        }
+        std::cout << "[ReadGraph] Load " << cnt_corrected << " corrected reads" << std::endl;
+    }
 }
 
 std::string Graph::find_path_from_start_bases(std::string start_node, std::string start_bases, std::string read_name, std::vector<std::string>& nodes_path, int prefix, int suffix) {

@@ -72,7 +72,7 @@ void Graph::get_annotation(std::string prefix) {
     execute_command(("cut -f1,2 " + ref_seq + ".fai | awk " + R"('{print "@SQ\tSN:"$1"\tLN:"$2}')" + " > " + prefix + ".ref.header.sam").c_str());
     execute_command(("cat " + prefix + ".ref.header.sam " + prefix + ".ref.sam | samtools sort -@ 50 -o " + prefix + ".ref.bam").c_str());
     std::string exeDir = getExecutablePath();
-    execute_command((exeDir + "/../src/scripts/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str());
+    execute_command((exeDir + "/../src/scripts/get_reference.py -o " + prefix + ".ref.bam.stats " + prefix + ".ref.bam " + prefix + ".fasta").c_str(), true, true, prefix + ".get_reference.log");
     write_graph_colored_from_bam(prefix + ".color", prefix + ".ref.bam.stats");
 }
 
@@ -472,7 +472,9 @@ void Graph::merge_tips(unsigned& num_tips, bool conservative) {
                     continue;
 
                 // if both tips super long, do not merge
-                if (graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length >= 50000000 && graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length >= 50000000)
+                // if (graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length >= 50000000 && graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length >= 50000000)
+                //     continue;
+                if (graph[node.first].outgoing_edges[outgoing_tips[i]].at(0).length >= 10000000 && graph[node.first].outgoing_edges[outgoing_tips[max_index]].at(0).length >= 10000000)
                     continue;
 
                 // if both tips long, do not risk to merge -- in the case below, no need to merge

@@ -32,10 +32,13 @@ def align_reads_and_detect_chimeric(
     """
     fasta_file = f"{inprefix}.fasta"
     bam_file = f"{outprefix}.bam"
+    bam_tmp_file = f"{bam_file}.tmp"
     sam_file = f"{outprefix}.sam"
     mmi_file = f"{inprefix}.mmi"
+    split_prefix = f"{inprefix}.refsplit"
 
-    # Step 1: Align if BAM doesn't exist
+    # Step 1: Align if BAM doesn't exist. The BAM is published atomically only
+    # after all producer subprocesses return successfully.
     if not Path(bam_file).exists():
         # Remove existing FASTA index if any
         fai_file = f"{fasta_file}.fai"
@@ -55,7 +58,10 @@ def align_reads_and_detect_chimeric(
             )
 
         # Build minimap2 index
-        subprocess.run(["minimap2", "-d", mmi_file, "--split-prefix", "refsplit", fasta_file], check=True)
+        subprocess.run(
+            ["minimap2", "-d", mmi_file, "--split-prefix", split_prefix, fasta_file],
+            check=True
+        )
 
         # Compress reads and align
         compress_proc = subprocess.Popen(
@@ -73,10 +79,22 @@ def align_reads_and_detect_chimeric(
         # Filter SAM lines (exclude headers) and append
         with open(sam_file, "a") as f_sam:
             subprocess.run(["grep", "-v", "^@"], stdin=minimap2_proc.stdout, stdout=f_sam, check=True)
-        minimap2_proc.wait()
+        minimap2_returncode = minimap2_proc.wait()
+        compress_returncode = compress_proc.wait()
+        if minimap2_returncode != 0:
+            raise subprocess.CalledProcessError(minimap2_returncode, minimap2_proc.args)
+        if compress_returncode != 0:
+            raise subprocess.CalledProcessError(compress_returncode, compress_proc.args)
 
-        # Sort SAM to BAM
-        subprocess.run(["samtools", "sort", "-@", str(threads), sam_file, "-o", bam_file], check=True)
+        # Sort to a temporary path so an interrupted run cannot leave a file
+        # that a later invocation mistakes for a completed checkpoint.
+        if Path(bam_tmp_file).exists():
+            os.remove(bam_tmp_file)
+        subprocess.run(
+            ["samtools", "sort", "-@", str(threads), sam_file, "-o", bam_tmp_file],
+            check=True
+        )
+        os.replace(bam_tmp_file, bam_file)
         os.remove(sam_file)
 
     # Step 2: Detect chimeric reads

@@ -54,7 +54,7 @@ public:
         if (correct_high) {
             if (!fs::is_regular_file(correct_reads_high)) {
                 std::cout << "[CorrectHigh] Correct high-freq reads" << std::endl;
-                execute_command(correct_reads + " " + reads + " " + correct_reads_lja + " " + high_contigs + " " + output + "/reads_all" + " " + compress + " --threads " + std::to_string(threads));
+                execute_command(correct_reads + " " + reads + " " + correct_reads_lja + " " + high_contigs + " " + output + "/reads_all" + " " + compress + " --threads " + std::to_string(threads), true, true, output + "/correct_reads_high.log");
             }
 
             if (!fs::is_directory(dbg_dir)) {

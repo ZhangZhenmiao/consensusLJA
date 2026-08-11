@@ -1836,7 +1836,7 @@ void Graph::remove_contained_contigs_minimap(std::string output, int threads, un
     }
 
     std::string exeDir = getExecutablePath();
-    execute_command((exeDir + "/../src/scripts/remove_cognate.py -o " + out_bam_prefix + ".results " + out_bam_prefix + ".bam").c_str());
+    execute_command((exeDir + "/../src/scripts/remove_cognate.py -o " + out_bam_prefix + ".results " + out_bam_prefix + ".bam").c_str(), true, true, out_bam_prefix + ".remove_cognate.log");
     std::ifstream infile(out_bam_prefix + ".results");
 
     // Check if file opened successfully
@@ -1924,8 +1924,7 @@ void Graph::connect_linear_and_tips_using_spanning_reads(std::string output, int
     std::string spanning_reads_script = exeDir + "/../src/scripts/spanning_reads.py";
 
     if (!fs::is_regular_file(out_result)) {
-        if (execute_command((spanning_reads_script + " " + output_all + " " + reads + " " + out_bam + " " + out_result + " -c " + compress + " -t " + std::to_string(threads) + " -i " + std::to_string(identity)).c_str()) != 0)
-            throw std::runtime_error("Failed to execute: " + spanning_reads_script + " " + output_all + " " + reads + " " + out_bam + " " + out_result + " -c " + compress + " -t " + std::to_string(threads));
+        execute_command((spanning_reads_script + " " + output_all + " " + reads + " " + out_bam + " " + out_result + " -c " + compress + " -t " + std::to_string(threads) + " -i " + std::to_string(identity)).c_str(), true, true, output + "/spanning_reads.log");
     }
 
     std::ifstream infile(out_result);

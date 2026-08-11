@@ -3,7 +3,9 @@
 
 #include <string>
 
-int execute_command(const std::string& command, bool exit_when_fail = true, bool mute_output = true);
+int execute_command(const std::string& command, bool exit_when_fail = true,
+                    bool mute_output = true,
+                    const std::string& log_file = "");
 
 double unialigner_identity(const std::string& seq1, const std::string& seq2, int prefix = 1000000);
 

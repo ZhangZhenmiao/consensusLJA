@@ -769,10 +769,29 @@ void Graph::append_linear_to_circular_genome(const std::string& prefix, int len_
                     continue;
                 traversed_labels.insert(e.rc_label);
 
-                // write a contig centered at 0, with length 2*(len_read + 1000)
-                std::string seq_centered = e.sequence.substr(0, len_read + 1000);
-                int start = std::max(0, int(e.sequence.size()) - k - len_read - 1000);
-                seq_centered = e.sequence.substr(start, e.sequence.size() - k - start) + seq_centered;
+                // The final k bases repeat the starting node, so the sequence
+                // of one complete traversal excludes that terminal overlap.
+                if (e.sequence.size() <= static_cast<size_t>(k))
+                    continue;
+                const std::string circular_sequence =
+                    e.sequence.substr(0, e.sequence.size() - k);
+
+                // Write a periodic contig centered at the artificial break.
+                // A short circle may need to be repeated several times for
+                // one read to align across all of its traversals.
+                const size_t flank_length =
+                    static_cast<size_t>(len_read) + 1000;
+                const size_t circular_length = circular_sequence.size();
+                const size_t start =
+                    (circular_length - flank_length % circular_length)
+                    % circular_length;
+
+                std::string seq_centered;
+                seq_centered.reserve(2 * flank_length);
+                for (size_t i = 0; i < 2 * flank_length; ++i)
+                    seq_centered.push_back(
+                        circular_sequence[(start + i) % circular_length]);
+
                 file_fasta << ">" << e.label << "_" << e.rc_label << "_linear\n";
                 file_fasta << seq_centered << "\n";
             }

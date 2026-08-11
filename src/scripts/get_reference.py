@@ -51,7 +51,7 @@ def run_jumbodbg(contig_name, fasta_path, out_dir, threads=10):
             "--coverage",
             "-o", str(contig_out)
         ]
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(cmd, check=True)
     return contig_out / "graph.dot"
 
 

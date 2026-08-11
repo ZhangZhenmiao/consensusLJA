@@ -8,10 +8,37 @@
 #include <fcntl.h>
 #include <iostream>
 #include <limits.h>
+#include <sstream>
 
-int execute_command(const std::string& command, bool exit_when_fail, bool mute_output) {
+namespace {
+
+std::string shell_quote(const std::string& value) {
+    std::string quoted = "'";
+    for (char c : value) {
+        if (c == '\'')
+            quoted += "'\\''";
+        else
+            quoted += c;
+    }
+    quoted += "'";
+    return quoted;
+}
+
+} // namespace
+
+int execute_command(const std::string& command, bool exit_when_fail,
+                    bool mute_output, const std::string& log_file) {
     std::string actual_command = command;
-    if (mute_output) {
+    if (!log_file.empty()) {
+        std::ofstream log(log_file, std::ios::app);
+        if (!log)
+            throw std::runtime_error("Failed to open command log: " + log_file);
+        log << "\n[CMD] " << command << '\n';
+        log.close();
+        actual_command += " >> " + shell_quote(log_file) + " 2>&1";
+        std::cout << "[CMD] Log: " << log_file << std::endl;
+    }
+    else if (mute_output) {
         if (actual_command.find(">") == std::string::npos)
             actual_command += " > /dev/null 2>&1";
         else
@@ -26,12 +53,18 @@ int execute_command(const std::string& command, bool exit_when_fail, bool mute_o
     result.success = false;
     result.exit_code = -1;
 
-    result.exit_code = system(actual_command.c_str());
+    const int wait_status = system(actual_command.c_str());
 
     // Check if command executed successfully
-    if (WIFEXITED(result.exit_code)) {
-        result.exit_code = WEXITSTATUS(result.exit_code);
+    if (wait_status == -1) {
+        result.exit_code = -1;
+    }
+    else if (WIFEXITED(wait_status)) {
+        result.exit_code = WEXITSTATUS(wait_status);
         result.success = (result.exit_code == 0);
+    }
+    else if (WIFSIGNALED(wait_status)) {
+        result.exit_code = 128 + WTERMSIG(wait_status);
     }
 
     std::string status;
@@ -40,8 +73,14 @@ int execute_command(const std::string& command, bool exit_when_fail, bool mute_o
     status += " with exit code " + std::to_string(result.exit_code) + "\n";
     // std::cout << status << std::endl;
 
-    if (!result.success && exit_when_fail)
-        throw std::runtime_error("Failed to execute " + command);
+    if (!result.success && exit_when_fail) {
+        std::ostringstream message;
+        message << "Failed to execute command (exit code " << result.exit_code << "): "
+                << command;
+        if (!log_file.empty())
+            message << "\nSee log: " << log_file;
+        throw std::runtime_error(message.str());
+    }
 
     // std::cout << "[CMD] " << command << " " << (result.success ? "succeeded" : "failed") << std::endl;
 

@@ -55,7 +55,7 @@ void MDBGRunner::simplifyMDBG() {
 
     std::string prefix = output + "/graph.cleaned";
     std::cout << "[RemoveChimeric] Identify chimeric edges" << std::endl;
-    execute_command(remove_chimeric + " " + reads + " " + prefix + " " + prefix + " " + compress + " " + prefix + ".dot" + " --threads " + std::to_string(threads) + " " + prefix + ".chimeric.txt");
+    execute_command(remove_chimeric + " " + reads + " " + prefix + " " + prefix + " " + compress + " " + prefix + ".dot" + " --threads " + std::to_string(threads) + " " + prefix + ".chimeric.txt", true, true, prefix + ".chimeric.log");
     graph.remove_chimeric_edge(prefix + ".chimeric.txt");
 
     removed_tips = 1;
@@ -308,6 +308,70 @@ void MDBGRunner::simplifyMDBG() {
     // graph.write_graph_colored_from_bam(output + "/graph.before_final" + ".color", output + "/graph.before_final" + ".ref.bam.stats");
     // graph.get_annotation(output + "/graph.before_final");
 
+    std::cout << "==========[Scaffolding]==========" << std::endl;
+    removed_edges = 1;
+    int cnt_round = 1;
+    while (removed_edges) {
+        graph.write_prefix_siffux_linear_edges(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), jumbodbg, threads, 501, removed_edges);
+        std::cout << "[Connect] Glued " << removed_edges << " edges" << std::endl;
+        graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
+
+        removed_paths = 1;
+        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths, 2000000);
+        std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
+        graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
+
+        cnt_round += 1;
+    }
+
+    removed_edges = 1;
+    while (removed_edges) {
+        graph.write_prefix_siffux_linear_edges(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), jumbodbg, threads, 301, removed_edges);
+        std::cout << "[Connect] Glued " << removed_edges << " edges" << std::endl;
+        graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
+
+        removed_paths = 1;
+        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths, 2000000);
+        std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
+        graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
+
+        cnt_round += 1;
+    }
+
+    removed_edges = 1;
+    while (removed_edges) {
+        graph.write_prefix_siffux_linear_edges(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), jumbodbg, threads, 501, removed_edges, 20000);
+        std::cout << "[Connect] Glued " << removed_edges << " edges" << std::endl;
+        graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
+
+        removed_paths = 1;
+        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths, 2000000);
+        std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
+        graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
+
+        cnt_round += 1;
+    }
+
+    removed_edges = 1;
+    while (removed_edges) {
+        graph.write_prefix_siffux_linear_edges(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), jumbodbg, threads, 501, removed_edges, 20000, false);
+        std::cout << "[Connect] Glued " << removed_edges << " edges" << std::endl;
+        graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
+
+        removed_paths = 1;
+        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths, 2000000);
+        std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
+        graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
+
+        cnt_round += 1;
+    }
+
+    // Graph graph;
+    // graph.restart_from_dot(output + "/graph.remove_contained_r7.dot", output + "/graph.remove_contained_r7.fasta");
+
+    std::cout << "[Connect] Connect linear and tips using spanning reads" << std::endl;
+    graph.connect_linear_and_tips_using_spanning_reads(output + "/graph.spanning_reads", threads, reads);
+
     while (true) {
         bool flag = true;
 
@@ -402,70 +466,6 @@ void MDBGRunner::simplifyMDBG() {
 
     // Graph graph;
     // graph.restart_from_dot(output + "/graph.before_removing_contained.dot", output + "/graph.before_removing_contained.fasta");
-
-    std::cout << "==========[Scaffolding]==========" << std::endl;
-    removed_edges = 1;
-    int cnt_round = 1;
-    while (removed_edges) {
-        graph.write_prefix_siffux_linear_edges(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), jumbodbg, threads, 501, removed_edges);
-        std::cout << "[Connect] Glued " << removed_edges << " edges" << std::endl;
-        graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
-
-        removed_paths = 1;
-        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths, 2000000);
-        std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
-        graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
-
-        cnt_round += 1;
-    }
-
-    removed_edges = 1;
-    while (removed_edges) {
-        graph.write_prefix_siffux_linear_edges(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), jumbodbg, threads, 301, removed_edges);
-        std::cout << "[Connect] Glued " << removed_edges << " edges" << std::endl;
-        graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
-
-        removed_paths = 1;
-        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths, 2000000);
-        std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
-        graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
-
-        cnt_round += 1;
-    }
-
-    removed_edges = 1;
-    while (removed_edges) {
-        graph.write_prefix_siffux_linear_edges(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), jumbodbg, threads, 501, removed_edges, 20000);
-        std::cout << "[Connect] Glued " << removed_edges << " edges" << std::endl;
-        graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
-
-        removed_paths = 1;
-        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths, 2000000);
-        std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
-        graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
-
-        cnt_round += 1;
-    }
-
-    removed_edges = 1;
-    while (removed_edges) {
-        graph.write_prefix_siffux_linear_edges(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), jumbodbg, threads, 501, removed_edges, 20000, false);
-        std::cout << "[Connect] Glued " << removed_edges << " edges" << std::endl;
-        graph.write_graph(output + "/graph.glue_linear_edges_r" + std::to_string(cnt_round), 1000000, false, true);
-
-        removed_paths = 1;
-        graph.remove_contained_contigs_minimap(output + "/graph.remove_contained_r" + std::to_string(cnt_round), threads, removed_paths, 2000000);
-        std::cout << "[Deduplicate] Removed " << removed_paths << " edges" << std::endl;
-        graph.write_graph(output + "/graph.remove_contained_r" + std::to_string(cnt_round), 1000000, false, true);
-
-        cnt_round += 1;
-    }
-
-    // Graph graph;
-    // graph.restart_from_dot(output + "/graph.remove_contained_r7.dot", output + "/graph.remove_contained_r7.fasta");
-
-    std::cout << "[Connect] Connect linear and tips using spanning reads" << std::endl;
-    graph.connect_linear_and_tips_using_spanning_reads(output + "/graph.spanning_reads", threads, reads);
 
     while (true) {
         bool flag = true;
@@ -664,7 +664,7 @@ void MDBGRunner::simplifyMDBG() {
     // Graph graph;
     // graph.restart_from_dot(output + "/graph.final.dot", output + "/graph.final.fasta");
 
-    execute_command(getExecutablePath() + "/../src/scripts/investigate_overlap.py --ref " + output + "/graph.final.fasta --query " + output + "/graph.final.fasta --paf " + output + "/graph.final.fasta.paf --threads " + std::to_string(threads) + " -P --output " + output + "/graph.final.fasta.paf.dup.txt");
+    execute_command(getExecutablePath() + "/../src/scripts/investigate_overlap.py --ref " + output + "/graph.final.fasta --query " + output + "/graph.final.fasta --paf " + output + "/graph.final.fasta.paf --threads " + std::to_string(threads) + " -P --output " + output + "/graph.final.fasta.paf.dup.txt", true, true, output + "/investigate_overlap.log");
     graph.write_graph_gfa(output + "/graph.final", output + "/graph.final.fasta.paf.dup.txt");
 
     graph.write_graph_final_formatting(output + "/graph.final.formatting", 1000000, false, true);

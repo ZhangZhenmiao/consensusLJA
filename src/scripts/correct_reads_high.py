@@ -17,16 +17,21 @@ def correct_reads_pipeline(
 ):
     """Integrated read correction pipeline: compress, align, and correct reads."""
     ori_fasta = f"{outprefix}.ori.fasta"
+    ori_fasta_tmp = f"{ori_fasta}.tmp"
     bam_file = f"{outprefix}.bam"
+    bam_file_tmp = f"{bam_file}.tmp"
     corrected_fasta = f"{outprefix}.corrected.fasta"
+    corrected_fasta_tmp = f"{corrected_fasta}.tmp"
 
     # Step 1: Compress reads if needed
     if not Path(ori_fasta).exists():
-        subprocess.run(
-            [compress, "--dimer-compress", "32,32,1", "--reads", reads_ori],
-            stdout=open(ori_fasta, "w"),
-            check=True
-        )
+        with open(ori_fasta_tmp, "w") as output:
+            subprocess.run(
+                [compress, "--dimer-compress", "32,32,1", "--reads", reads_ori],
+                stdout=output,
+                check=True
+            )
+        os.replace(ori_fasta_tmp, ori_fasta)
 
     # Step 2: Align reads and sort BAM if needed
     if not Path(bam_file).exists():
@@ -34,13 +39,20 @@ def correct_reads_pipeline(
             "minimap2", "-t", str(threads), "-ax", "map-hifi", "--eqx",
             high_contig, ori_fasta
         ]
-        samtools_sort_cmd = ["samtools", "sort", "-@", str(threads), "-o", bam_file]
+        samtools_sort_cmd = ["samtools", "sort", "-@", str(threads), "-o", bam_file_tmp]
 
         p1 = subprocess.Popen(minimap2_cmd, stdout=subprocess.PIPE)
         p2 = subprocess.Popen(samtools_sort_cmd, stdin=p1.stdout)
         p1.stdout.close()
-        p2.communicate()
-        subprocess.run(["samtools", "index", bam_file], check=True)
+        sort_returncode = p2.wait()
+        minimap2_returncode = p1.wait()
+        if minimap2_returncode != 0:
+            raise subprocess.CalledProcessError(minimap2_returncode, minimap2_cmd)
+        if sort_returncode != 0:
+            raise subprocess.CalledProcessError(sort_returncode, samtools_sort_cmd)
+        subprocess.run(["samtools", "index", bam_file_tmp], check=True)
+        os.replace(bam_file_tmp, bam_file)
+        os.replace(f"{bam_file_tmp}.bai", f"{bam_file}.bai")
 
     # Step 3: Run read correction logic
     print("[CorrectHigh] Loading original read lengths...", flush=True)
@@ -96,7 +108,7 @@ def correct_reads_pipeline(
     # Write corrected reads
     print("[CorrectHigh] Writing corrected reads to output FASTA...", flush=True)
     written = 0
-    with open(corrected_fasta, "w") as f_out:
+    with open(corrected_fasta_tmp, "w") as f_out:
         written_reads = set()
         for record in SeqIO.parse(reads_corr, "fasta"):
             read_id = record.id
@@ -107,6 +119,8 @@ def correct_reads_pipeline(
             SeqIO.write(record, f_out, "fasta")
             written += 1
             written_reads.add(read_id)
+
+    os.replace(corrected_fasta_tmp, corrected_fasta)
 
     bam.close()
     ref.close()

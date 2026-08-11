@@ -62,10 +62,35 @@ def extract_flanks(input_fasta, output_fasta, flank_size=20000):
     print(f"[Connect] Flanks written to: {output_fasta}")
 
 def run_minimap2_to_bam(flank_fasta, hifi_reads, output_bam, compress, threads):
-    cmd = f"{compress} --dimer-compress 32,32,1 --reads {hifi_reads} | minimap2 -ax map-hifi -Y --eqx --sam-hit-only --secondary=no -t {threads} {flank_fasta} - | samtools sort -@ {threads} -o {output_bam}"
-    
-    os.system(cmd)
-    subprocess.run(f"samtools index {output_bam}", shell=True, check=True)
+    output_bam_tmp = f"{output_bam}.tmp"
+    compress_cmd = [compress, "--dimer-compress", "32,32,1", "--reads", hifi_reads]
+    minimap2_cmd = [
+        "minimap2", "-ax", "map-hifi", "-Y", "--eqx", "--sam-hit-only",
+        "--secondary=no", "-t", str(threads), flank_fasta, "-"
+    ]
+    sort_cmd = ["samtools", "sort", "-@", str(threads), "-o", output_bam_tmp]
+
+    compress_proc = subprocess.Popen(compress_cmd, stdout=subprocess.PIPE)
+    minimap2_proc = subprocess.Popen(
+        minimap2_cmd, stdin=compress_proc.stdout, stdout=subprocess.PIPE
+    )
+    compress_proc.stdout.close()
+    sort_proc = subprocess.Popen(sort_cmd, stdin=minimap2_proc.stdout)
+    minimap2_proc.stdout.close()
+
+    sort_returncode = sort_proc.wait()
+    minimap2_returncode = minimap2_proc.wait()
+    compress_returncode = compress_proc.wait()
+    if compress_returncode != 0:
+        raise subprocess.CalledProcessError(compress_returncode, compress_cmd)
+    if minimap2_returncode != 0:
+        raise subprocess.CalledProcessError(minimap2_returncode, minimap2_cmd)
+    if sort_returncode != 0:
+        raise subprocess.CalledProcessError(sort_returncode, sort_cmd)
+
+    subprocess.run(["samtools", "index", output_bam_tmp], check=True)
+    os.replace(output_bam_tmp, output_bam)
+    os.replace(f"{output_bam_tmp}.bai", f"{output_bam}.bai")
     print(f"[Connect] Sorted BAM + index written: {output_bam}, {output_bam}.bai")
 
 def filter_alignments_with_identity(bam_file_path, threshold=0.9):
@@ -353,13 +378,17 @@ def main():
 
     flank_fasta = args.fasta[:args.fasta.rfind(".fa")] + ".flanks.fasta"
     if not os.path.isfile(flank_fasta):
-        extract_flanks(args.fasta, flank_fasta, args.flank_size)
+        flank_fasta_tmp = f"{flank_fasta}.tmp"
+        extract_flanks(args.fasta, flank_fasta_tmp, args.flank_size)
+        os.replace(flank_fasta_tmp, flank_fasta)
     if not os.path.isfile(args.output_bam):
         run_minimap2_to_bam(flank_fasta, args.hifi_reads, args.output_bam, args.compress, args.thread)
     
     high_identity_alignments = filter_alignments_with_identity(args.output_bam, 0.9)
     if not os.path.isfile(args.output_result):
-        summarize_full_connected_sequences(high_identity_alignments, flank_fasta, args.output_result)
+        output_result_tmp = f"{args.output_result}.tmp"
+        summarize_full_connected_sequences(high_identity_alignments, flank_fasta, output_result_tmp)
+        os.replace(output_result_tmp, args.output_result)
 
 if __name__ == "__main__":
     main()
