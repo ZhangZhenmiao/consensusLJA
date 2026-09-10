@@ -3439,8 +3439,11 @@ void Graph::extract_unambiguous(unsigned& num_paths) {
                     double closest_ratio = 0;
                     for (int j = 0; j < n1.size(); j += 2) {
                         if (n2.at(j) == node2) {
-                            if (graph.find(n1.at(j)) != graph.end() && graph[n1.at(j)].incoming_edges.empty()) {
-                                double multi_tip = graph[n1.at(j)].outgoing_edges[node2].at(0).multiplicity;
+                            if (graph.find(n1.at(j)) != graph.end() &&
+                                graph[n1.at(j)].incoming_edges.empty() &&
+                                graph[n1.at(j)].outgoing_edges.find(node2) != graph[n1.at(j)].outgoing_edges.end() &&
+                                !graph[n1.at(j)].outgoing_edges.at(node2).empty()) {
+                                double multi_tip = graph[n1.at(j)].outgoing_edges.at(node2).at(0).multiplicity;
                                 double ratio = multi_tip / multi_out;
                                 sum_ratio += ratio;
                                 if (std::abs(ratio - 1) < std::abs(closest_ratio - 1)) {

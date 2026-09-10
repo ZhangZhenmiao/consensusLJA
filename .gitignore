@@ -11,5 +11,7 @@
 **/*.a
 **/*.o
 **/bin/
+lib/LJA/**/CTestTestfile.cmake
+lib/LJA/**/generated/*.pc
 src/analysis/trim_header
 src/analysis/replace_n
